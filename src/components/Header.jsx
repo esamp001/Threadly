@@ -81,7 +81,6 @@ const Header = () => {
 				</Box>
 
 				<Box sx={{
-					display: 'flex',
 					alignItems: 'center',
 					flexDirection: 'column',
 					gap: 1,

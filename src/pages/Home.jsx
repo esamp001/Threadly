@@ -8,10 +8,13 @@ const Home = () => {
   return (
     // Main container
     <Grid container sx={{ border: '1px solid black'}}>
+      <Grid sx={{ border: '1px solid green', width: '100%' }} item xs={12} lg={12}>
         <Header />
-        <Grid item xs={12} md={6}>
-            BODY CONTENT
-        </Grid>
+      </Grid>
+
+      <Grid item xs={12} md={8} sx={{ mx: "auto" }}>
+        BODY CONTENT
+      </Grid>
     </Grid>
   )
 }

@@ -1,5 +1,6 @@
 import { Avatar, Box, InputAdornment, TextField, Typography } from '@mui/material';
 import { Home, LayoutTemplate, Search as SearchIcon, TrendingUp, Users } from 'lucide-react';
+import ThreadlyLogo from '../../assets/Threadly.png';
 
 const Header = () => {
 
@@ -10,21 +11,22 @@ const Header = () => {
       justifyContent: { xs: 'flex-start', sm: 'center' },  // Left on mobile, center on larger
       height: { xs: 80, sm: 100, md: 110, lg: 120 },
       gap: 6,
-      border: '1px solid red'
     }}>
-      <Box>LOGO</Box>
-      <Typography
-        variant="h6"
-        sx={{
-          border: '1px solid blue',
-          fontWeight: 700,
-          letterSpacing: '0.1rem',
-          fontSize: { xs: '1rem', sm: '1rem', md: '0.9rem', lg: '1.1rem' },
-          display: { xs: 'none', sm: 'block' }
-        }}
-      >
-        Threadly
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90 }} />
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            letterSpacing: '0.1rem',
+            fontSize: { xs: '1rem', sm: '1rem', md: '0.9rem', lg: '1.1rem' },
+            display: { xs: 'none', sm: 'block' }
+          }}
+        >
+          Threadly
+        </Typography>
+      </Box>
+
 
 
       <Box sx={{ display: { xs: 'none', sm: 'none', md: 'flex' }, gap: 10, ml: 8, alignItems: 'center', }}>

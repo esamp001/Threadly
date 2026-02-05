@@ -1,4 +1,4 @@
-import { Box, Grid } from '@mui/material'
+import { Grid } from '@mui/material'
 
 // Importing
 import BottomNav from '../components/HomeComponents/BottomNav'
@@ -15,14 +15,14 @@ const Home = () => {
         <Header />
       </Grid>
 
-      <Grid container spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 12 }} sx={{ border: '1px solid blue', p: 2 }}>
-        <Grid item size={{ xs: 3}} sx={{ border: '1px solid red' }}>
+      <Grid container spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 12 }} sx={{ border: '1px solid blue' }}>
+        <Grid item size={{ xs: 3 }}>
           <LeftContent />
         </Grid>
         <Grid item size={{ xs: 6 }}>
           <MainContent />
         </Grid>
-        <Grid item size={{ xs: 3 }} sx={{ border: '1px solid yellow' }}>
+        <Grid item size={{ xs: 2.8 }}>
           <RightContent />
         </Grid>
       </Grid>

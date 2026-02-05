@@ -3,24 +3,24 @@ import { Home, LayoutTemplate, Search as SearchIcon, TrendingUp, Users } from 'l
 
 const Header = () => {
 
-
-
-
 	return (
 		<Box sx={{
 			display: 'flex',
 			alignItems: 'center',
 			justifyContent: { xs: 'flex-start', sm: 'center' },  // Left on mobile, center on larger
-			p: 3,
 			height: { xs: 80, sm: 100, md: 120, lg: 150 },
-			gap: 6
+			gap: 6,
+			border: '1px solid red'
 		}}>
+			<Box>LOGO</Box>
 			<Typography
 				variant="h6"
 				sx={{
+					border: '1px solid blue',
 					fontWeight: 700,
 					letterSpacing: '0.1rem',
-					fontSize: { xs: '1rem', sm: '1rem', md: '0.9rem', lg: '1.1rem' }
+					fontSize: { xs: '1rem', sm: '1rem', md: '0.9rem', lg: '1.1rem' },
+					display: { xs: 'none', sm: 'block' }
 				}}
 			>
 				Threadly
@@ -39,7 +39,7 @@ const Header = () => {
 				<Box>
 					<TextField
 						sx={{
-							width: { xs: 200, sm: 270, md: 320, lg: 380 }
+							width: { xs: 180, sm: 250, md: 320, lg: 380 }
 						}}
 						size='small'
 						placeholder="Search"
@@ -56,9 +56,9 @@ const Header = () => {
 
 
 
-			<Box sx={{ display: 'flex', gap: 1, width: 150 }}>
+			<Box sx={{ display: 'flex', gap: 1, width: 150, justifyContent: 'flex-end' }}>
 				<Box sx={{ position: 'relative' }}>
-					<Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+					<Box sx={{ display: 'flex', gap: 1 }}>
 						<Avatar sx={{ width: 50, height: 50, }}>J</Avatar>
 					</Box>
 

@@ -1,29 +1,34 @@
 import { Box, Grid } from '@mui/material'
 
 // Importing
-import BottomNav from '../components/BottomNav'
-import Header from '../components/Header'
-import LeftContent from '../components/LeftContent'
-import MainContent from '../components/MainContent'
-import RightContent from '../components/RightContent'
+import BottomNav from '../components/HomeComponents/BottomNav'
+import Header from '../components/HomeComponents/Header'
+import LeftContent from '../components/HomeComponents/LeftContent'
+import MainContent from '../components/HomeComponents/MainContent'
+import RightContent from '../components/HomeComponents/RightContent'
 
 const Home = () => {
   return (
     // Main container
     <Grid container sx={{ border: '1px solid black' }}>
-      <Grid sx={{ width: '100%' }} item xs={12}>
+      <Grid sx={{ width: '100%' }} item size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
         <Header />
       </Grid>
 
-      <Grid item xs={12} sx={{ mx: "auto" }}>
-        <Box>
-          <MainContent />
-          <RightContent />
+      <Grid container spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 12 }} sx={{ border: '1px solid blue', p: 2 }}>
+        <Grid item size={{ xs: 3}} sx={{ border: '1px solid red' }}>
           <LeftContent />
-        </Box>
+        </Grid>
+        <Grid item size={{ xs: 6 }}>
+          <MainContent />
+        </Grid>
+        <Grid item size={{ xs: 3 }} sx={{ border: '1px solid yellow' }}>
+          <RightContent />
+        </Grid>
       </Grid>
 
-      <Grid item xs={12}>
+
+      <Grid item size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
         <BottomNav />
       </Grid>
     </Grid>

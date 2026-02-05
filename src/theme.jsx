@@ -13,6 +13,13 @@ const theme = createTheme({
     text: {
       primary: "#FFFFFF",
       secondary: "#B3B3B3",
+      main: "#121212a8",
+    },
+    paper: {
+      backgroundColor: "#f3f0f0ff",
+    },
+    search: {
+      backgroundColor: "#cfc5c5ff",
     },
   },
   shape: {

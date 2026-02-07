@@ -1,4 +1,4 @@
-import { Avatar, Box, InputAdornment, TextField, Typography } from '@mui/material';
+import { Avatar, Box, InputAdornment, TextField, Typography, Grid } from '@mui/material';
 import { Home, LayoutTemplate, Search as SearchIcon, TrendingUp, Users } from 'lucide-react';
 import ThreadlyLogo from '../../assets/Threadly.png';
 
@@ -8,26 +8,22 @@ const Header = () => {
     <Box sx={{
       display: 'flex',
       alignItems: 'center',
-      justifyContent: { xs: 'flex-start', sm: 'center' },  // Left on mobile, center on larger
-      height: { xs: 80, sm: 100, md: 110, lg: 120 },
-      gap: 6,
+      gap: 5,
+      px: 7
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90 }} />
+      <Box sx={{ display: 'flex', alignItems: 'center'}}>
+        <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} />
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
             letterSpacing: '0.1rem',
-            fontSize: { xs: '1rem', sm: '1rem', md: '0.9rem', lg: '1.1rem' },
-            display: { xs: 'none', sm: 'block' }
+            display: { xs: 'none', sm: 'none', md: 'block' }
           }}
         >
           Threadly
         </Typography>
       </Box>
-
-
 
       <Box sx={{ display: { xs: 'none', sm: 'none', md: 'flex' }, gap: 10, ml: 8, alignItems: 'center', }}>
         <Home size={25} />
@@ -36,12 +32,12 @@ const Header = () => {
         <Users size={25} />
       </Box>
 
-
-      <Box>
-        <Box>
+      {/* Search Bar */}
+      <Grid container>
+        <Grid sx={{ width: { xs: 600, sm: 800, md: 1000, lg: 500, xl: 1050} }}>
           <TextField
             sx={{
-              width: { xs: 180, sm: 250, md: 320, lg: 380 },
+              width: '100%',
               '& .MuiOutlinedInput-root': {
                 borderRadius: 21,
                 '& fieldset': {
@@ -62,12 +58,10 @@ const Header = () => {
               ),
             }}
           />
-        </Box>
-      </Box>
+        </Grid>
+      </Grid>
 
-
-
-      <Box sx={{ display: 'flex', gap: 1, width: 150, justifyContent: 'flex-end' }}>
+      <Box sx={{ display: 'flex', gap: 1, width: 150, justifyContent: 'flex-end', ml: 5 }}>
         <Box sx={{ position: 'relative' }}>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Avatar sx={{ width: 50, height: 50, }}>J</Avatar>
@@ -84,7 +78,7 @@ const Header = () => {
               py: 0.2,
               fontSize: 10,
               borderRadius: '999px',
-              fontWeight: 700,
+              fontWeight: 700
             }}
           >
             Lv 12
@@ -116,7 +110,6 @@ const Header = () => {
           </Typography>
         </Box>
       </Box>
-
     </Box>
   )
 }

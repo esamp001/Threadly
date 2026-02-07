@@ -8,7 +8,7 @@ const theme = createTheme({
     },
     background: {
       default: "#121212",
-      paper: "#181818",
+      paper: "#1818185e",
     },
     text: {
       primary: "#FFFFFF",
@@ -16,11 +16,15 @@ const theme = createTheme({
       main: "#121212a8",
     },
     paper: {
-      backgroundColor: "#f3f0f0ff",
+      backgroundColor: "#1818185e",
     },
     search: {
       backgroundColor: "#cfc5c5ff",
     },
+    // In theme.jsx
+    button: {
+      backgroundColor: "rgba(128, 128, 128, 0.1)", // transparent gray
+    }
   },
   shape: {
     borderRadius: 12,

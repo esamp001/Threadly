@@ -10,25 +10,25 @@ import RightContent from '../components/HomeComponents/RightContent'
 const Home = () => {
   return (
     // Main container
-    <Grid container sx={{ border: '1px solid black' }}>
-      <Grid sx={{ width: '100%' }} item size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
+    <Grid container>
+      <Grid sx={{ width: '100%' }} item size={{ xs: 12 }}>
         <Header />
       </Grid>
 
-      <Grid container spacing={2} size={{ xs: 12, sm: 12, md: 12, lg: 12 }} sx={{ border: '1px solid blue' }}>
-        <Grid item size={{ xs: 3 }}>
+      <Grid container size={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }} spacing={2}>
+        <Grid item size={{ xs: 0, sm: 0, md: 0, lg: 2.9, xl: 2.9 }} sx={{ display: { xs: 'none', sm: 'none', md: 'none', lg: 'block' } }}>
           <LeftContent />
         </Grid>
-        <Grid item size={{ xs: 6 }}>
+        <Grid item size={{ xs: 12, sm: 12, md: 9, lg: 6, xl: 6 }}>
           <MainContent />
         </Grid>
-        <Grid item size={{ xs: 2.8 }}>
+        <Grid item size={{ xs: 0, sm: 0, md: 3, lg: 3, xl: 3 }} sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}>
           <RightContent />
         </Grid>
       </Grid>
 
 
-      <Grid item size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
+      <Grid item>
         <BottomNav />
       </Grid>
     </Grid>

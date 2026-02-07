@@ -3,7 +3,6 @@ import { Camera } from 'lucide-react';
 
 
 const SearchButton = () => {
-  const theme = useTheme();
   return (
     <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
       <TextField

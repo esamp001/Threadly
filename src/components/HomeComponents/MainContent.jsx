@@ -19,7 +19,6 @@ const MainContent = () => {
         </Box>
       </Paper>
 
-
       {/* Thread Content */}
       <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -33,19 +32,24 @@ const MainContent = () => {
 
         <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mt: 1 }}>Bakit hindi na ako mahal ng jowa ko?</Typography>
 
-
         {/* Actual Content */}
         <Box sx={{ mt: 2, border: '1px solid red', height: '100px' }}>
         </Box>
-        <Box sx={{ display: 'flex', border: '1px solid red', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
-          <Box>
-            <ExpandLessRoundedIcon sx={{ color: 'primary.main', height: 30, width: 30 }} /> {/* Upvote */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ExpandLessRoundedIcon sx={{ color: 'primary.main', height: 30, width: 30 }} /> {/* Upvote */}
+              <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>500</Typography>
+            </Box>
             <ExpandMoreRoundedIcon sx={{ color: 'error.main', height: 30, width: 30 }} />{/* Downvote */}
-
           </Box>
-          <Box>
-            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<MessageRoundedIcon sx={{ color: 'text.main' }} />}>500</Button>
-            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<ReplyRoundedIcon sx={{ color: 'text.main' }} />}>26</Button>
+          <Box sx={{ gap: 1, display: 'flex' }}>
+            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}>
+              <Typography sx={{ color: 'text.secondary' }}>500</Typography>
+            </Button>
+            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<ReplyRoundedIcon sx={{ color: 'text.secondary' }} />}>
+              <Typography sx={{ color: 'text.secondary' }}>26</Typography>
+            </Button>
           </Box>
         </Box>
       </Paper>

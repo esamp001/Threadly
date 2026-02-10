@@ -2,11 +2,14 @@ import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
-import { Avatar, Box, Button, Paper, Typography, Accordion, AccordionDetails, AccordionSummary, TextField} from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, FormControl, MenuItem, Paper, Select, Typography } from "@mui/material";
 import SearchButton from './SearchButton';
-import { useState, useRef, useEffect } from 'react';
+
+
+// Quill
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+import { useEffect, useRef, useState } from 'react';
 
 const ReactQuill = Quill;
 
@@ -36,12 +39,12 @@ const MainContent = () => {
 
 
   // Function to get content
-  const getQuillContent = () => {
-    if (quillInstanceRef.current) {
-      return quillInstanceRef.current.root.innerHTML;
-    }
-    return '';
-  };
+  // const getQuillContent = () => {
+  //   if (quillInstanceRef.current) {
+  //     return quillInstanceRef.current.root.innerHTML;
+  //   }
+  //   return '';
+  // };
 
 
   return (
@@ -50,18 +53,41 @@ const MainContent = () => {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <Accordion expanded={isExpanded} sx={{ border: '1px solid red'}}>
+      <Accordion expanded={isExpanded}>
         <AccordionSummary onClick={(e) => e.stopPropagation()} sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 , width: '100%'}}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
             <Avatar sx={{ height: 50, width: 50 }}>J</Avatar>
             <SearchButton onExpand={() => setIsExpanded(!isExpanded)} />
           </Box>
         </AccordionSummary>
-        <AccordionDetails sx={{p: 2, backgroundColor: 'paper.backgroundColor' }}>
+
+        {/* Select Spaces using dropdown */}
+        <Box sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
+          <FormControl fullWidth>
+            <Select
+              value={1}
+              renderValue={() => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ width: 32, height: 32 }}>T</Avatar>
+                  <Typography fontWeight={700}>Tanong PH</Typography>
+                </Box>
+              )}
+              sx={{ borderRadius: 5 }}
+            >
+              <MenuItem value={1}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Avatar sx={{ width: 28, height: 28 }}>T</Avatar>
+                  Tanong PH
+                </Box>
+              </MenuItem>
+            </Select>
+          </FormControl>
+
+        </Box>
+        <AccordionDetails sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
           <Box
             sx={{
               width: '100%',
-              // border: '1px solid red',
               '& .ql-container': {
                 backgroundColor: 'paper.backgroundColor',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -115,11 +141,11 @@ const MainContent = () => {
                 borderColor: 'primary.main'
               }
             }
-          }
+            }
           >
             <div
               ref={quillRef}
-              style={{ height: '150px', marginBottom: '50px', border: '1px solid red' }}
+              style={{ height: '150px', marginBottom: '50px' }}
             />
           </Box>
         </AccordionDetails>
@@ -128,10 +154,13 @@ const MainContent = () => {
       {/* Thread Content */}
       <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar sx={{ height: 35, width: 35, mr: 1 }}>J</Avatar>
+          <Avatar sx={{ height: 35, width: 35, mr: 1 }}>T</Avatar>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            <Typography sx={{ color: 'text.secondary' }}>John Doe</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700 }}>Tanong PH</Typography>
+              <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>Posted by u/John Doe</Typography>
+            </Box>
             <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>1 day ago</Typography>
           </Box>
         </Box>

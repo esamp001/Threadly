@@ -25,7 +25,7 @@ const LeftContent = () => {
       </Paper>
 
       {/* Content of left side - Trending Spaces */}
-      <Paper sx={{ p: 2, backgroundColor: 'paper.backgroundColor', borderTopLeftRadius: 0, borderBottomLeftRadius: 0, mt: 5 }}>
+      <Paper sx={{ p: 2, backgroundColor: 'paper.backgroundColor', borderTopLeftRadius: 0, borderBottomLeftRadius: 0, mt: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography sx={{ fontWeight: 700 }}>
             Trending Spaces

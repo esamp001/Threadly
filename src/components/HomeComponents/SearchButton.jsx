@@ -1,4 +1,4 @@
-import { Box, Button, IconButton, InputAdornment, TextField, Typography, useTheme } from '@mui/material';
+import { Box, Button, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import { Camera } from 'lucide-react';
 
 
@@ -8,7 +8,7 @@ const SearchButton = ({ onExpand }) => {
       <TextField
         onClick={onExpand}
         size="small"
-        placeholder="Create new thread title on space"
+        placeholder="Create title and start a thread"
         sx={{
           width: '80%',
           border: '3px solid',

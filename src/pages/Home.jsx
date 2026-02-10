@@ -27,7 +27,6 @@ const Home = () => {
         </Grid>
       </Grid>
 
-
       <Grid item>
         <BottomNav />
       </Grid>

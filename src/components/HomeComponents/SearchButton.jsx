@@ -2,12 +2,13 @@ import { Box, Button, IconButton, InputAdornment, TextField, Typography, useThem
 import { Camera } from 'lucide-react';
 
 
-const SearchButton = () => {
+const SearchButton = ({ onExpand }) => {
   return (
     <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
       <TextField
+        onClick={onExpand}
         size="small"
-        placeholder="Create new thread on space"
+        placeholder="Create new thread title on space"
         sx={{
           width: '80%',
           border: '3px solid',

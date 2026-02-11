@@ -8,10 +8,13 @@ app.use(express.json());
 
 // Middleware
 app.use(cors({
-    origin: process.env.ORIGIN,
-    credentials: process.env.CREDENTIALS === 'true',
+  origin: process.env.ORIGIN,
+  credentials: process.env.CREDENTIALS === 'true',
 }));
 
 // All register routes here
+const cloudinary = require('./routes/cloudinary');
+
+app.use('/api/cloudinary', cloudinary);
 
 module.exports = app;

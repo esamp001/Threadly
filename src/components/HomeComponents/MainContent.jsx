@@ -63,8 +63,10 @@ const MainContent = () => {
 
         {/* Select Spaces using dropdown */}
         <Box sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, ml: 1 }}>Select Space</Typography>
           <FormControl fullWidth>
             <Select
+              size="small"
               value={1}
               renderValue={() => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

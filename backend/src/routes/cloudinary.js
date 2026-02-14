@@ -10,6 +10,7 @@ const upload = multer({ storage });
 
 // Upload route
 router.post('/upload', upload.single('avatar'), async (req, res) => {
+  
   try {
     if (!req.file) {
       return res.status(400).json({

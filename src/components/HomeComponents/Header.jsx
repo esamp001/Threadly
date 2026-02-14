@@ -3,45 +3,128 @@ import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } f
 import { useState } from 'react';
 import ThreadlyLogo from '../../assets/Threadly.png';
 import TextFieldThreadly from './TextFieldThreadly';
+import { useSnackbar } from '../../context/SnackbarContext';
+import { CircularProgress } from '@mui/material';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+
+
 
 const Header = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
+  const { showSnackbar } = useSnackbar();
+  const [loading, setLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [coverPhoto, setCoverPhoto] = useState(null);
+  const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     spaceName: '',
     spaceDescription: '',
-    spaceSlug: ''
+    spaceSlug: '',
+    avatarUrl: '',  // Store the Cloudinary URL here
+    avatarPublicId: ''  // Store Cloudinary public_id
   });
 
+  const steps = [
+    'About your Space',
+    'Space Details',
+    'Space Members'
+  ];
 
   // Helper function
   const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
+
     if (file) {
-      const formData = new FormData();
-      formData.append('avatar', file);
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+      setCoverPhoto(previewUrl);
+      setUploadProgress(0); // Reset progress
+
+      // Validate file type by extension
+      const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      const fileExtension = file.name.split('.').pop().toLowerCase();
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        showSnackbar('Please upload an image file (JPG, PNG, GIF, WebP)', 'error');
+        setAvatarPreview(null);
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showSnackbar('File size must be less than 5MB', 'error');
+        setAvatarPreview(null);
+        return;
+      }
 
       try {
+        setLoading(true);
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        // Simulate progress (since fetch doesn't have built-in progress)
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + Math.random() * 20;
+          });
+        }, 200);
+
         const response = await fetch('/api/cloudinary/upload', {
           method: 'POST',
           body: formData,
-          // Don't set Content-Type header - fetch will set it automatically for FormData
         });
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
 
         const result = await response.json();
 
         if (response.ok) {
-          console.log('Upload successful:', result);
-          // You can store the URL in state if needed
-          // setAvatarUrl(result.url);
+          showSnackbar(result.message, 'success');
+          setAvatarPreview(result.url);
+          setCoverPhoto(result.url); // Update cover with Cloudinary URL
+          setFormData(prev => ({
+            ...prev,
+            avatarUrl: result.url,
+            avatarPublicId: result.publicId
+          }));
         } else {
-          console.error('Upload failed:', result.error);
+          showSnackbar(result.message, 'error');
+          setAvatarPreview(null);
         }
       } catch (error) {
-        console.error('Upload error:', error);
+        showSnackbar('Failed to upload avatar', 'error');
+        setAvatarPreview(null);
+      } finally {
+        setLoading(false);
+        // Reset progress after a short delay
+        setTimeout(() => setUploadProgress(0), 1000);
       }
     }
   };
 
+  const handleNext = () => {
+    setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+  };
+
+  const handleBack = () => {
+    setActiveStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const handleReset = () => {
+    setActiveStep(0);
+    setOpenDrawer(false);
+  };
 
   return (
     <Box sx={{
@@ -75,92 +158,281 @@ const Header = () => {
         anchor="top"
         open={openDrawer}
         onClose={() => setOpenDrawer(false)}
-        ModalProps={{
-          style: {
-            backgroundColor: 'rgba(0, 0, 0, 0.88)',
-          },
+        PaperProps={{
+          sx: {
+            backgroundImage: coverPhoto ? `url(${coverPhoto})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.66)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1
+            }
+          }
         }}
       >
-        <Box sx={{ width: '100%', p: 5 }}>
-
-          <Typography variant="h6">Step 1: About your Space</Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-            Quickly create a space for your community
-          </Typography>
-
-          {/* Right side - Avatar upload */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 150 }}>
-            <Avatar
-              sx={{
-                width: 100,
-                height: 100,
-                mb: 2,
-                border: '3px solid',
-                borderColor: 'primary.main',
-                boxShadow: theme => `0 4px 0 0 ${theme.palette.success.main}`, // Green shadow
-                bgcolor: 'search.backgroundColor',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: theme => `0 6px 0 0 ${theme.palette.success.main}`
-                },
-              }}
-            >
-              <Typography sx={{ fontWeight: 700, color: 'text.main' }}>Space</Typography>
-            </Avatar>
-            <Button variant="contained" size="small" component="label">
-              Upload Avatar
-              <input type="file" hidden accept="image/*"
-                onChange={handleAvatarUpload}
-              />
-            </Button>
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 3, mt: 3 }}>
-            {/* Left side - Form fields */}
-            <Box sx={{ flex: 1 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
-                <TextFieldThreadly
-                  label="Space Name"
-                  variant="outlined"
-                  value={formData.spaceName}
-                  size="small"
-                  sx={{ mt: 2, width: '53%' }}
-                  required
-                  onChange={(e) => {
-                    const slug = e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/(^-|-$)/g, '');
-                    setFormData({ ...formData, spaceName: e.target.value, spaceSlug: slug });
-                  }}
-                />
-
-                <TextFieldThreadly
-                  label="Space URL"
-                  variant="outlined"
-                  size="small"
-                  sx={{
-                    mt: 2,
-                    width: '45%',
-                    pointerEvents: 'none', // Prevents clicking
-                    cursor: 'not-allowed' // Shows not-allowed cursor
-                  }}
-                  value={`spaces/${formData.spaceSlug}`}
-                  disabled
-                />
+          {activeStep === 0 && (
+          <Box sx={{
+            position: 'relative',
+            zIndex: 2,
+            width: '100%',
+            p: 5,
+            backdropFilter: 'blur(18px)'
+          }}>
+              <Box sx={{ mb: 4 }}>
+                <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+                  {steps.map((label, index) => (
+                    <Step key={label}>
+                      <StepLabel sx={{
+                        color: 'text.secondary',
+                        '&.Mui-active': { color: 'primary.main' },
+                        '&.Mui-completed': { color: 'primary.main' }
+                      }}>
+                        {label}
+                      </StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
               </Box>
 
-              <TextFieldThreadly
-                label="Description"
-                variant="outlined"
+            <Typography variant="h6">Step 1: About your Space</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              Quickly create a space for your community
+            </Typography>
+
+            {/* Right side - Avatar upload */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 150 }}>
+              <Avatar
+                sx={{
+                  width: 100,
+                  height: 100,
+                  mb: 2,
+                  border: '3px solid',
+                  borderColor: 'primary.main',
+                  boxShadow: theme => `0 4px 0 0 ${theme.palette.success.main}`,
+                  bgcolor: 'search.backgroundColor',
+                  position: 'relative', // needed for overlay
+                  overflow: 'hidden',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: theme => `0 6px 0 0 ${theme.palette.success.main}`
+                  }
+                }}
+              >
+                {loading ? (
+                  <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CircularProgress
+                      variant="determinate"
+                      value={uploadProgress}
+                      size={60}
+                      sx={{
+                        color: 'primary.main',
+                        position: 'absolute',
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        component="div"
+                        sx={{
+                          color: 'text.primary',
+                          fontSize: '12px',
+                          fontWeight: 600
+                        }}
+                      >
+                        {`${Math.round(uploadProgress)}%`}
+                      </Typography>
+                    </Box>
+                  </Box>
+                ) : avatarPreview ? (
+                  <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+                    <img
+                      src={avatarPreview}
+                      alt="Avatar preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    {/* Remove button overlay */}
+                    <Box
+                      onClick={() => { setAvatarPreview(null); setCoverPhoto(null) }} // replace with your remove logic
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        bgcolor: 'rgba(0,0,0,0)', // fully transparent initially
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        '&:hover': {
+                          bgcolor: 'rgba(0,0,0,0.4)', // semi-transparent on hover
+                        },
+                        '&:hover span': {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <Typography variant="caption" component="span" sx={{ opacity: 0, transition: 'opacity 0.2s ease', color: (theme) => theme.palette.getContrastText(theme.palette.background.paper) }}>Remove</Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography sx={{ fontWeight: 700, color: 'text.main' }}>Space</Typography>
+                )}
+              </Avatar>
+              <Button
+                component="label"
                 size="small"
-                sx={{ mt: 2, width: '100%', borderRadius: 2 }}
-                multiline
-                rows={4}
-                rowsMax={4}
-              />
+                sx={{
+                  textTransform: "none",
+                  borderRadius: "999px",
+                  px: 2.5,
+                  py: 0.8,
+                  fontWeight: 500,
+                  fontSize: "0.85rem",
+                  backgroundColor: "#111",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  "&:hover": {
+                    backgroundColor: "#222",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                  },
+                }}
+              >
+                Upload Avatar
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                />
+              </Button>
             </Box>
+
+            <Box sx={{ display: 'flex', gap: 3, mt: 3 }}>
+              {/* Left side - Form fields */}
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
+                  <TextFieldThreadly
+                    label="Space Name"
+                    variant="outlined"
+                    value={formData.spaceName}
+                    size="small"
+                    sx={{ mt: 2, width: '53%' }}
+                    required
+                    onChange={(e) => {
+                      const slug = e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)/g, '');
+                      setFormData({ ...formData, spaceName: e.target.value, spaceSlug: slug });
+                    }}
+                  />
+
+                  <TextFieldThreadly
+                    label="Space URL"
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      mt: 2,
+                      width: '45%',
+                      pointerEvents: 'none', // Prevents clicking
+                      cursor: 'not-allowed' // Shows not-allowed cursor
+                    }}
+                    value={`spaces/${formData.spaceSlug}`}
+                    disabled
+                  />
+                </Box>
+
+                <TextFieldThreadly
+                  label="Description"
+                  onChange={(e) => setFormData({ ...formData, spaceDescription: e.target.value })}
+                  variant="outlined"
+                  size="small"
+                  sx={{ mt: 2, width: '100%', borderRadius: 2 }}
+                  multiline
+                  rows={2}
+                  rowsMax={2}
+                />
+              </Box>
+            </Box>
+          </Box>
+          )}
+
+          {activeStep === 1 && (
+            <Box>
+              <Typography variant="h6">Step 2: Space Details</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                Configure your space settings
+              </Typography>
+            </Box>
+          )}
+
+          {activeStep === 2 && (
+            <Box>
+              <Typography variant="h6">Step 3: Space Members</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                Invite members to your space
+              </Typography>
+            </Box>
+          )}
+       
+        {/* Navigation Buttons */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, mb: 1,
+          zIndex: 10  // Ensure buttons are on top
+         }}>
+          <Button
+            onClick={handleReset}
+            sx={{
+              textTransform: 'none',
+              color: 'text.primary'
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              disabled={activeStep === 0}
+              onClick={handleBack}
+              sx={{
+                textTransform: 'none',
+                color: 'text.primary'
+              }}
+            >
+              Back
+            </Button>
+
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              sx={{
+                textTransform: 'none',
+                backgroundColor: 'primary.main'
+              }}
+            >
+              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+            </Button>
           </Box>
         </Box>
       </Drawer>

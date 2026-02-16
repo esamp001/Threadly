@@ -9,15 +9,12 @@ import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 
-
-
 const Header = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const { showSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [coverPhoto, setCoverPhoto] = useState(null);
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     spaceName: '',
@@ -33,6 +30,8 @@ const Header = () => {
     'Space Members'
   ];
 
+  const threadly_topics = [{}]
+
   // Helper function
   const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
@@ -41,7 +40,6 @@ const Header = () => {
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
-      setCoverPhoto(previewUrl);
       setUploadProgress(0); // Reset progress
 
       // Validate file type by extension
@@ -92,7 +90,6 @@ const Header = () => {
         if (response.ok) {
           showSnackbar(result.message, 'success');
           setAvatarPreview(result.url);
-          setCoverPhoto(result.url); // Update cover with Cloudinary URL
           setFormData(prev => ({
             ...prev,
             avatarUrl: result.url,
@@ -160,7 +157,7 @@ const Header = () => {
         onClose={() => setOpenDrawer(false)}
         PaperProps={{
           sx: {
-            backgroundImage: coverPhoto ? `url(${coverPhoto})` : 'none',
+            // backgroundImage: coverPhoto ? `url(${coverPhoto})` : 'none',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundColor: 'rgba(0, 0, 0, 0.66)',
@@ -176,30 +173,36 @@ const Header = () => {
           }
         }}
       >
+        <Box sx={{
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          p: 2
+        }}>
+          <Stepper activeStep={activeStep}>
+            {steps.map((label, index) => (
+              <Step key={label}>
+                <StepLabel sx={{
+                  color: 'text.secondary',
+                  '&.Mui-active': { color: 'primary.main' },
+                  '&.Mui-completed': { color: 'primary.main' }
+                }}>
+                  {label}
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }} />
+        </Box>
+
           {activeStep === 0 && (
           <Box sx={{
             position: 'relative',
             zIndex: 2,
             width: '100%',
-            p: 5,
-            backdropFilter: 'blur(18px)'
+            p: 4,
+            backdropFilter: 'blur(10px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.79)',
           }}>
-              <Box sx={{ mb: 4 }}>
-                <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-                  {steps.map((label, index) => (
-                    <Step key={label}>
-                      <StepLabel sx={{
-                        color: 'text.secondary',
-                        '&.Mui-active': { color: 'primary.main' },
-                        '&.Mui-completed': { color: 'primary.main' }
-                      }}>
-                        {label}
-                      </StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
-              </Box>
-
+            
             <Typography variant="h6">Step 1: About your Space</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
               Quickly create a space for your community
@@ -270,7 +273,7 @@ const Header = () => {
                     />
                     {/* Remove button overlay */}
                     <Box
-                      onClick={() => { setAvatarPreview(null); setCoverPhoto(null) }} // replace with your remove logic
+                      onClick={() => { setAvatarPreview(null) }} // replace with your remove logic
                       sx={{
                         position: 'absolute',
                         top: 0,
@@ -380,10 +383,17 @@ const Header = () => {
           )}
 
           {activeStep === 1 && (
-            <Box>
-              <Typography variant="h6">Step 2: Space Details</Typography>
+          <Box sx={{
+            position: 'relative',
+            zIndex: 2,
+            width: '100%',
+            p: 4,
+            backdropFilter: 'blur(10px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.79)',
+          }}>
+              <Typography variant="h6">Step 2: Space Topics</Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                Configure your space settings
+                Choose your preferred topics for your space
               </Typography>
             </Box>
           )}
@@ -398,8 +408,8 @@ const Header = () => {
           )}
        
         {/* Navigation Buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1, mb: 1,
-          zIndex: 10  // Ensure buttons are on top
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1,
+          zIndex: 10, backgroundColor: 'rgba(0, 0, 0, 0.8)',
          }}>
           <Button
             onClick={handleReset}

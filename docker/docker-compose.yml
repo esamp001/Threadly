@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    env_file:
+      - ../.env
+    environment:
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - PORT=3000
+      - ORIGIN=http://localhost:5173
+      - CREDENTIALS=true
+    volumes:
+      - ../backend:/app
+      - /app/node_modules

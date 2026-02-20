@@ -1,0 +1,3 @@
+@echo off
+echo Starting Threadly containers...
+docker-compose up -d

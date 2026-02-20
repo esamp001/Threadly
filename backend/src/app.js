@@ -14,7 +14,9 @@ app.use(cors({
 
 // All register routes here
 const cloudinary = require('./routes/cloudinary');
+const header = require('./routes/header.routes');
 
 app.use('/api/cloudinary', cloudinary);
+app.use('/api/header', header);
 
 module.exports = app;

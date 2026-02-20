@@ -1,13 +1,13 @@
-import { Avatar, Box, Button, Drawer, Grid, InputAdornment, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Switch, TextField, Typography } from '@mui/material';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import ThreadlyLogo from '../../assets/Threadly.png';
-import TextFieldThreadly from './TextFieldThreadly';
 import { useSnackbar } from '../../context/SnackbarContext';
-import { CircularProgress } from '@mui/material';
-import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
+import TextFieldThreadly from './TextFieldThreadly';
+
 
 const Header = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -21,16 +21,19 @@ const Header = () => {
     spaceDescription: '',
     spaceSlug: '',
     avatarUrl: '',  // Store the Cloudinary URL here
-    avatarPublicId: ''  // Store Cloudinary public_id
+    avatarPublicId: '',  // Store Cloudinary public_id,
+    topics: []
   });
+
+  console.log(formData, "formData")
+  console.log("Current Step: ", activeStep)
 
   const steps = [
     'About your Space',
-    'Space Details',
-    'Space Members'
+    'Space Topics',
+    'Prviacy & Access Settings',
+    'Space Members (Optional)'
   ];
-
-  const threadly_topics = [{}]
 
   // Helper function
   const handleAvatarUpload = async (event) => {
@@ -110,8 +113,23 @@ const Header = () => {
     }
   };
 
+  const fetchTopics = async () => {
+    try {
+      const data = await fetch('/api/header');
+
+      const result = await data.json();
+      setFormData(prev => ({
+        ...prev,
+        topics: result.topics
+      }));
+    } catch (error) {
+      showSnackbar('Failed to fetch topics', 'error');
+    }
+  };
+
   const handleNext = () => {
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    activeStep === 0 && fetchTopics();
   };
 
   const handleBack = () => {
@@ -193,7 +211,7 @@ const Header = () => {
           <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }} />
         </Box>
 
-          {activeStep === 0 && (
+        {activeStep === 0 && (
           <Box sx={{
             position: 'relative',
             zIndex: 2,
@@ -202,7 +220,7 @@ const Header = () => {
             backdropFilter: 'blur(10px)',
             backgroundColor: 'rgba(0, 0, 0, 0.79)',
           }}>
-            
+
             <Typography variant="h6">Step 1: About your Space</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
               Quickly create a space for your community
@@ -380,9 +398,9 @@ const Header = () => {
               </Box>
             </Box>
           </Box>
-          )}
+        )}
 
-          {activeStep === 1 && (
+        {activeStep === 1 && (
           <Box sx={{
             position: 'relative',
             zIndex: 2,
@@ -391,26 +409,104 @@ const Header = () => {
             backdropFilter: 'blur(10px)',
             backgroundColor: 'rgba(0, 0, 0, 0.79)',
           }}>
-              <Typography variant="h6">Step 2: Space Topics</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                Choose your preferred topics for your space
-              </Typography>
-            </Box>
-          )}
+            <Typography variant="h6">Step 2: Space Topics</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              Choose your preferred topics for your space
+            </Typography>
 
-          {activeStep === 2 && (
-            <Box>
-              <Typography variant="h6">Step 3: Space Members</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                Invite members to your space
-              </Typography>
+            <Box sx={{
+              height: 400, // Fixed height
+              overflowY: 'auto', // Make scrollable
+              pr: 1, // Padding for scrollbar
+              mt: 2
+            }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
+                {formData.topics.map((topic) => (
+                  <Box
+                    key={topic.id}
+                    onClick={() => {
+                      // Toggle topic selection logic here
+                    }}
+                    sx={{
+                      p: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <i className={topic.icon} style={{ fontSize: 20, marginRight: 8 }} />
+                      <Typography variant="subtitle2" fontWeight={500}>
+                        {topic.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>
+                      {topic.description}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-          )}
-       
+          </Box>
+        )}
+
+        {activeStep === 2 && (
+          <Box sx={{ position: 'relative', zIndex: 2, width: '100%', p: 4, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.79)' }}>
+            <Typography variant="h6">Step 2: Privacy & Access Settings</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              Choose who can view and contribute to your space
+            </Typography>
+
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>Community Type</Typography>
+              <RadioGroup>
+                <FormControlLabel value="public" control={<Radio />} label="Public - Anyone can view and post" />
+                <FormControlLabel value="restricted" control={<Radio />} label="Restricted - Anyone can view, only approved members can post" />
+                <FormControlLabel value="private" control={<Radio />} label="Private - Only approved members can view and post" />
+              </RadioGroup>
+
+              <FormControlLabel sx={{ mt: 2 }} control={<Switch />} label="Mature (18+) content" />
+            </Box>
+          </Box>
+        )}
+
+        {activeStep === 3 && (
+          <Box sx={{ position: 'relative', zIndex: 2, width: '100%', p: 4, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.79)' }}>
+            <Typography variant="h6">Step 5: Space Members (Optional)</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              Invite members to your space or skip for now
+            </Typography>
+
+            <Box sx={{ mt: 3 }}>
+              <TextFieldThreadly
+                label="Invite by username or email"
+                placeholder="Enter usernames or emails separated by commas"
+                fullWidth
+              />
+
+              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Default Role</Typography>
+              <FormControl fullWidth>
+                <Select size="small" defaultValue="member">
+                  <MenuItem value="member">Member - Can post and comment</MenuItem>
+                  <MenuItem value="contributor">Contributor - Can post, comment, and approve posts</MenuItem>
+                  <MenuItem value="moderator">Moderator - Full access to moderation tools</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        )}
+
         {/* Navigation Buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 1,
+        <Box sx={{
+          display: 'flex', justifyContent: 'space-between', p: 1,
           zIndex: 10, backgroundColor: 'rgba(0, 0, 0, 0.8)',
-         }}>
+        }}>
           <Button
             onClick={handleReset}
             sx={{

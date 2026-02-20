@@ -38,15 +38,6 @@ const MainContent = () => {
   }, [isExpanded]);
 
 
-  // Function to get content
-  // const getQuillContent = () => {
-  //   if (quillInstanceRef.current) {
-  //     return quillInstanceRef.current.root.innerHTML;
-  //   }
-  //   return '';
-  // };
-
-
   return (
     <Box sx={{
       width: '100%',

@@ -1,10 +1,9 @@
-import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Switch, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-import ThreadlyLogo from '../../assets/Threadly.png';
 import { useSnackbar } from '../../context/SnackbarContext';
 import TextFieldThreadly from './TextFieldThreadly';
 
@@ -16,22 +15,22 @@ const Header = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeStep, setActiveStep] = useState(0);
+  const [topics, setTopics] = useState([]);
   const [formData, setFormData] = useState({
     spaceName: '',
     spaceDescription: '',
     spaceSlug: '',
     avatarUrl: '',  // Store the Cloudinary URL here
-    avatarPublicId: '',  // Store Cloudinary public_id,
-    topics: []
+    avatarPublicId: '',  // Store Cloudinary public_id
+    topics: [],
+    communityType: ['public'],
+    isMature: false,
   });
-
-  console.log(formData, "formData")
-  console.log("Current Step: ", activeStep)
 
   const steps = [
     'About your Space',
     'Space Topics',
-    'Prviacy & Access Settings',
+    'Privacy & Access Settings',
     'Space Members (Optional)'
   ];
 
@@ -118,18 +117,55 @@ const Header = () => {
       const data = await fetch('/api/header');
 
       const result = await data.json();
-      setFormData(prev => ({
-        ...prev,
-        topics: result.topics
-      }));
+      setTopics(result.topics);
     } catch (error) {
       showSnackbar('Failed to fetch topics', 'error');
+    }
+  };
+
+  const saveSpace = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/header', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          spaceName: formData.spaceName,
+          spaceDescription: formData.spaceDescription,
+          spaceSlug: formData.spaceSlug,
+          avatarUrl: formData.avatarUrl,
+          avatarPublicId: formData.avatarPublicId,
+          communityType: formData.communityType,
+          isMature: formData.isMature,
+          topics: formData.topics // Array of topic objects
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showSnackbar('Space created successfully!', 'success');
+        handleReset(); // Close drawer and reset form
+      } else {
+        showSnackbar(result.message || 'Failed to create space', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Failed to create space', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleNext = () => {
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     activeStep === 0 && fetchTopics();
+
+    if (activeStep === steps.length - 1) {
+      saveSpace();
+    }
   };
 
   const handleBack = () => {
@@ -148,17 +184,22 @@ const Header = () => {
       gap: 5,
       px: 7
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90, }}>
+        {/* <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} /> */}
         <Typography
           variant="h6"
           sx={{
-            fontWeight: 700,
-            letterSpacing: '0.1rem',
+            fontWeight: 900,
+            letterSpacing: '0.12em',
+            fontFamily: 'Inter, sans-serif',
+            textTransform: 'uppercase', // Add this for all caps
             display: { xs: 'none', sm: 'none', md: 'block' }
           }}
         >
-          Threadly
+          THREAD
+          <Box component="span" sx={{ color: 'primary.main' }}>
+            LY
+          </Box>
         </Typography>
       </Box>
 
@@ -166,7 +207,26 @@ const Header = () => {
         <Home size={25} />
         <TrendingUp size={25} />
         <LayoutTemplate size={25} />
-        <DiamondPlus onClick={() => setOpenDrawer(true)} style={{ cursor: 'pointer' }} size={25} />
+        <Tooltip
+          title="Create space"
+          arrow
+          sx={{
+            '& .MuiTooltip-tooltip': {
+              backgroundColor: 'primary.main',
+              color: 'white',
+              fontSize: '0.875rem',
+            },
+            '& .MuiTooltip-arrow': {
+              color: 'primary.main',
+            }
+          }}
+        >
+          <DiamondPlus
+            onClick={() => setOpenDrawer(true)}
+            style={{ cursor: 'pointer' }}
+            size={25}
+          />
+        </Tooltip>
       </Box>
 
       <Drawer
@@ -415,28 +475,50 @@ const Header = () => {
             </Typography>
 
             <Box sx={{
-              height: 400, // Fixed height
-              overflowY: 'auto', // Make scrollable
-              pr: 1, // Padding for scrollbar
+              height: 400,
+              overflowY: 'auto',
+              pr: 1,
               mt: 2
             }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
-                {formData.topics.map((topic) => (
+                {topics.map((topic) => (
                   <Box
                     key={topic.id}
                     onClick={() => {
-                      // Toggle topic selection logic here
+                      const topicData = {
+                        id: topic.id,
+                        name: topic.name,
+                        description: topic.description
+                      };
+
+                      setFormData(prev => {
+                        const isAlreadySelected = prev.topics.some(t => t.id === topic.id);
+                        if (isAlreadySelected) {
+                          // Remove topic if already selected
+                          return {
+                            ...prev,
+                            topics: prev.topics.filter(t => t.id !== topic.id)
+                          };
+                        } else {
+                          // Add topic if not selected
+                          return {
+                            ...prev,
+                            topics: [...prev.topics, topicData]
+                          };
+                        }
+                      })
                     }}
                     sx={{
                       p: 2,
                       border: '1px solid',
-                      borderColor: 'divider',
+                      borderColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'divider',
                       borderRadius: 1,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
+                      // backgroundColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'transparent',
                       '&:hover': {
                         borderColor: 'primary.main',
-                        backgroundColor: 'action.hover'
+                        backgroundColor: formData.topics.some(t => t.id === topic.id) ? 'primary.dark' : 'action.hover'
                       }
                     }}
                   >
@@ -458,39 +540,46 @@ const Header = () => {
 
         {activeStep === 2 && (
           <Box sx={{ position: 'relative', zIndex: 2, width: '100%', p: 4, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.79)' }}>
-            <Typography variant="h6">Step 2: Privacy & Access Settings</Typography>
+            <Typography variant="h6">Step 3: Privacy & Access Settings</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
               Choose who can view and contribute to your space
             </Typography>
 
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>Community Type</Typography>
-              <RadioGroup>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700 }}>Community Type</Typography>
+              <RadioGroup
+                value={formData.communityType}
+                onChange={(e) => setFormData({ ...formData, communityType: e.target.value })}
+              >
                 <FormControlLabel value="public" control={<Radio />} label="Public - Anyone can view and post" />
                 <FormControlLabel value="restricted" control={<Radio />} label="Restricted - Anyone can view, only approved members can post" />
                 <FormControlLabel value="private" control={<Radio />} label="Private - Only approved members can view and post" />
               </RadioGroup>
 
-              <FormControlLabel sx={{ mt: 2 }} control={<Switch />} label="Mature (18+) content" />
+              <FormControlLabel
+                sx={{ mt: 2 }}
+                control={<Switch checked={formData.isMature} onChange={(e) => setFormData({ ...formData, isMature: e.target.checked })} />}
+                label="Mature (18+) content"
+              />
             </Box>
           </Box>
         )}
 
         {activeStep === 3 && (
           <Box sx={{ position: 'relative', zIndex: 2, width: '100%', p: 4, backdropFilter: 'blur(10px)', backgroundColor: 'rgba(0, 0, 0, 0.79)' }}>
-            <Typography variant="h6">Step 5: Space Members (Optional)</Typography>
+            <Typography variant="h6">Step 4: Space Members (Optional)</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
               Invite members to your space or skip for now
             </Typography>
 
             <Box sx={{ mt: 3 }}>
               <TextFieldThreadly
+                sx={{ width: '50%' }}
                 label="Invite by username or email"
                 placeholder="Enter usernames or emails separated by commas"
-                fullWidth
               />
 
-              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Default Role</Typography>
+              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Select Role</Typography>
               <FormControl fullWidth>
                 <Select size="small" defaultValue="member">
                   <MenuItem value="member">Member - Can post and comment</MenuItem>

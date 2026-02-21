@@ -5,7 +5,6 @@ import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, FormControl, MenuItem, Paper, Select, Typography } from "@mui/material";
 import SearchButton from './SearchButton';
 
-
 // Quill
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
@@ -13,12 +12,50 @@ import { useEffect, useRef, useState } from 'react';
 
 const ReactQuill = Quill;
 
-console.log(ReactQuill, "ReactQuill");
-
 const MainContent = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const quillRef = useRef(null);
   const quillInstanceRef = useRef(null);
+  const [spaces, setSpaces] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  // -------------- API FETCH -------------- //
+  // Move function outside useEffect
+  const listSpaces = async (loadMore = false) => {
+    if (loading) return;
+
+    const currentPage = loadMore ? page + 1 : 1;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
+      const result = await response.json();
+
+      if (response.ok) {
+        if (loadMore) {
+          setSpaces(prev => [...prev, ...result.spaces]);
+          setPage(currentPage);
+        } else {
+          setSpaces(result.spaces);
+          setPage(1);
+        }
+        setHasMore(result.spaces.length === limit);
+      }
+    } catch (error) {
+      console.error('Failed to fetch spaces:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Simple useEffect for initial load
+  useEffect(() => {
+    listSpaces();
+  }, []);
+
 
   useEffect(() => {
     if (isExpanded && quillRef.current && !quillInstanceRef.current) {
@@ -67,12 +104,25 @@ const MainContent = () => {
               )}
               sx={{ borderRadius: 5 }}
             >
-              <MenuItem value={1}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar sx={{ width: 28, height: 28 }}>T</Avatar>
-                  Tanong PH
-                </Box>
-              </MenuItem>
+              {spaces.map((space) => (
+                <MenuItem value={space.id}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {space.avatar_url ? (
+                      <Avatar
+                        sx={{ width: 28, height: 28 }}
+                        src={space.avatar_url}
+                      >
+                        {space.space_name.charAt().toUpperCase(0)}
+                      </Avatar>
+                    ) : (
+                      <Avatar sx={{ width: 28, height: 28 }}>
+                        {space.space_name.charAt().toUpperCase(0)}
+                      </Avatar>
+                    )}
+                    {space.space_name}
+                  </Box>
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 

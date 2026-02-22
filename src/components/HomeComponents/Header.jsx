@@ -17,6 +17,14 @@ const Header = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState({
+    spaceName: '',
+    spaceDescription: '',
+    spaceSlug: '',
+    avatarUrl: '',
+    communityType: '',
+  });
+
   const [formData, setFormData] = useState({
     spaceName: '',
     spaceDescription: '',
@@ -168,13 +176,38 @@ const Header = () => {
     }
   };
 
+  const validateStep = () => {
+    const errors = {};
+
+    if (activeStep === 0) {
+      if (!formData.spaceName) errors.spaceName = 'Space name is required';
+      if (!formData.spaceDescription) errors.spaceDescription = 'Description is required';
+      if (!formData.spaceSlug) errors.spaceSlug = 'URL slug is required';
+      if (!formData.avatarUrl) errors.avatarUrl = 'Avatar is required';
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      showSnackbar('Please fill in all required fields', 'error');
+      return true; // Has errors
+    }
+
+    return false; // No errors
+  };
+
   const handleNext = () => {
+    if (validateStep()) return;
+
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     activeStep === 0 && fetchTopics();
 
     if (activeStep === steps.length - 1) {
       saveSpace();
     }
+
+    // Use a more descriptive name for the helper text function
+
   };
 
   const handleBack = () => {
@@ -193,7 +226,7 @@ const Header = () => {
       gap: 5,
       px: 7
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90, }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90, mr: 5 }}>
         {/* <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} /> */}
         <Typography
           variant="h6"
@@ -202,7 +235,7 @@ const Header = () => {
             letterSpacing: '0.12em',
             fontFamily: 'Inter, sans-serif',
             textTransform: 'uppercase', // Add this for all caps
-            display: { xs: 'none', sm: 'none', md: 'block' }
+            // display: { xs: 'none', sm: 'block' }
           }}
         >
           THREAD
@@ -422,13 +455,13 @@ const Header = () => {
             <Box sx={{ display: 'flex', gap: 3, mt: 3 }}>
               {/* Left side - Form fields */}
               <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 1 }}>
                   <TextFieldThreadly
                     label="Space Name"
                     variant="outlined"
                     value={formData.spaceName}
                     size="small"
-                    sx={{ mt: 2, width: '53%' }}
+                    sx={{ mt: 2, width: '100%' }}
                     required
                     onChange={(e) => {
                       const slug = e.target.value
@@ -437,6 +470,8 @@ const Header = () => {
                         .replace(/(^-|-$)/g, '');
                       setFormData({ ...formData, spaceName: e.target.value, spaceSlug: slug });
                     }}
+                    helperText={fieldErrors.spaceName}
+                    error={!!fieldErrors.spaceName}
                   />
 
                   <TextFieldThreadly
@@ -445,7 +480,7 @@ const Header = () => {
                     size="small"
                     sx={{
                       mt: 2,
-                      width: '45%',
+                      width: '100%',
                       pointerEvents: 'none', // Prevents clicking
                       cursor: 'not-allowed' // Shows not-allowed cursor
                     }}
@@ -663,7 +698,7 @@ const Header = () => {
 
       {/* Search Bar */}
       <Grid container>
-        <Grid sx={{ width: { xs: 600, sm: 800, md: 1000, lg: 500, xl: 1050 } }}>
+        <Grid sx={{ width: { xs: 600, sm: 1200, md: 1200, lg: 1200, xl: 1200 } }}>
           <TextField
             sx={{
               width: '100%',

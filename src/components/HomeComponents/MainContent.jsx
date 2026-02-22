@@ -3,6 +3,7 @@ import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, FormControl, MenuItem, Paper, Select, Typography } from "@mui/material";
+import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
 // Quill
@@ -82,10 +83,32 @@ const MainContent = () => {
       flexDirection: 'column',
     }}>
       <Accordion expanded={isExpanded}>
-        <AccordionSummary onClick={(e) => e.stopPropagation()} sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-            <Avatar sx={{ height: 50, width: 50 }}>J</Avatar>
-            <SearchButton onExpand={() => setIsExpanded(!isExpanded)} />
+        <AccordionSummary
+          onClick={(e) => e.stopPropagation()}
+          sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}
+        >
+          <Box sx={{ width: '100%' }}>
+            {/* Section Title */}
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 600,
+                letterSpacing: '0.06em',
+                color: 'text.secondary',
+                mb: 1
+              }}
+            >
+              Create Thread
+            </Typography>
+
+            {/* Content */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar sx={{ height: 50, width: 50 }}>J</Avatar>
+              <SearchButton sx={{ borderColor: 'white' }}
+                expanded={isExpanded}
+                onExpand={() => setIsExpanded(!isExpanded)}
+              />
+            </Box>
           </Box>
         </AccordionSummary>
 
@@ -190,6 +213,11 @@ const MainContent = () => {
               ref={quillRef}
               style={{ height: '150px', marginBottom: '50px' }}
             />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <CustomButton>Create Thread</CustomButton>
+            <CustomButton>Draft</CustomButton>
           </Box>
         </AccordionDetails>
       </Accordion>

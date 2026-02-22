@@ -1,20 +1,30 @@
-import { Box, Button, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
-import { Camera } from 'lucide-react';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { useState } from 'react';
 
+const SearchButton = ({ expanded, onExpand }) => {
+  const [title, setTitle] = useState('');
+  const maxLength = 300;
 
-const SearchButton = ({ onExpand }) => {
   return (
-    <Box sx={{ display: 'flex', gap: 2, width: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
       <TextField
+        multiline
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
         onClick={onExpand}
-        size="small"
-        placeholder="Create title and start a thread"
+        placeholder="Create a title..."
         sx={{
-          width: '80%',
+          width: '100%',
           border: '3px solid',
           boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
           bgcolor: 'search.backgroundColor',
-          borderRadius: 7,
+          borderRadius: 2,
+          transition: 'all 0.2s ease-in-out',  // Add smooth transition
+          '&:hover': {
+            boxShadow: 'none',  // Remove shadow on hover
+            transform: 'translateY(2px)',  // Slight upward movement
+          },
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
               border: 'none',
@@ -35,38 +45,23 @@ const SearchButton = ({ onExpand }) => {
           sx: {
             color: 'text.main',
           },
-          startAdornment: (
-            <InputAdornment position="start">
-              <IconButton size="small" sx={{ p: 0 }} />
-            </InputAdornment>
-          ),
           endAdornment: (
-            <InputAdornment position="end">
+            <InputAdornment position="end" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px' }}>
+                {title.length}/{maxLength}
+              </Typography>
               <IconButton sx={{ color: 'text.main', p: 0 }} size="small">
-                <Camera size={25} />
+                <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
               </IconButton>
             </InputAdornment>
           ),
         }}
-      />
-
-      <Button
-        sx={{
-          borderRadius: 7,
-          typography: 'button',
-          fontWeight: 500,
-          border: '3px solid white',
-          letterSpacing: '0.05rem',
-          textTransform: 'none',
-          bgcolor: 'primary.light',
-          boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
+        inputProps={{
+          maxLength: maxLength,
         }}
-        variant='contained'
-      >
-        <Typography variant='subtitle1' sx={{ fontWeight: 500 }}>Create</Typography>
-      </Button>
+      />
     </Box>
   )
 }
 
-export default SearchButton
+export default SearchButton;

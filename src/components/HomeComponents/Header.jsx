@@ -1,9 +1,9 @@
-import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Switch, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Skeleton, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSnackbar } from '../../context/SnackbarContext';
 import TextFieldThreadly from './TextFieldThreadly';
 
@@ -16,6 +16,7 @@ const Header = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeStep, setActiveStep] = useState(0);
   const [topics, setTopics] = useState([]);
+  const [topicsLoading, setTopicsLoading] = useState(true);
   const [formData, setFormData] = useState({
     spaceName: '',
     spaceDescription: '',
@@ -23,7 +24,7 @@ const Header = () => {
     avatarUrl: '',  // Store the Cloudinary URL here
     avatarPublicId: '',  // Store Cloudinary public_id
     topics: [],
-    communityType: ['public'],
+    communityType: 'public',
     isMature: false,
   });
 
@@ -112,16 +113,24 @@ const Header = () => {
     }
   };
 
-  const fetchTopics = async () => {
-    try {
-      const data = await fetch('/api/header');
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        setTopicsLoading(true);
+        const response = await fetch('/api/header');
+        const result = await response.json();
+        if (response.ok) {
+          setTopics(result.topics);
+        }
+      } catch (error) {
+        console.error('Failed to fetch topics:', error);
+      } finally {
+        setTopicsLoading(false);
+      }
+    };
 
-      const result = await data.json();
-      setTopics(result.topics);
-    } catch (error) {
-      showSnackbar('Failed to fetch topics', 'error');
-    }
-  };
+    fetchTopics();
+  }, []);
 
   const saveSpace = async () => {
     try {
@@ -481,58 +490,78 @@ const Header = () => {
               mt: 2
             }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
-                {topics.map((topic) => (
-                  <Box
-                    key={topic.id}
-                    onClick={() => {
-                      const topicData = {
-                        id: topic.id,
-                        name: topic.name,
-                        description: topic.description
-                      };
+                {topicsLoading ? (
+                  // Show skeleton boxes while loading
+                  Array.from({ length: topics.length || 8 }).map((_, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Skeleton variant="circular" width={20} height={20} sx={{ mr: 1 }} />
+                        <Skeleton variant="text" width="60%" height={20} />
+                      </Box>
+                      <Skeleton variant="text" width="100%" height={14} />
+                      <Skeleton variant="text" width="80%" height={14} sx={{ mt: 0.5 }} />
+                    </Box>
+                  ))
+                ) : (
+                  // Show actual topics when loaded
+                  topics.map((topic) => (
+                    <Box
+                      key={topic.id}
+                      onClick={() => {
+                        const topicData = {
+                          id: topic.id,
+                          name: topic.name,
+                          description: topic.description
+                        };
 
-                      setFormData(prev => {
-                        const isAlreadySelected = prev.topics.some(t => t.id === topic.id);
-                        if (isAlreadySelected) {
-                          // Remove topic if already selected
-                          return {
-                            ...prev,
-                            topics: prev.topics.filter(t => t.id !== topic.id)
-                          };
-                        } else {
-                          // Add topic if not selected
-                          return {
-                            ...prev,
-                            topics: [...prev.topics, topicData]
-                          };
+                        setFormData(prev => {
+                          const isAlreadySelected = prev.topics.some(t => t.id === topic.id);
+                          if (isAlreadySelected) {
+                            return {
+                              ...prev,
+                              topics: prev.topics.filter(t => t.id !== topic.id)
+                            };
+                          } else {
+                            return {
+                              ...prev,
+                              topics: [...prev.topics, topicData]
+                            };
+                          }
+                        })
+                      }}
+                      sx={{
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'divider',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          backgroundColor: formData.topics.some(t => t.id === topic.id) ? 'primary.dark' : 'action.hover'
                         }
-                      })
-                    }}
-                    sx={{
-                      p: 2,
-                      border: '1px solid',
-                      borderColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'divider',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      // backgroundColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'transparent',
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        backgroundColor: formData.topics.some(t => t.id === topic.id) ? 'primary.dark' : 'action.hover'
-                      }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <i className={topic.icon} style={{ fontSize: 20, marginRight: 8 }} />
-                      <Typography variant="subtitle2" fontWeight={500}>
-                        {topic.name}
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <i className={topic.icon} style={{ fontSize: 20, marginRight: 8 }} />
+                        <Typography variant="subtitle2" fontWeight={500}>
+                          {topic.name}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>
+                        {topic.description}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>
-                      {topic.description}
-                    </Typography>
-                  </Box>
-                ))}
+                  ))
+                )}
               </Box>
             </Box>
           </Box>

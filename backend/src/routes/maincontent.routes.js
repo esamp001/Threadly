@@ -8,16 +8,32 @@ router.get('/all_spaces', async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
+    // Get the spaces for current page
     const spaces = await knex('spaces')
-      .select('id', 'space_name', 'avatar_url')  // Only select id and name
+      .select('id', 'space_name', 'avatar_url')
       .where('is_active', true)
       .orderBy('created_at', 'desc')
       .limit(limit)
       .offset(offset);
 
+    // Get total count for pagination info
+    const totalCount = await knex('spaces')
+      .where('is_active', true)
+      .count('* as count')
+      .first();
+
+    const hasMore = (offset + spaces.length) < totalCount.count;
+
     res.json({
       success: true,
-      spaces
+      spaces,
+      pagination: {
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+        totalCount: totalCount.count,
+        hasMore,
+        totalPages: Math.ceil(totalCount.count / limit)
+      }
     });
   } catch (error) {
     res.status(500).json({

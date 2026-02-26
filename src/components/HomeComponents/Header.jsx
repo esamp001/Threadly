@@ -6,7 +6,8 @@ import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } f
 import { useEffect, useState } from 'react';
 import { useSnackbar } from '../../context/SnackbarContext';
 import TextFieldThreadly from './TextFieldThreadly';
-
+// Add this import at the top with your other imports
+import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 
 const Header = () => {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -17,6 +18,7 @@ const Header = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
+  const [showTopicsConfirmation, setShowTopicsConfirmation] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
     spaceName: '',
     spaceDescription: '',
@@ -182,8 +184,13 @@ const Header = () => {
     if (activeStep === 0) {
       if (!formData.spaceName) errors.spaceName = 'Space name is required';
       if (!formData.spaceDescription) errors.spaceDescription = 'Description is required';
-      if (!formData.spaceSlug) errors.spaceSlug = 'URL slug is required';
-      if (!formData.avatarUrl) errors.avatarUrl = 'Avatar is required';
+    }
+
+    if (activeStep === 1) {
+      if (formData.topics.length === 0) {
+        setShowTopicsConfirmation(true);
+        return true; // Block navigation until confirmation
+      }
     }
 
     setFieldErrors(errors);
@@ -200,14 +207,11 @@ const Header = () => {
     if (validateStep()) return;
 
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
-    activeStep === 0 && fetchTopics();
+    // activeStep === 0 && fetchTopics();
 
     if (activeStep === steps.length - 1) {
       saveSpace();
     }
-
-    // Use a more descriptive name for the helper text function
-
   };
 
   const handleBack = () => {
@@ -391,7 +395,6 @@ const Header = () => {
                         objectFit: 'cover',
                       }}
                     />
-                    {/* Remove button overlay */}
                     <Box
                       onClick={() => { setAvatarPreview(null) }} // replace with your remove logic
                       sx={{
@@ -498,6 +501,8 @@ const Header = () => {
                   multiline
                   rows={2}
                   rowsMax={2}
+                  helperText={fieldErrors.spaceDescription}
+                  error={!!fieldErrors.spaceDescription}
                 />
               </Box>
             </Box>
@@ -694,6 +699,19 @@ const Header = () => {
             </Button>
           </Box>
         </Box>
+        <ConfirmationDialog
+          open={showTopicsConfirmation}
+          onClose={() => setShowTopicsConfirmation(false)}
+          onConfirm={() => {
+            setShowTopicsConfirmation(false);
+            setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+          }}
+          title="No Topics Selected"
+          message="You haven't selected any topics for your space."
+          subMessage="Adding topics helps users discover your space, but you can add them later from your space settings. Would you like to continue without topics?"
+          confirmText="Continue"
+          cancelText="Go Back"
+        />
       </Drawer>
 
       {/* Search Bar */}

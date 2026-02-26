@@ -22,28 +22,28 @@ const MainContent = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const limit = 10;
+  const [selectedSpace, setSelectedSpace] = useState(null); // Add this line
 
   // -------------- API FETCH -------------- //
   // Move function outside useEffect
   const listSpaces = async (loadMore = false) => {
-    if (loading) return;
+    if (loading || !hasMore) return;
 
     const currentPage = loadMore ? page + 1 : 1;
-
     try {
       setLoading(true);
       const response = await fetch(`/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
       const result = await response.json();
-
       if (response.ok) {
+        const newSpaces = result.spaces;
         if (loadMore) {
-          setSpaces(prev => [...prev, ...result.spaces]);
+          setSpaces(prev => [...prev, ...newSpaces]);
           setPage(currentPage);
         } else {
-          setSpaces(result.spaces);
+          setSpaces(newSpaces);
           setPage(1);
         }
-        setHasMore(result.spaces.length === limit);
+        setHasMore(result.pagination.hasMore); // Use backend pagination info
       }
     } catch (error) {
       console.error('Failed to fetch spaces:', error);
@@ -118,17 +118,40 @@ const MainContent = () => {
           <FormControl fullWidth>
             <Select
               size="small"
-              value={1}
+              value={selectedSpace?.id || ''}
+              onChange={(e) => {
+                const spaceId = e.target.value;
+                const selected = spaces.find(space => space.id === spaceId);
+                setSelectedSpace(selected);
+              }}
               renderValue={() => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar sx={{ width: 32, height: 32 }}>T</Avatar>
-                  <Typography fontWeight={700}>Tanong PH</Typography>
+                  <Avatar sx={{ width: 32, height: 32 }}>
+                    {selectedSpace ? (selectedSpace.avatar_url ? '' : selectedSpace.space_name?.charAt(0)) : 'S'}
+                  </Avatar>
+                  <Typography fontWeight={700}>
+                    {selectedSpace ? selectedSpace.space_name : 'Select Space'}
+                  </Typography>
                 </Box>
               )}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    maxHeight: 300, // Set max height for scrolling
+                    '& .MuiList-root': {
+                      position: 'relative'
+                    }
+                  }
+                }
+              }}
               sx={{ borderRadius: 5 }}
             >
-              {spaces.map((space) => (
-                <MenuItem value={space.id}>
+              {spaces.map((space, index) => (
+                <MenuItem
+                  key={space.id}
+                  value={space.id}
+                  ref={null}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {space.avatar_url ? (
                       <Avatar
@@ -146,6 +169,21 @@ const MainContent = () => {
                   </Box>
                 </MenuItem>
               ))}
+
+              {hasMore && (
+                <MenuItem
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    listSpaces(true);
+                  }}
+                  sx={{ justifyContent: 'center', py: 1 }}
+                >
+                  <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                    {loading ? 'Loading...' : 'Load More'}
+                  </Typography>
+                </MenuItem>
+              )}
             </Select>
           </FormControl>
 

@@ -118,7 +118,7 @@ const MainContent = () => {
           <FormControl fullWidth>
             <Select
               size="small"
-              value={selectedSpace?.id || ''}
+              value={selectedSpace?.id || spaces[0]?.id || ''}
               onChange={(e) => {
                 const spaceId = e.target.value;
                 const selected = spaces.find(space => space.id === spaceId);
@@ -126,7 +126,7 @@ const MainContent = () => {
               }}
               renderValue={() => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar sx={{ width: 32, height: 32 }}>
+                  <Avatar sx={{ width: 35, height: 35 }}>
                     {selectedSpace ? (selectedSpace.avatar_url ? '' : selectedSpace.space_name?.charAt(0)) : 'S'}
                   </Avatar>
                   <Typography fontWeight={700}>

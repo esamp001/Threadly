@@ -1,9 +1,7 @@
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
-import { useState } from 'react';
+import { Box, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
 
-const SearchButton = ({ expanded, onExpand }) => {
-  const [title, setTitle] = useState('');
+const SearchButton = ({ expanded, onExpand, title, setTitle }) => {
   const maxLength = 300;
 
   return (
@@ -12,7 +10,11 @@ const SearchButton = ({ expanded, onExpand }) => {
         multiline
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        onClick={onExpand}
+        onClick={() => {
+          if (!expanded) {
+            onExpand(); // Only expand if not already expanded
+          }
+        }}
         placeholder="Create a title..."
         sx={{
           width: '100%',
@@ -50,9 +52,18 @@ const SearchButton = ({ expanded, onExpand }) => {
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px' }}>
                 {title.length}/{maxLength}
               </Typography>
-              <IconButton sx={{ color: 'text.main', p: 0 }} size="small">
-                <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-              </IconButton>
+              <Tooltip title={expanded ? "Close" : "Expand"} arrow>
+                <IconButton
+                  sx={{ color: 'text.main', p: 0 }}
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExpand(); // This toggles (open/close)
+                  }}
+                >
+                  <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                </IconButton>
+              </Tooltip>
             </InputAdornment>
           ),
         }}

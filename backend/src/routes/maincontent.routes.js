@@ -43,32 +43,38 @@ router.get('/all_spaces', async (req, res) => {
   }
 });
 
-// GET - Get space by slug
-// router.get('/:slug', async (req, res) => {
-//   const { slug } = req.params;
+router.post('/create_thread', async (req, res) => {
+  const { title, content, spaceId } = req.body;
 
-//   try {
-//     const space = await knex('spaces')
-//       .where('space_slug', slug)
-//       .first();
+  let status = 200
+  let error_message = ''
+  let success = true
+  let thread = []
 
-//     if (!space) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Space not found'
-//       });
-//     }
+  try {
+    thread = await knex('threads')
+      .insert({
+        title,
+        content,
+        space_id: spaceId,
+        created_by: 1  // Placeholder user ID since you don't have users table yet
+      })
+      .returning('*');
 
-//     res.json({
-//       success: true,
-//       space
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// });
+  } catch (error) {
+    console.error('Error creating thread:', error);
+    status = 500
+    error_message = error.message
+    success = false
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      thread: thread[0]
+    });
+  }
+
+});
 
 module.exports = router;

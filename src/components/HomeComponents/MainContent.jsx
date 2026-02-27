@@ -1,32 +1,59 @@
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
-import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, FormControl, MenuItem, Paper, Select, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { useSnackbar } from '../../context/SnackbarContext';
+import ThreadContent from '../Global/ThreadContent';
 import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
 // Quill
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-const ReactQuill = Quill;
 
 const MainContent = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const quillRef = useRef(null);
+  const { showSnackbar } = useSnackbar();
   const quillInstanceRef = useRef(null);
   const [spaces, setSpaces] = useState([]);
+  console.log(spaces, "spaces")
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const limit = 10;
-  const [selectedSpace, setSelectedSpace] = useState(null); // Add this line
+  const [createdThread, setCreatedThread] = useState(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    spaceId: '',
+    content: ''
+  });
+
+
+
+  // Function Handlers
+  const handleQuillChange = useCallback((delta, oldDelta, source) => {
+    if (quillInstanceRef.current) {
+      const htmlContent = quillInstanceRef.current.root.innerHTML;
+
+      // Strip HTML tags
+      const tmp = document.createElement('div');
+      tmp.innerHTML = htmlContent;
+      const plainText = tmp.textContent || tmp.innerText || '';
+
+      setFormData(prev => ({
+        ...prev,
+        content: plainText
+      }));
+    }
+  }, []);
+
+  console.log(formData, "formData")
+  console.log(createdThread?.space_id, "createdThread.space_id")
+  console.log(spaces, "spaces array")
 
   // -------------- API FETCH -------------- //
   // Move function outside useEffect
-  const listSpaces = async (loadMore = false) => {
+  const listSpaces = useCallback(async (loadMore = false) => {
     if (loading || !hasMore) return;
 
     const currentPage = loadMore ? page + 1 : 1;
@@ -50,6 +77,39 @@ const MainContent = () => {
     } finally {
       setLoading(false);
     }
+  }, [page, loading, hasMore]);
+
+  const handleCreateThread = async () => {
+    try {
+      const response = await fetch('/api/maincontent/create_thread', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        showSnackbar('Thread created successfully', 'success');
+
+        // Set the created thread data
+        setCreatedThread(result.thread);
+
+        // Reset form
+        setFormData({
+          title: '',
+          content: '',
+          spaceId: ''
+        });
+      } else {
+        showSnackbar(result.error_message || 'Failed to create thread', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating thread:', error);
+      showSnackbar('Error creating thread', 'error');
+    }
   };
 
   // Simple useEffect for initial load
@@ -72,8 +132,19 @@ const MainContent = () => {
           ]
         }
       });
+
+      // Add change listener
+      quillInstanceRef.current.on('text-change', handleQuillChange);
     }
   }, [isExpanded]);
+
+  useEffect(() => {
+    return () => {
+      if (quillInstanceRef.current) {
+        quillInstanceRef.current.off('text-change', handleQuillChange);
+      }
+    };
+  }, []);
 
 
   return (
@@ -107,6 +178,8 @@ const MainContent = () => {
               <SearchButton sx={{ borderColor: 'white' }}
                 expanded={isExpanded}
                 onExpand={() => setIsExpanded(!isExpanded)}
+                setTitle={(title) => setFormData(prev => ({ ...prev, title }))}
+                title={formData.title}
               />
             </Box>
           </Box>
@@ -118,19 +191,23 @@ const MainContent = () => {
           <FormControl fullWidth>
             <Select
               size="small"
-              value={selectedSpace?.id || spaces[0]?.id || ''}
+              value={formData.spaceId || (spaces && spaces[0] ? spaces[0].id : '')}
               onChange={(e) => {
                 const spaceId = e.target.value;
                 const selected = spaces.find(space => space.id === spaceId);
-                setSelectedSpace(selected);
+                setFormData(prev => ({ ...prev, spaceId, spaceName: selected.space_name, avatarUrl: selected.avatar_url }));
               }}
               renderValue={() => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Avatar sx={{ width: 35, height: 35 }}>
-                    {selectedSpace ? (selectedSpace.avatar_url ? '' : selectedSpace.space_name?.charAt(0)) : 'S'}
+                    {formData.avatarUrl ? (
+                      <img src={formData.avatarUrl} alt="Space avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      formData.spaceName?.charAt(0).toUpperCase() || 'S'
+                    )}
                   </Avatar>
                   <Typography fontWeight={700}>
-                    {selectedSpace ? selectedSpace.space_name : 'Select Space'}
+                    {formData.spaceName || 'Select Space'}
                   </Typography>
                 </Box>
               )}
@@ -204,7 +281,7 @@ const MainContent = () => {
                 fontSize: '16px',
                 lineHeight: 1.5,
                 padding: '16px',
-                minHeight: '118px', // 150px - 32px padding
+                minHeight: '118px', // 150px - 32px padding,
               },
               '& .ql-editor.ql-blank::before': {
                 color: 'text.secondary',
@@ -231,7 +308,7 @@ const MainContent = () => {
                 color: 'text.primary',
               },
               '& .ql-picker-item:hover': {
-                backgroundColor: 'primary.main',
+                backgroundColor: 'primary.light',
                 color: 'text.primary',
               },
               '& .ql-picker-item.ql-selected': {
@@ -243,7 +320,17 @@ const MainContent = () => {
               },
               '& .ql-snow .ql-picker.ql-expanded .ql-picker-options': {
                 borderColor: 'primary.main'
-              }
+              },
+              '& .ql-snow.ql-toolbar button:hover, & .ql-snow.ql-toolbar button:focus, & .ql-snow.ql-toolbar button.ql-active, & .ql-snow.ql-toolbar .ql-picker-label:hover, & .ql-snow.ql-toolbar .ql-picker-label.ql-active, & .ql-snow.ql-toolbar .ql-picker-item:hover, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected': {
+                color: '#FFFFFF'
+              },
+
+              '& .ql-snow.ql-toolbar button:hover .ql-stroke, & .ql-snow.ql-toolbar button:focus .ql-stroke, & .ql-snow.ql-toolbar button.ql-active .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke': {
+                stroke: '#FFFFFF !important', // Changes icon outlines
+              },
+              '& .ql-snow.ql-toolbar button:hover .ql-fill, & .ql-snow.ql-toolbar button:focus .ql-fill, & .ql-snow.ql-toolbar button.ql-active .ql-fill, & .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill, & .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill, & .ql-snow.ql-toolbar .ql-picker-item:hover .ql-fill, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-fill': {
+                fill: '#FFFFFF !important', // Changes icon interiors
+              },
             }
             }
           >
@@ -254,49 +341,26 @@ const MainContent = () => {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-            <CustomButton>Create Thread</CustomButton>
+            <CustomButton fetchOnclick={handleCreateThread}>Create Thread</CustomButton>
             <CustomButton>Draft</CustomButton>
           </Box>
         </AccordionDetails>
       </Accordion>
 
       {/* Thread Content */}
-      <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar sx={{ height: 35, width: 35, mr: 1 }}>T</Avatar>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700 }}>Tanong PH</Typography>
-              <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>Posted by u/John Doe</Typography>
-            </Box>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>1 day ago</Typography>
-          </Box>
-        </Box>
-
-        <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mt: 1 }}>Bakit hindi na ako mahal ng jowa ko?</Typography>
-
-        {/* Actual Content */}
-        <Box sx={{ mt: 2, border: '1px solid red', height: '100px' }}>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ExpandLessRoundedIcon sx={{ color: 'primary.main', height: 30, width: 30 }} /> {/* Upvote */}
-              <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>500</Typography>
-            </Box>
-            <ExpandMoreRoundedIcon sx={{ color: 'error.main', height: 30, width: 30 }} />{/* Downvote */}
-          </Box>
-          <Box sx={{ gap: 1, display: 'flex' }}>
-            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}>
-              <Typography sx={{ color: 'text.secondary' }}>500</Typography>
-            </Button>
-            <Button sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }} variant='contained' startIcon={<ReplyRoundedIcon sx={{ color: 'text.secondary' }} />}>
-              <Typography sx={{ color: 'text.secondary' }}>26</Typography>
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
+      {createdThread && (
+        <ThreadContent
+          avatar="T"
+          spaceName={formData.spaceName || 'Unknown Space'}
+          postedBy="u/John Doe"
+          timeAgo="Just now"
+          title={createdThread.title}
+          content={createdThread.content}
+          upvotes={createdThread.upvotes}
+          comments={createdThread.comments}
+          shares={createdThread.shares}
+        />
+      )}
     </Box>
   )
 }

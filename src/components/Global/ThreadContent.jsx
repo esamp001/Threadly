@@ -14,16 +14,27 @@ const ThreadContent = ({
   content,
   upvotes,
   comments,
-  shares
+  shares,
+  spaceName,
+  handleVote
 }) => {
   console.log(content, " content")
   return (
     <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Avatar sx={{ height: 35, width: 35, mr: 1 }}>{avatar}</Avatar>
+        <Avatar
+          sx={{ height: 35, width: 35, mr: 1 }}
+          src={avatar}
+          alt={spaceName}
+        >
+          {spaceName ? spaceName.charAt(0).toUpperCase() : 'S'}
+        </Avatar>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+              {spaceName}
+            </Typography>
             <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700 }}>
               {username}
             </Typography>
@@ -55,7 +66,7 @@ const ThreadContent = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ExpandLessRoundedIcon
               sx={{ color: 'primary.main', height: 30, width: 30, cursor: 'pointer' }}
-            // onClick={onUpvote}
+              onClick={() => handleVote('upvote')}
             />
             <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>
               {upvotes}
@@ -63,7 +74,7 @@ const ThreadContent = ({
           </Box>
           <ExpandMoreRoundedIcon
             sx={{ color: 'error.main', height: 30, width: 30, cursor: 'pointer' }}
-          // onClick={onDownvote}
+            onClick={() => handleVote('downvote')}
           />
         </Box>
 

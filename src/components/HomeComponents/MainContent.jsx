@@ -1,6 +1,6 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import { useSnackbar } from '../../context/SnackbarContext';
-import ThreadContent from '../Global/ThreadContent';
+import ThreadContent from "../Global/ThreadContent";
 import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
@@ -16,12 +16,14 @@ const MainContent = () => {
   const { showSnackbar } = useSnackbar();
   const quillInstanceRef = useRef(null);
   const [spaces, setSpaces] = useState([]);
-  console.log(spaces, "spaces")
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const limit = 10;
-  const [createdThread, setCreatedThread] = useState(null);
+  const [threads, setThreads] = useState([]);
+  console.log(threads, "threads")
+  const [threadsHasMore, setThreadsHasMore] = useState(true);
+  const [threadsPage, setThreadsPage] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
     spaceId: '',
@@ -47,12 +49,7 @@ const MainContent = () => {
     }
   }, []);
 
-  console.log(formData, "formData")
-  console.log(createdThread?.space_id, "createdThread.space_id")
-  console.log(spaces, "spaces array")
-
   // -------------- API FETCH -------------- //
-  // Move function outside useEffect
   const listSpaces = useCallback(async (loadMore = false) => {
     if (loading || !hasMore) return;
 
@@ -79,6 +76,32 @@ const MainContent = () => {
     }
   }, [page, loading, hasMore]);
 
+  const fetchThreads = useCallback(async (loadMore = false) => {
+    if (loading || !threadsHasMore) return;
+
+    const currentPage = loadMore ? threadsPage + 1 : 1;
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/maincontent/all_threads?page=${currentPage}&limit=10`);
+      const result = await response.json();
+
+      if (result.success) {
+        if (loadMore) {
+          setThreads(prev => [...prev, ...result.threads]);
+          setThreadsPage(currentPage);
+        } else {
+          setThreads(result.threads);
+          setThreadsPage(1);
+        }
+        setThreadsHasMore(result.pagination.hasMore);
+      }
+    } catch (error) {
+      console.error('Failed to fetch threads:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, threadsHasMore, threadsPage]);
+
   const handleCreateThread = async () => {
     try {
       const response = await fetch('/api/maincontent/create_thread', {
@@ -94,8 +117,8 @@ const MainContent = () => {
       if (response.ok && result.success) {
         showSnackbar('Thread created successfully', 'success');
 
-        // Set the created thread data
-        setCreatedThread(result.thread);
+        // // Set the created thread data
+        // setCreatedThread(result.thread);
 
         // Reset form
         setFormData({
@@ -112,9 +135,16 @@ const MainContent = () => {
     }
   };
 
+
+  const handleVote = (voteType) => {
+    console.log(voteType, "voteType")
+
+  };
+
   // Simple useEffect for initial load
   useEffect(() => {
     listSpaces();
+    fetchThreads();
   }, []);
 
 
@@ -348,19 +378,23 @@ const MainContent = () => {
       </Accordion>
 
       {/* Thread Content */}
-      {createdThread && (
+      {threads.map(thread => (
         <ThreadContent
-          avatar="T"
-          spaceName={formData.spaceName || 'Unknown Space'}
-          postedBy="u/John Doe"
-          timeAgo="Just now"
-          title={createdThread.title}
-          content={createdThread.content}
-          upvotes={createdThread.upvotes}
-          comments={createdThread.comments}
-          shares={createdThread.shares}
+          key={thread.id}
+          handleVote={handleVote}
+          avatar={thread.avatar_url}
+          spaceName={thread.space_name || 'Unknown Space'}
+          postedBy="u/John Doe"  // You'll need to add user info to threads
+          timeAgo={thread.timeAgo}   // You'll need to calculate relative time
+          title={thread.title}
+          content={thread.content}
+          upvotes={thread.upvotes || 0}
+          comments={thread.comments || 0}
+          shares={thread.shares || 0}
+          threadId={thread.id}
         />
-      )}
+      ))}
+
     </Box>
   )
 }

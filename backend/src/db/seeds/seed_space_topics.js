@@ -1,4 +1,4 @@
-export async function seed(knex) {
+exports.seed = async function (knex) {
   // Delete existing
   await knex('topics').del();
 

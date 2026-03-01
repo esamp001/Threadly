@@ -9,9 +9,9 @@ module.exports = {
     database: process.env.DB_NAME,
   },
   migrations: {
-    directory: '../src/db/migrations',
+    directory: './src/db/migrations',
   },
   seeds: {
-    directory: '../src/db/seeds',
+    directory: './src/db/seeds',
   },
 };

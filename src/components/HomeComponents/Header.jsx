@@ -37,6 +37,9 @@ const Header = () => {
     communityType: 'public',
     isMature: false,
   });
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  console.log(API_URL, "API URL")
 
   const steps = [
     'About your Space',
@@ -127,7 +130,7 @@ const Header = () => {
     const fetchTopics = async () => {
       try {
         setTopicsLoading(true);
-        const response = await fetch('/api/header');
+        const response = await fetch(`${API_URL}/api/header`);
         const result = await response.json();
         if (response.ok) {
           setTopics(result.topics);

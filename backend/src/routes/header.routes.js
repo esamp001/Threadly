@@ -81,6 +81,7 @@ router.put('/', async (req, res) => {
     status = 500;
     error_message = error.message;
     success = false;
+    await trx.rollback();
   }
 
   res.status(status).json({
@@ -90,34 +91,6 @@ router.put('/', async (req, res) => {
     space
   });
 });
-
-// GET - Get space by slug
-// router.get('/:slug', async (req, res) => {
-//   const { slug } = req.params;
-
-//   try {
-//     const space = await knex('spaces')
-//       .where('space_slug', slug)
-//       .first();
-
-//     if (!space) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Space not found'
-//       });
-//     }
-
-//     res.json({
-//       success: true,
-//       space
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// });
 
 
 

@@ -64,7 +64,8 @@ router.get('/all_threads', async (req, res) => {
         'threads.comments',
         'threads.shares',
         'spaces.space_name',
-        'spaces.avatar_url', 'spaces.space_name', 'spaces.avatar_url')
+        'spaces.avatar_url',
+        'spaces.space_name')
       .orderBy('threads.created_at', 'desc')
       .limit(limit)
       .offset(offset);

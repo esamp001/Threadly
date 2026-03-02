@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 
 const MainContent = () => {
+  const API_URL = import.meta.env.VITE_API_URL;
   const [isExpanded, setIsExpanded] = useState(false);
   const quillRef = useRef(null);
   const { showSnackbar } = useSnackbar();

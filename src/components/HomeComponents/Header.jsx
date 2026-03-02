@@ -37,9 +37,8 @@ const Header = () => {
     communityType: 'public',
     isMature: false,
   });
+  // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
-
-  console.log(API_URL, "API URL")
 
   const steps = [
     'About your Space',
@@ -93,7 +92,7 @@ const Header = () => {
           });
         }, 200);
 
-        const response = await fetch('/api/cloudinary/upload', {
+        const response = await fetch(`${API_URL}/api/cloudinary/upload`, {
           method: 'POST',
           body: formData,
         });
@@ -149,7 +148,7 @@ const Header = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/header', {
+      const response = await fetch(`${API_URL}/api/header`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

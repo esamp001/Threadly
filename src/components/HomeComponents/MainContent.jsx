@@ -21,7 +21,6 @@ const MainContent = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
   const [threads, setThreads] = useState([]);
-  console.log(threads, "threads")
   const [threadsHasMore, setThreadsHasMore] = useState(true);
   const [threadsPage, setThreadsPage] = useState(1);
   const [formData, setFormData] = useState({
@@ -56,7 +55,7 @@ const MainContent = () => {
     const currentPage = loadMore ? page + 1 : 1;
     try {
       setLoading(true);
-      const response = await fetch(`/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
+      const response = await fetch(`${API_URL}/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
       const result = await response.json();
       if (response.ok) {
         const newSpaces = result.spaces;
@@ -82,7 +81,7 @@ const MainContent = () => {
     const currentPage = loadMore ? threadsPage + 1 : 1;
     try {
       setLoading(true);
-      const response = await fetch(`/api/maincontent/all_threads?page=${currentPage}&limit=10`);
+      const response = await fetch(`${API_URL}/api/maincontent/all_threads?page=${currentPage}&limit=10`);
       const result = await response.json();
 
       if (result.success) {
@@ -104,7 +103,7 @@ const MainContent = () => {
 
   const handleCreateThread = async () => {
     try {
-      const response = await fetch('/api/maincontent/create_thread', {
+      const response = await fetch(`${API_URL}/api/maincontent/create_thread`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -137,7 +136,6 @@ const MainContent = () => {
 
 
   const handleVote = (voteType) => {
-    console.log(voteType, "voteType")
 
   };
 

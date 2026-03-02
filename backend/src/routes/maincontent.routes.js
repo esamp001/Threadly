@@ -90,8 +90,6 @@ router.get('/all_threads', async (req, res) => {
         timeAgo = createdAt.format('MMM DD');
       }
 
-      console.log(timeAgo, "timeAgo")
-
       return {
         ...thread,
         timeAgo

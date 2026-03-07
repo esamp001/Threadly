@@ -22,6 +22,7 @@ const MainContent = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
   const [threads, setThreads] = useState([]);
+  const [openComment, setOpenComment] = useState(false);
   const [threadsHasMore, setThreadsHasMore] = useState(true);
   const [threadsPage, setThreadsPage] = useState(1);
   const [formData, setFormData] = useState({
@@ -31,9 +32,8 @@ const MainContent = () => {
   });
 
 
-
   // Function Handlers
-  const handleQuillChange = useCallback((delta, oldDelta, source) => {
+  const handleQuillChange = useCallback(() => {
     if (quillInstanceRef.current) {
       const htmlContent = quillInstanceRef.current.root.innerHTML;
 
@@ -117,8 +117,7 @@ const MainContent = () => {
       if (response.ok && result.success) {
         showSnackbar('Thread created successfully', 'success');
 
-        // // Set the created thread data
-        // setCreatedThread(result.thread);
+        setThreads(prev => [result.thread, ...prev]);
 
         // Reset form
         setFormData({
@@ -126,6 +125,15 @@ const MainContent = () => {
           content: '',
           spaceId: ''
         });
+
+        // Close accordion
+        setIsExpanded(false)
+
+        // Reset Quill content
+        if (quillInstanceRef.current) {
+          quillInstanceRef.current.setText(''); // Clear the editor
+        }
+
       } else {
         showSnackbar(result.error_message || 'Failed to create thread', 'error');
       }
@@ -136,9 +144,106 @@ const MainContent = () => {
   };
 
 
-  const handleVote = (voteType) => {
+  const handleVote = async (voteType, threadId) => {
+    // 1. Optimistic update - update UI immediately
+    setThreads(prev =>
+      prev.map(thread => {
+        if (thread.id !== threadId) {
+          return thread;
+        }
 
+        const vote_value = voteType === 'upvote' ? 1 : -1;
+        const currentVote = thread.userVote || 0;
+
+        // If user clicked same vote again → remove vote
+        if (currentVote === vote_value) {
+          return {
+            ...thread,
+            upvotes: voteType === 'upvote' ? thread.upvotes - 1 : thread.upvotes,
+            downvotes: voteType === 'downvote' ? thread.downvotes - 1 : thread.downvotes,
+            net_score: thread.net_score - vote_value,
+            userVote: null
+          };
+        }
+
+        // If user clicked opposite vote → switch vote
+        if (thread.userVote === -vote_value) {
+          return {
+            ...thread,
+            net_score: thread.net_score + (vote_value * 2), // Remove old vote, add new vote
+            userVote: vote_value
+          };
+        }
+
+        // New vote
+        return {
+          ...thread,
+          net_score: thread.net_score + vote_value,
+          userVote: vote_value
+        };
+      })
+    );
+
+    try {
+      // Make API call
+      const response = await fetch(`${API_URL}/api/maincontent/threads/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          threadId: threadId,
+          voteType: voteType
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Success - update with actual server data
+        setThreads(prevThreads =>
+          prevThreads.map(thread =>
+            thread.id === result.updatedThread.id
+              ? { ...thread, ...result.updatedThread }
+              : thread
+          )
+        );
+      } else {
+        // Server failed - revert optimistic update
+        setThreads(prevThreads =>
+          prevThreads.map(thread =>
+            thread.id === threadId
+              ? {
+                ...thread,
+                net_score: thread.net_score - (voteType === 'upvote' ? 1 : -1),
+                userVote: thread.userVote === (voteType === 'upvote' ? 1 : -1) ? null : thread.userVote
+              }
+              : thread
+          )
+        );
+        showSnackbar(result.error_message || 'Failed to vote', 'error');
+      }
+    } catch (error) {
+      // Network error - revert optimistic update
+      setThreads(prevThreads =>
+        prevThreads.map(thread =>
+          thread.id === threadId
+            ? {
+              ...thread,
+              net_score: thread.net_score - (voteType === 'upvote' ? 1 : -1),
+              userVote: thread.userVote === (voteType === 'upvote' ? 1 : -1) ? null : thread.userVote
+            }
+            : thread
+        )
+      );
+      showSnackbar('Error voting', 'error');
+    }
   };
+
+  const handleCommentOpen = (isOpen, threadId) => {
+    setOpenComment(isOpen);
+  };
+
 
   // Simple useEffect for initial load
   useEffect(() => {
@@ -380,7 +485,9 @@ const MainContent = () => {
       {threads.map(thread => (
         <ThreadContent
           key={thread.id}
+          net_score={thread.net_score}
           handleVote={handleVote}
+          userVote={thread.userVote}
           avatar={thread.avatar_url}
           spaceName={thread.space_name || 'Unknown Space'}
           postedBy="u/John Doe"  // You'll need to add user info to threads
@@ -391,8 +498,10 @@ const MainContent = () => {
           comments={thread.comments || 0}
           shares={thread.shares || 0}
           threadId={thread.id}
+          onCommentOpen={handleCommentOpen}
         />
       ))}
+
 
     </Box>
   )

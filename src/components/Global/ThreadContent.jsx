@@ -6,19 +6,22 @@ import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
 
 const ThreadContent = ({
+  net_score,
   avatar,
   username,
   postedBy,
   timeAgo,
   title,
   content,
-  upvotes,
   comments,
   shares,
   spaceName,
-  handleVote
+  handleVote,
+  threadId,
+  userVote,
+  onCommentOpen,
 }) => {
-  console.log(content, " content")
+
   return (
     <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
       {/* Header */}
@@ -63,19 +66,66 @@ const ThreadContent = ({
       {/* Actions */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ExpandLessRoundedIcon
-              sx={{ color: 'primary.main', height: 30, width: 30, cursor: 'pointer' }}
-              onClick={() => handleVote('upvote')}
-            />
-            <Typography variant='subtitle2' sx={{ color: 'text.secondary' }}>
-              {upvotes}
-            </Typography>
+          {/* Voting */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'transparent',
+            borderRadius: 3,
+            p: 1,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            border: userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+            '&:hover': {
+              backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
+              transform: 'translateY(-1px)'
+            }
+          }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5
+            }}>
+              <ExpandLessRoundedIcon
+                sx={{
+                  color: userVote === 1 ? '#4CAF50' : 'text.primary',
+                  height: 28,
+                  width: 28,
+                  cursor: 'pointer',
+                  opacity: 1,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: userVote === 1 ? '#4CAF50' : '#4CAF50',
+                    transform: 'scale(1.1)'
+                  }
+                }}
+                onClick={() => handleVote('upvote', threadId)}
+              />
+              <Typography variant='subtitle2' sx={{
+                color: userVote !== 0 ? '#FFFFFF' : 'text.primary',
+                fontWeight: userVote !== 0 ? 700 : 500,
+                fontSize: '0.875rem',
+                transition: 'all 0.2s ease'
+              }}>
+                {net_score}
+              </Typography>
+              <ExpandMoreRoundedIcon
+                sx={{
+                  color: userVote === -1 ? '#F44336' : 'text.primary',
+                  height: 28,
+                  width: 28,
+                  cursor: 'pointer',
+                  opacity: 1,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    color: userVote === -1 ? '#F44336' : '#F44336',
+                    transform: 'scale(1.1)'
+                  }
+                }}
+                onClick={() => handleVote('downvote', threadId)}
+              />
+            </Box>
           </Box>
-          <ExpandMoreRoundedIcon
-            sx={{ color: 'error.main', height: 30, width: 30, cursor: 'pointer' }}
-            onClick={() => handleVote('downvote')}
-          />
         </Box>
 
         <Box sx={{ gap: 1, display: 'flex' }}>
@@ -83,7 +133,7 @@ const ThreadContent = ({
             sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
             variant='contained'
             startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}
-          // onClick={onComment}
+            onClick={() => onCommentOpen('true', threadId)}
           >
             <Typography sx={{ color: 'text.secondary' }}>
               {comments}

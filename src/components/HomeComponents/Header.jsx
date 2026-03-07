@@ -230,9 +230,10 @@ const Header = () => {
       display: 'flex',
       alignItems: 'center',
       gap: 5,
-      px: 7
+      px: 7,
+      height: 100
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90, mr: 5 }}>
+      <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', width: 90, height: 90, mr: 5 }}>
         {/* <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} /> */}
         <Typography
           variant="h6"
@@ -241,7 +242,7 @@ const Header = () => {
             letterSpacing: '0.12em',
             fontFamily: 'Inter, sans-serif',
             textTransform: 'uppercase', // Add this for all caps
-            // display: { xs: 'none', sm: 'block' }
+            display: { xs: 'none', sm: 'block' }
           }}
         >
           THREAD
@@ -251,7 +252,7 @@ const Header = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: { xs: 'none', sm: 'none', md: 'flex' }, gap: 10, ml: 8, alignItems: 'center', }}>
+      <Box sx={{ display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }, gap: 10, ml: 8, alignItems: 'center' }}>
         <Home size={25} />
         <TrendingUp size={25} />
         <LayoutTemplate size={25} />
@@ -718,7 +719,7 @@ const Header = () => {
 
       {/* Search Bar */}
       <Grid container>
-        <Grid sx={{ width: { xs: 600, sm: 1200, md: 1200, lg: 1200, xl: 1200 } }}>
+        <Grid sx={{ width: { xs: 1200, sm: 1200, md: 1200, lg: 1200, xl: 1200 } }}>
           <TextField
             sx={{
               width: '100%',

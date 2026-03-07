@@ -50,9 +50,13 @@ router.get('/all_threads', async (req, res) => {
   let threads = []
 
   try {
-    // Get the threads for current page
+    // Get the threads for current page with user votes
     threads = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
+      .leftJoin('scores', function () {
+        this.on('threads.id', '=', 'scores.thread_id')
+          .andOn('scores.user_id', '=', 1) // Using hardcoded user ID for now
+      })
       .select('threads.id',
         'threads.title',
         'threads.content',
@@ -63,9 +67,11 @@ router.get('/all_threads', async (req, res) => {
         'threads.upvotes',
         'threads.comments',
         'threads.shares',
+        'threads.net_score',
         'spaces.space_name',
         'spaces.avatar_url',
-        'spaces.space_name')
+        'spaces.space_name',
+        'scores.vote_type as userVote')
       .orderBy('threads.created_at', 'desc')
       .limit(limit)
       .offset(offset);
@@ -157,6 +163,78 @@ router.post('/create_thread', async (req, res) => {
     });
   }
 
+});
+
+router.post('/threads/vote', async (req, res) => {
+  const { threadId, voteType } = req.body;
+  // const userId = req.user.id; // from auth middleware
+
+  const numericVote = voteType === 'upvote' ? 1 : -1;
+
+  let updatedThread;
+
+  try {
+    await knex.transaction(async (trx) => {
+
+      const existingVote = await trx('scores')
+        .where({ user_id: 1, thread_id: threadId })
+        .first();
+
+      // Case 1: No previous vote
+      if (!existingVote) {
+
+        await trx('scores').insert({
+          user_id: 1,
+          thread_id: threadId,
+          vote_type: numericVote
+        });
+
+        await trx('threads')
+          .where({ id: threadId })
+          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .increment('net_score', numericVote);
+
+      }
+
+      // Case 2: Same vote clicked again → remove vote
+      else if (existingVote.vote_type === numericVote) {
+
+        await trx('scores')
+          .where({ user_id: 1, thread_id: threadId })
+          .delete();
+
+        await trx('threads')
+          .where({ id: threadId })
+          .decrement(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement('net_score', numericVote);
+
+      }
+
+      // Case 3: Switching vote
+      else {
+        await trx('scores')
+          .where({ user_id: 1, thread_id: threadId })
+          .update({ vote_type: numericVote });
+
+        await trx('threads')
+          .where({ id: threadId })
+          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
+          .increment('net_score', numericVote * 2);
+
+      }
+
+      updatedThread = await trx('threads')
+        .where({ id: threadId })
+        .first();
+    });
+
+    res.json({ success: true, updatedThread });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;

@@ -1,4 +1,4 @@
-export function up(knex) {
+module.exports.up = function(knex) {
     return knex.schema.createTable('topics', (table) => {
         table.increments('id').primary();       // Auto-incrementing ID
         table.string('name').notNullable();     // Topic name
@@ -9,6 +9,6 @@ export function up(knex) {
     });
 }
 
-export function down(knex) {
+module.exports.down = function(knex) {
     return knex.schema.dropTableIfExists('topics');
 }

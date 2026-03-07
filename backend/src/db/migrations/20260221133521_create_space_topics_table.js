@@ -1,4 +1,4 @@
-export async function up(knex) {
+module.exports.up = async (knex) => {
   await knex.schema.createTable('space_topics', (table) => {
     table.increments('id').primary();
     table.integer('space_id').unsigned().notNullable();
@@ -14,6 +14,6 @@ export async function up(knex) {
   });
 }
 
-export async function down(knex) {
+module.exports.down = async (knex) => {
   await knex.schema.dropTable('space_topics');
 }

@@ -1,6 +1,7 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import { useSnackbar } from '../../context/SnackbarContext';
 import ThreadContent from "../Global/ThreadContent";
+import CommentPanel from './CommentPanel';
 import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
@@ -22,7 +23,7 @@ const MainContent = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
   const [threads, setThreads] = useState([]);
-  const [openComment, setOpenComment] = useState(false);
+  const [openCommentThreads, setOpenCommentThreads] = useState(false);
   const [threadsHasMore, setThreadsHasMore] = useState(true);
   const [threadsPage, setThreadsPage] = useState(1);
   const [formData, setFormData] = useState({
@@ -240,10 +241,12 @@ const MainContent = () => {
     }
   };
 
-  const handleCommentOpen = (isOpen, threadId) => {
-    setOpenComment(isOpen);
-  };
-
+  const handleCommentOpen = useCallback((threadId) => {
+    setOpenCommentThreads(prev => ({
+      ...prev,
+      [threadId]: !prev[threadId]
+    }));
+  }, []);
 
   // Simple useEffect for initial load
   useEffect(() => {
@@ -483,25 +486,28 @@ const MainContent = () => {
 
       {/* Thread Content */}
       {threads.map(thread => (
-        <ThreadContent
-          key={thread.id}
-          net_score={thread.net_score}
-          handleVote={handleVote}
-          userVote={thread.userVote}
-          avatar={thread.avatar_url}
-          spaceName={thread.space_name || 'Unknown Space'}
-          postedBy="u/John Doe"  // You'll need to add user info to threads
-          timeAgo={thread.timeAgo}   // You'll need to calculate relative time
-          title={thread.title}
-          content={thread.content}
-          upvotes={thread.upvotes || 0}
-          comments={thread.comments || 0}
-          shares={thread.shares || 0}
-          threadId={thread.id}
-          onCommentOpen={handleCommentOpen}
-        />
+        <Box key={thread.id}>
+          <ThreadContent
+            net_score={thread.net_score}
+            handleVote={handleVote}
+            userVote={thread.userVote}
+            avatar={thread.avatar_url}
+            spaceName={thread.space_name || 'Unknown Space'}
+            postedBy="u/John Doe"  // You'll need to add user info to threads
+            timeAgo={thread.timeAgo}   // You'll need to calculate relative time
+            title={thread.title}
+            content={thread.content}
+            upvotes={thread.upvotes || 0}
+            comments={thread.comments || 0}
+            shares={thread.shares || 0}
+            threadId={thread.id}
+            onCommentOpen={handleCommentOpen}
+          />
+          {openCommentThreads[thread.id] && (
+            <CommentPanel threadId={thread.id} isOpen={openCommentThreads[thread.id]} />
+          )}
+        </Box>
       ))}
-
 
     </Box>
   )

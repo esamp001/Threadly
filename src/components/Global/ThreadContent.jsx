@@ -133,7 +133,7 @@ const ThreadContent = ({
             sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
             variant='contained'
             startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}
-            onClick={() => onCommentOpen('true', threadId)}
+            onClick={() => onCommentOpen(threadId)}
           >
             <Typography sx={{ color: 'text.secondary' }}>
               {comments}

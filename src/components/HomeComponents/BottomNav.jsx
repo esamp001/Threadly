@@ -12,7 +12,13 @@ const BottomNav = () => {
       left: 0,
       right: 0,
       zIndex: 1000,
-      display: { xs: 'block', sm: 'none' }
+      display: { xs: 'block', sm: 'none' },
+      // Adds extra padding for iPhones with "home bars"
+      pb: 'env(safe-area-inset-bottom)',
+      backgroundColor: 'background.paper',
+      boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+      borderTop: '1px solid',
+      borderColor: 'divider'
     }}>
       <BottomNavigation
         value={value}

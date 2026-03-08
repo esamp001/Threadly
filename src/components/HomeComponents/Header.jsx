@@ -226,57 +226,81 @@ const Header = () => {
   };
 
   return (
-    <Box sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 5,
-      px: 7,
-      height: 100
-    }}>
-      <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', width: 90, height: 90, mr: 5 }}>
-        {/* <img src={ThreadlyLogo} alt="Threadly Logo" style={{ width: 90, height: 90, padding: 0 }} /> */}
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 900,
-            letterSpacing: '0.12em',
-            fontFamily: 'Inter, sans-serif',
-            textTransform: 'uppercase', // Add this for all caps
-            display: { xs: 'none', sm: 'block' }
-          }}
-        >
-          THREAD
-          <Box component="span" sx={{ color: 'primary.main' }}>
-            LY
-          </Box>
-        </Typography>
-      </Box>
+    <Grid
+      container
+      spacing={2}
+      sx={{
+        alignItems: 'center', // This centers everything on the X-axis
+        px: 2,
+        py: 1,
+        border: '1px solid rgba(255,255,255,0.1)'
+      }}
+    >
+      {/* Logo */}
+      <Grid item size={{ xs: 3, sm: 3, md: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 900,
+              letterSpacing: '0.12em',
+              fontFamily: 'Inter, sans-serif',
+              textTransform: 'uppercase',
+              fontSize: { xs: '0.8rem', sm: '1.25rem' }, // Smaller on mobile
+              display: 'block' // Always visible
+            }}
+          >
+            THREAD
+            <Box component="span" sx={{ color: 'primary.main' }}>
+              LY
+            </Box>
+          </Typography>
+        </Box>
+      </Grid>
 
-      <Box sx={{ display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }, gap: 10, ml: 8, alignItems: 'center' }}>
-        <Home size={25} />
-        <TrendingUp size={25} />
-        <LayoutTemplate size={25} />
-        <Tooltip
-          title="Create space"
-          arrow
-          sx={{
-            '& .MuiTooltip-tooltip': {
-              backgroundColor: 'primary.main',
-              color: 'white',
-              fontSize: '0.875rem',
-            },
-            '& .MuiTooltip-arrow': {
-              color: 'primary.main',
-            }
-          }}
-        >
-          <DiamondPlus
-            onClick={() => setOpenDrawer(true)}
-            style={{ cursor: 'pointer' }}
-            size={25}
-          />
-        </Tooltip>
-      </Box>
+      {/* Navigation */}
+      <Grid
+        item
+        size={{ sm: 'grow', md: 'grow' }}
+        sx={{
+          display: { xs: 'none', sm: 'flex' },
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <Box sx={{
+          display: 'flex',
+          // Responsive gap: tight on tablet, wide on desktop
+          gap: { sm: 4, md: 6, lg: 10 },
+          mr: { lg: 10, xl: 20 },
+          alignItems: 'center'
+        }}>
+          <Home size={25} />
+          <TrendingUp size={25} />
+          <LayoutTemplate size={25} />
+          <Tooltip
+            title="Create space"
+            arrow
+            sx={{
+              '& .MuiTooltip-tooltip': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+                fontSize: '0.875rem',
+              },
+              '& .MuiTooltip-arrow': {
+                color: 'primary.main',
+              }
+            }}
+          >
+            <DiamondPlus
+              onClick={() => setOpenDrawer(true)}
+              style={{ cursor: 'pointer' }}
+              size={25}
+            />
+          </Tooltip>
+        </Box>
+      </Grid>
+
 
       <Drawer
         anchor="top"
@@ -718,84 +742,85 @@ const Header = () => {
       </Drawer>
 
       {/* Search Bar */}
-      <Grid container>
-        <Grid sx={{ width: { xs: 1200, sm: 1200, md: 1200, lg: 1200, xl: 1200 } }}>
-          <TextField
-            sx={{
-              width: '100%',
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 21,
-                '& fieldset': {
-                  borderWidth: '2px',
-                },
-                '&:hover fieldset': {
-                  borderColor: 'primary.main',
-                }
+      <Grid item size="grow">
+        <TextField
+          fullWidth
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 21,
+              '& fieldset': {
+                borderWidth: '2px',
+              },
+              '&:hover fieldset': {
+                borderColor: 'primary.main',
               }
-            }}
-            size='small'
-            placeholder="Search..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
+            }
+          }}
+          size='small'
+          placeholder="Search..."
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Grid>
 
-      <Box sx={{ display: 'flex', gap: 1, width: 150, justifyContent: 'flex-end', ml: 5 }}>
-        <Box sx={{ position: 'relative' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Avatar sx={{ width: 50, height: 50, }}>J</Avatar>
+
+      <Grid item size="auto">
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          <Box sx={{ position: 'relative' }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Avatar sx={{ width: 50, height: 50, }}>J</Avatar>
+            </Box>
+
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: -4,
+                right: -4,
+                bgcolor: 'success.main',
+                color: '#fff',
+                px: 0.8,
+                py: 0.2,
+                fontSize: 10,
+                borderRadius: '999px',
+                fontWeight: 700
+              }}
+            >
+              Lv 12
+            </Box>
           </Box>
 
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              bgcolor: 'success.main',
-              color: '#fff',
-              px: 0.8,
-              py: 0.2,
-              fontSize: 10,
-              borderRadius: '999px',
-              fontWeight: 700
-            }}
-          >
-            Lv 12
+          <Box sx={{
+            alignItems: 'center',
+            flexDirection: 'column',
+            gap: 1,
+            display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }
+          }}>
+            <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
+            <Typography
+              sx={{
+                display: 'inline-block',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'success.light',
+                bgcolor: 'rgba(76, 175, 80, 0.12)',
+                px: 1,
+                py: 0.2,
+                borderRadius: '6px',
+                letterSpacing: 0.3,
+              }}
+            >
+              Head Hunter
+            </Typography>
           </Box>
         </Box>
-
-        <Box sx={{
-          alignItems: 'center',
-          flexDirection: 'column',
-          gap: 1,
-          width: 150,
-          display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }
-        }}>
-          <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
-          <Typography
-            sx={{
-              display: 'inline-block',
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'success.light',
-              bgcolor: 'rgba(76, 175, 80, 0.12)',
-              px: 1,
-              py: 0.2,
-              borderRadius: '6px',
-              letterSpacing: 0.3,
-            }}
-          >
-            Head Hunter
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
+      </Grid>
+      {/* </Box > */}
+    </Grid >
   )
 }
 

@@ -1,9 +1,27 @@
 import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material'
-import { Home, LayoutTemplate, TrendingUp, Users } from 'lucide-react'
-import { useState } from 'react'
+import { DiamondPlus, Home, LayoutTemplate, TrendingUp } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-const BottomNav = () => {
+const BottomNav = ({ openDrawer, setOpenDrawer }) => {
   const [value, setValue] = useState(0)
+  const [visible, setVisible] = useState(true)
+  const [prevScrollPos, setPrevScrollPos] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollPos = window.scrollY
+
+      // 1. Show if scrolling up, hide if scrolling down
+      // 2. Always show if we are at the very top of the page
+      const isVisible = prevScrollPos > currentScrollPos || currentScrollPos < 10
+
+      setVisible(isVisible)
+      setPrevScrollPos(currentScrollPos)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [prevScrollPos])
 
   return (
     <Box sx={{
@@ -13,63 +31,27 @@ const BottomNav = () => {
       right: 0,
       zIndex: 1000,
       display: { xs: 'block', sm: 'none' },
-      // Adds extra padding for iPhones with "home bars"
-      pb: 'env(safe-area-inset-bottom)',
-      backgroundColor: 'background.paper',
-      boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+      backgroundColor: 'background.default',
       borderTop: '1px solid',
-      borderColor: 'divider'
+      borderColor: 'divider',
+      pb: 'env(safe-area-inset-bottom)',
+
+      // --- ANIMATION LOGIC ---
+      transition: 'transform 0.3s ease-in-out', // Smooth sliding
+      transform: visible ? 'translateY(0)' : 'translateY(100%)', // Slide down to hide
     }}>
       <BottomNavigation
         value={value}
-        onChange={(event, newValue) => {
-          setValue(newValue)
-        }}
-        sx={{
-          backgroundColor: 'background.paper',
-          borderTop: '1px solid rgba(0, 0, 0, 0.12)',
-          height: 60
-        }}
+        onChange={(event, newValue) => setValue(newValue)}
+        sx={{ height: 60, backgroundColor: 'transparent' }}
       >
+        <BottomNavigationAction icon={<Home size={24} />} sx={{ minWidth: 'auto' }} />
+        <BottomNavigationAction icon={<TrendingUp size={24} />} sx={{ minWidth: 'auto' }} />
+        <BottomNavigationAction icon={<LayoutTemplate size={24} />} sx={{ minWidth: 'auto' }} />
         <BottomNavigationAction
-          icon={<Home size={24} />}
-          sx={{
-            minWidth: 'auto',
-            px: 1,
-            '&.Mui-selected': {
-              color: 'primary.main'
-            }
-          }}
-        />
-        <BottomNavigationAction
-          icon={<TrendingUp size={24} />}
-          sx={{
-            minWidth: 'auto',
-            px: 1,
-            '&.Mui-selected': {
-              color: 'primary.main'
-            }
-          }}
-        />
-        <BottomNavigationAction
-          icon={<LayoutTemplate Grid3x3 size={24} />}
-          sx={{
-            minWidth: 'auto',
-            px: 1,
-            '&.Mui-selected': {
-              color: 'primary.main'
-            }
-          }}
-        />
-        <BottomNavigationAction
-          icon={<Users size={24} />}
-          sx={{
-            minWidth: 'auto',
-            px: 1,
-            '&.Mui-selected': {
-              color: 'primary.main'
-            }
-          }}
+          icon={<DiamondPlus size={24} />}
+          sx={{ minWidth: 'auto' }}
+          onClick={() => setOpenDrawer(true)} // Make it clickable!
         />
       </BottomNavigation>
     </Box>

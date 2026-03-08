@@ -41,7 +41,6 @@ router.put('/', async (req, res) => {
   let status = 201;
   let success = true;
 
-
   try {
     // Start transaction
     const trx = await knex.transaction();
@@ -72,8 +71,9 @@ router.put('/', async (req, res) => {
     // Commit transaction
     await trx.commit();
 
-    // Fetch created space with details
+    // Fetch created space with the SAME format as MainContent expects
     space = await knex('spaces')
+      .select('id', 'space_name', 'avatar_url') // Same fields as maincontent.routes.js
       .where('id', spaceId.id)
       .first();
 
@@ -88,7 +88,7 @@ router.put('/', async (req, res) => {
     success,
     status,
     error_message,
-    space
+    space // Return in the same format as MainContent expects
   });
 });
 

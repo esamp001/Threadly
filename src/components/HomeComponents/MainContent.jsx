@@ -11,13 +11,12 @@ import 'quill/dist/quill.snow.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 
-const MainContent = () => {
+const MainContent = ({ spaces, setSpaces }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   const [isExpanded, setIsExpanded] = useState(false);
   const quillRef = useRef(null);
   const { showSnackbar } = useSnackbar();
   const quillInstanceRef = useRef(null);
-  const [spaces, setSpaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
@@ -324,85 +323,89 @@ const MainContent = () => {
 
         {/* Select Spaces using dropdown */}
         <Box sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, ml: 1 }}>Select Space</Typography>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, ml: 1, fontWeight: 600 }}>
+            Where are we posting today?
+          </Typography>
           <FormControl fullWidth>
             <Select
               size="small"
-              value={formData.spaceId || (spaces && spaces[0] ? spaces[0].id : '')}
+              displayEmpty
+              value={formData.spaceId || ''}
               onChange={(e) => {
                 const spaceId = e.target.value;
                 const selected = spaces.find(space => space.id === spaceId);
-                setFormData(prev => ({ ...prev, spaceId, spaceName: selected.space_name, avatarUrl: selected.avatar_url }));
+                setFormData(prev => ({
+                  ...prev,
+                  spaceId,
+                  spaceName: selected?.space_name || '',
+                  avatarUrl: selected?.avatar_url || ''
+                }));
               }}
-              renderValue={() => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar sx={{ width: 35, height: 35 }}>
-                    {formData.avatarUrl ? (
-                      <img src={formData.avatarUrl} alt="Space avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      formData.spaceName?.charAt(0).toUpperCase() || 'S'
-                    )}
-                  </Avatar>
-                  <Typography fontWeight={700}>
-                    {formData.spaceName || 'Select Space'}
-                  </Typography>
-                </Box>
-              )}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    maxHeight: 300, // Set max height for scrolling
-                    '& .MuiList-root': {
-                      position: 'relative'
-                    }
-                  }
+              renderValue={(selected) => {
+                // 1. Consistency: Use the same Box structure for both states
+                if (!selected || selected === '') {
+                  return (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Select Space
+                    </Typography>
+                  );
                 }
+
+                return (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                      src={formData.avatarUrl}
+                      sx={{ width: 24, height: 24, fontSize: '0.75rem' }}
+                    >
+                      {formData.spaceName?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    {/* 2. Consistency: Use variant="body2" and same weight as MenuItems */}
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      {formData.spaceName}
+                    </Typography>
+                  </Box>
+                );
               }}
-              sx={{ borderRadius: 5 }}
+              sx={{ borderRadius: 3 }} // Slightly tighter radius looks cleaner with small inputs
             >
-              {spaces.map((space, index) => (
-                <MenuItem
-                  key={space.id}
-                  value={space.id}
-                  ref={null}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {space.avatar_url ? (
-                      <Avatar
-                        sx={{ width: 28, height: 28 }}
-                        src={space.avatar_url}
-                      >
-                        {space.space_name.charAt().toUpperCase(0)}
-                      </Avatar>
-                    ) : (
-                      <Avatar sx={{ width: 28, height: 28 }}>
-                        {space.space_name.charAt().toUpperCase(0)}
-                      </Avatar>
-                    )}
-                    {space.space_name}
+              {spaces.map((space) => (
+                <MenuItem key={space.id} value={space.id} sx={{ py: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                      src={space.avatar_url}
+                      sx={{ width: 24, height: 24, fontSize: '0.75rem' }}
+                    >
+                      {space.space_name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    {/* 3. Consistency: Match the weight and variant from renderValue */}
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {space.space_name}
+                    </Typography>
                   </Box>
                 </MenuItem>
               ))}
 
               {hasMore && (
                 <MenuItem
-                  onMouseDown={(e) => {
-                    e.preventDefault();
+                  onClick={(e) => {
                     e.stopPropagation();
                     listSpaces(true);
                   }}
-                  sx={{ justifyContent: 'center', py: 1 }}
+                  disabled={loading}
+                  sx={{ justifyContent: 'center', py: 1.5 }}
                 >
-                  <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>
                     {loading ? 'Loading...' : 'Load More'}
                   </Typography>
                 </MenuItem>
               )}
             </Select>
           </FormControl>
-
         </Box>
         <AccordionDetails sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, ml: 1, fontWeight: 600 }}>
+            Share your thoughts
+          </Typography>
           <Box
             sx={{
               width: '100%',

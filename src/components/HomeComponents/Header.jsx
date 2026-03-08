@@ -9,8 +9,7 @@ import TextFieldThreadly from './TextFieldThreadly';
 // Add this import at the top with your other imports
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 
-const Header = () => {
-  const [openDrawer, setOpenDrawer] = useState(false);
+const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -170,6 +169,19 @@ const Header = () => {
       if (response.ok) {
         showSnackbar('Space created successfully!', 'success');
         handleReset(); // Close drawer and reset form
+        onSpaceCreated(result.space)
+
+        // Reset all forms in creating space
+        setFormData({
+          spaceName: '',
+          spaceDescription: '',
+          spaceSlug: '',
+          avatarUrl: '',
+          avatarPublicId: '',
+          communityType: 'public',
+          isMature: false,
+          topics: []
+        });
       } else {
         showSnackbar(result.message || 'Failed to create space', 'error');
       }
@@ -334,7 +346,11 @@ const Header = () => {
                 <StepLabel sx={{
                   color: 'text.secondary',
                   '&.Mui-active': { color: 'primary.main' },
-                  '&.Mui-completed': { color: 'primary.main' }
+                  '&.Mui-completed': { color: 'primary.main' },
+                  '& .MuiStepLabel-label': {
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' }, // Smaller on mobile
+                    fontWeight: 500
+                  }
                 }}>
                   {label}
                 </StepLabel>

@@ -20,7 +20,6 @@ import {
 import { useState } from 'react';
 
 const CommentPanel = ({ threadId }) => {
-
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
@@ -150,30 +149,28 @@ const CommentPanel = ({ threadId }) => {
       body: JSON.stringify({
         content: newCommentText,
         thread_id: threadId,
-        parent_id: null,
-        created_by: 1 // TODO: Get from auth context
+        parent_id: null
       }),
     });
 
     const newComment = await response.json();
 
-    setComments(prev => [newComment, ...prev]);
-    setNewCommentId(newComment.id);
+    setComments(prev => [newComment.comment, ...prev]);
+    setNewCommentId(newComment.comment.id);
     setNewCommentText('');
     setIsPostingComment(false);
 
     // Clear the new comment ID after animation
-    setTimeout(() => setNewCommentId(null), 1000);
+    // setTimeout(() => setNewCommentId(null), 1000);
   };
 
   const CommentItem = ({ comment, depth = 0 }) => {
-
     const showReplies = expandedReplies[comment.id];
     const isNewComment = comment.id === newCommentId;
 
     return (
       <Slide
-        direction="down"
+        direction="right"
         in={true}
         timeout={isNewComment ? 500 : 0}
         easing="cubic-bezier(0.4, 0, 0.2, 1)"
@@ -560,7 +557,7 @@ const CommentPanel = ({ threadId }) => {
               size="small"
               startIcon={<MessageSquare size={16} />}
               disabled={isPostingComment || !newCommentText.trim()}
-              onClick={handlePostComment}
+              onClick={() => handlePostComment(threadId)}
               sx={{
                 textTransform: 'none',
                 borderRadius: 2,

@@ -2,9 +2,22 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
 
+// Add this function at the top of your comments.routes.js
+function formatRelativeTime(dateString) {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffInSeconds = Math.floor((now - past) / 1000);
+
+  if (diffInSeconds < 60) return 'just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}hr ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return `${Math.floor(diffInSeconds / 604800)}w ago`;
+}
+
 // POST - Create new comment
 router.post('/', async (req, res) => {
-  const { content } = req.body;
+  const { content, thread_id, parent_id } = req.body;
 
   let comment = null;
   let error_message = '';
@@ -13,16 +26,24 @@ router.post('/', async (req, res) => {
 
   try {
 
-  const comments_posted = await knex('comments').insert({
-    content: content,
-    thread_id: 1, // TODO: Get from thread context or request body
-    created_by: 1, // TODO: Get from authenticated user
-    parent_id: null, // TODO: Get from request body if it's a reply
-    upvotes: 0,
-    downvotes: 0,
-    net_score: 0,
-    is_active: true
-  });
+    const [commentId] = await knex('comments').insert({
+      content,
+      thread_id,
+      parent_id,
+    }).returning('id');
+
+    comment = await knex('comments').where('id', commentId.id).first();
+
+    // Add the remaining data need for the comment
+    comment = {
+      ...comment,
+      author: 'Sarah Johnson',
+      avatar: 'S',
+      timestamp: formatRelativeTime(comment.created_at),
+      net_score: 12,
+      userVote: 0,
+      replies: []
+    };
 
   } catch (error) {
     status = 500;
@@ -36,7 +57,6 @@ router.post('/', async (req, res) => {
       comment
     });
   }
-
 });
 
 module.exports = router;

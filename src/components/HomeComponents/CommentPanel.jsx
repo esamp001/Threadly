@@ -1,8 +1,6 @@
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import { MessageSquare } from 'lucide-react';
-
 import {
   Avatar,
   Box,
@@ -10,86 +8,24 @@ import {
   Divider,
   IconButton,
   Paper,
+  Skeleton,
   Slide,
   TextField,
   Typography
 } from '@mui/material';
-
-
-
-import { useState } from 'react';
+import { MessageSquare } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 const CommentPanel = ({ threadId }) => {
+  const API_URL = import.meta.env.VITE_API_URL;
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [newCommentId, setNewCommentId] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL;
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: 'Sarah Johnson',
-      avatar: 'S',
-      content: 'This is such a great discussion! I really appreciate the thoughtful perspectives being shared here.',
-      timestamp: '2h ago',
-      net_score: 12,
-      userVote: 0,
-      replies: [
-        {
-          id: 11,
-          author: 'Mike Chen',
-          avatar: 'M',
-          content: 'I completely agree! The quality of conversation here is really refreshing.',
-          timestamp: '1h ago',
-          net_score: 5,
-          userVote: 0,
-          replies: []
-        },
-        {
-          id: 12,
-          author: 'Emily Davis',
-          avatar: 'E',
-          content: 'Same here. It\'s nice to see such civil discourse for a change.',
-          timestamp: '45m ago',
-          net_score: 3,
-          userVote: 0,
-          replies: []
-        }
-      ]
-    },
-    {
-      id: 2,
-      author: 'David Wilson',
-      avatar: 'D',
-      content: 'Has anyone considered the long-term implications of this approach? I think we might be overlooking some important factors.',
-      timestamp: '3h ago',
-      net_score: 8,
-      userVote: 0,
-      replies: [
-        {
-          id: 21,
-          author: 'Lisa Anderson',
-          avatar: 'L',
-          content: 'That\'s a really good point. What specific factors are you thinking about?',
-          timestamp: '2h ago',
-          net_score: 4,
-          userVote: 0,
-          replies: []
-        }
-      ]
-    },
-    {
-      id: 3,
-      author: 'Alex Thompson',
-      avatar: 'A',
-      content: 'Great thread! This exactly matches what I\'ve been thinking about lately.',
-      timestamp: '4h ago',
-      net_score: 15,
-      userVote: 1,
-      replies: []
-    }
-  ]);
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
 
   const toggleReplies = (id) => {
     setExpandedReplies(prev => ({
@@ -154,277 +90,499 @@ const CommentPanel = ({ threadId }) => {
     });
 
     const newComment = await response.json();
-
     setComments(prev => [newComment.comment, ...prev]);
     setNewCommentId(newComment.comment.id);
     setNewCommentText('');
+    setNewCommentId(null); // Add this line
     setIsPostingComment(false);
-
-    // Clear the new comment ID after animation
-    // setTimeout(() => setNewCommentId(null), 1000);
   };
+
+  const fetchComments = useCallback(async () => {
+    const response = await fetch(`${API_URL}/api/comments?thread_id=${threadId}`);
+    const data = await response.json();
+
+    setComments(data.comments);
+    setLoading(false);
+  }, [threadId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  const CommentSkeleton = () => (
+    <Box sx={{ mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Skeleton variant="circular" width={32} height={32} />
+        <Box sx={{ flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Skeleton variant="text" width={100} height={20} />
+            <Skeleton variant="text" width={60} height={16} />
+          </Box>
+          <Skeleton variant="text" width="100%" height={25} sx={{ mb: 0.5 }} />
+          <Skeleton variant="text" width="90%" height={25} sx={{ mb: 1.5 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Skeleton variant="rectangular" width={70} height={25} sx={{ borderRadius: 3 }} />
+            <Skeleton variant="text" width={35} height={16} />
+            <Skeleton variant="text" width={35} height={16} />
+            <Skeleton variant="circular" width={20} height={20} />
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
 
   const CommentItem = ({ comment, depth = 0 }) => {
     const showReplies = expandedReplies[comment.id];
     const isNewComment = comment.id === newCommentId;
 
     return (
-      <Slide
-        direction="right"
-        in={true}
-        timeout={isNewComment ? 500 : 0}
-        easing="cubic-bezier(0.4, 0, 0.2, 1)"
-      >
-        <Box sx={{ mb: 2 }}>
-          {/* COMMENT */}
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                fontSize: 13,
-                bgcolor: 'primary.main',
-                border: '2px solid',
-                borderColor: 'background.paper',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-            >
-              {comment.avatar}
-            </Avatar>
-
-            <Box sx={{ flex: 1 }}>
-              {/* HEADER */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography
-                  fontWeight={600}
-                  fontSize={14}
+      <Box sx={{ mb: 2 }}>
+        {/* SLIDE ONLY FOR NEW COMMENTS */}
+        {isNewComment ? (
+          <Slide
+            direction="right"
+            in={true}
+            timeout={500}
+            easing="cubic-bezier(0.4, 0, 0.2, 1)"
+          >
+            <Box sx={{ mb: 2 }}>
+              {/* COMMENT */}
+              <Box sx={{ display: 'flex', gap: 1.5 }}>
+                <Avatar
                   sx={{
-                    color: 'text.primary',
-                    '&:hover': {
-                      color: 'primary.main',
-                      cursor: 'pointer'
-                    }
+                    width: 32,
+                    height: 32,
+                    fontSize: 13,
+                    bgcolor: 'primary.main',
+                    border: '2px solid',
+                    borderColor: 'background.paper',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
                 >
-                  {comment.author}
-                </Typography>
+                  {comment.avatar}
+                </Avatar>
 
-                <Typography
-                  fontSize={12}
-                  color="text.secondary"
-                  sx={{ fontWeight: 500 }}
-                >
-                  {comment.timestamp}
-                </Typography>
+                <Box sx={{ flex: 1 }}>
+                  {/* HEADER */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                    <Typography
+                      fontWeight={600}
+                      fontSize={14}
+                      sx={{
+                        color: 'text.primary',
+                        '&:hover': {
+                          color: 'primary.main',
+                          cursor: 'pointer'
+                        }
+                      }}
+                    >
+                      {comment.author}
+                    </Typography>
 
-                {comment.userVote !== 0 && (
-                  <Box
+                    <Typography
+                      fontSize={12}
+                      color="text.secondary"
+                      sx={{ fontWeight: 500 }}
+                    >
+                      {comment.timestamp}
+                    </Typography>
+
+                    {comment.userVote !== 0 && (
+                      <Box
+                        sx={{
+                          px: 1,
+                          py: 0.2,
+                          borderRadius: 1,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          backgroundColor: comment.userVote === 1 ? 'success.main' : 'error.main',
+                          color: 'white'
+                        }}
+                      >
+                        {comment.userVote === 1 ? '↑' : '↓'}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* CONTENT */}
+                  <Typography
+                    fontSize={14}
                     sx={{
-                      px: 1,
-                      py: 0.2,
-                      borderRadius: 1,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      backgroundColor: comment.userVote === 1 ? 'success.main' : 'error.main',
-                      color: 'white'
+                      lineHeight: 1.6,
+                      color: 'text.primary',
+                      wordBreak: 'break-word'
                     }}
                   >
-                    {comment.userVote === 1 ? '↑' : '↓'}
-                  </Box>
-                )}
-              </Box>
+                    {comment.content}
+                  </Typography>
 
-              {/* CONTENT */}
-              <Typography
-                fontSize={14}
-                sx={{
-                  lineHeight: 1.6,
-                  color: 'text.primary',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {comment.content}
-              </Typography>
-
-              {/* ACTIONS */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
-                {/* Voting */}
-                <Box sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
-                  borderRadius: 3,
-                  p: 0.5,
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-                  '&:hover': {
-                    backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-                    transform: 'translateY(-1px)'
-                  }
-                }}>
-                  <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5
-                  }}>
-                    <ExpandLessRoundedIcon
-                      sx={{
-                        color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
-                        height: 20,
-                        width: 20,
-                        cursor: 'pointer',
-                        opacity: 1,
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
-                          transform: 'scale(1.1)'
-                        }
-                      }}
-                      onClick={() => handleVote('upvote', comment.id)}
-                    />
-                    <Typography variant='subtitle2' sx={{
-                      color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
-                      fontWeight: comment.userVote !== 0 ? 700 : 500,
-                      fontSize: '0.75rem',
-                      transition: 'all 0.2s ease',
-                      minWidth: '20px',
-                      textAlign: 'center'
+                  {/* ACTIONS */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
+                    {/* Voting */}
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
+                      borderRadius: 3,
+                      p: 0.5,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                      '&:hover': {
+                        backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
+                        transform: 'translateY(-1px)'
+                      }
                     }}>
-                      {comment.net_score}
-                    </Typography>
-                    <ExpandMoreRoundedIcon
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}>
+                        <ExpandLessRoundedIcon
+                          sx={{
+                            color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
+                            height: 20,
+                            width: 20,
+                            cursor: 'pointer',
+                            opacity: 1,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
+                              transform: 'scale(1.1)'
+                            }
+                          }}
+                          onClick={() => handleVote('upvote', comment.id)}
+                        />
+                        <Typography variant='subtitle2' sx={{
+                          color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
+                          fontWeight: comment.userVote !== 0 ? 700 : 500,
+                          fontSize: '0.75rem',
+                          transition: 'all 0.2s ease',
+                          minWidth: '20px',
+                          textAlign: 'center'
+                        }}>
+                          {comment.net_score}
+                        </Typography>
+                        <ExpandMoreRoundedIcon
+                          sx={{
+                            color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
+                            height: 20,
+                            width: 20,
+                            cursor: 'pointer',
+                            opacity: 1,
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              color: comment.userVote === -1 ? '#F44336' : '#F44336',
+                              transform: 'scale(1.1)'
+                            }
+                          }}
+                          onClick={() => handleVote('downvote', comment.id)}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Typography
                       sx={{
-                        color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
-                        height: 20,
-                        width: 20,
+                        fontSize: 12,
+                        color: 'text.secondary',
                         cursor: 'pointer',
-                        opacity: 1,
-                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          color: comment.userVote === -1 ? '#F44336' : '#F44336',
-                          transform: 'scale(1.1)'
+                          color: 'primary.main'
+                        },
+                        transition: 'color 0.2s ease'
+                      }}
+                      onClick={() =>
+                        setReplyingTo(
+                          replyingTo === comment.id ? null : comment.id
+                        )
+                      }
+                    >
+                      Reply
+                    </Typography>
+
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: 'text.secondary',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: 'primary.main'
+                        },
+                        transition: 'color 0.2s ease'
+                      }}
+                    >
+                      Share
+                    </Typography>
+
+                    <IconButton
+                      size="small"
+                      sx={{
+                        color: 'text.secondary',
+                        '&:hover': {
+                          color: 'primary.main',
+                          backgroundColor: 'action.hover'
                         }
                       }}
-                      onClick={() => handleVote('downvote', comment.id)}
-                    />
+                    >
+                      <MoreHorizIcon fontSize="small" />
+                    </IconButton>
                   </Box>
                 </Box>
-
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    color: 'text.secondary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      color: 'primary.main'
-                    },
-                    transition: 'color 0.2s ease'
-                  }}
-                  onClick={() =>
-                    setReplyingTo(
-                      replyingTo === comment.id ? null : comment.id
-                    )
-                  }
-                >
-                  Reply
-                </Typography>
-
-                <Typography
-                  sx={{
-                    fontSize: 12,
-                    color: 'text.secondary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      color: 'primary.main'
-                    },
-                    transition: 'color 0.2s ease'
-                  }}
-                >
-                  Share
-                </Typography>
-
-                <IconButton
-                  size="small"
-                  sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                      color: 'primary.main',
-                      backgroundColor: 'action.hover'
-                    }
-                  }}
-                >
-                  <MoreHorizIcon fontSize="small" />
-                </IconButton>
-
               </Box>
+            </Box>
+          </Slide>
+        ) : (
+          /* REGULAR COMMENT WITHOUT SLIDE */
+          <Box sx={{ mb: 2 }}>
+            {/* COMMENT */}
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  fontSize: 13,
+                  bgcolor: 'primary.main',
+                  border: '2px solid',
+                  borderColor: 'background.paper',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                {comment.avatar}
+              </Avatar>
 
-              {/* VIEW REPLIES */}
-              {comment.replies?.length > 0 && !showReplies && (
-                <Button
-                  onClick={() => toggleReplies(comment.id)}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: 12,
-                    mt: 1.5,
-                    color: 'primary.main',
-                    fontWeight: 500,
-                    px: 0,
-                    justifyContent: 'flex-start',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: 'primary.dark'
-                    }
-                  }}
-                >
-                  {comment.replies.length === 1 ? 'View reply' : `View ${comment.replies.length} replies`}
-                </Button>
-              )}
-
-              {/* REPLIES */}
-              {showReplies && (
-                <Box
-                  sx={{
-                    borderLeft: '2px solid',
-                    borderColor: 'divider',
-                    pl: 2,
-                    mt: 2
-                  }}
-                >
-
-                  {comment.replies.map(reply => (
-                    <CommentItem
-                      key={reply.id}
-                      comment={reply}
-                      depth={depth + 1}
-                    />
-                  ))}
-
-                  <Button
-                    onClick={() => toggleReplies(comment.id)}
+              <Box sx={{ flex: 1 }}>
+                {/* HEADER */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Typography
+                    fontWeight={600}
+                    fontSize={14}
                     sx={{
-                      textTransform: 'none',
-                      fontSize: 12,
-                      mt: 1,
-                      color: 'text.secondary',
-                      px: 0,
-                      justifyContent: 'flex-start',
+                      color: 'text.primary',
                       '&:hover': {
-                        backgroundColor: 'transparent',
-                        color: 'primary.main'
+                        color: 'primary.main',
+                        cursor: 'pointer'
                       }
                     }}
                   >
-                    Hide replies
-                  </Button>
+                    {comment.author}
+                  </Typography>
+
+                  <Typography
+                    fontSize={12}
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {comment.timestamp}
+                  </Typography>
+
+                  {comment.userVote !== 0 && (
+                    <Box
+                      sx={{
+                        px: 1,
+                        py: 0.2,
+                        borderRadius: 1,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        backgroundColor: comment.userVote === 1 ? 'success.main' : 'error.main',
+                        color: 'white'
+                      }}
+                    >
+                      {comment.userVote === 1 ? '↑' : '↓'}
+                    </Box>
+                  )}
+                </Box>
+
+                {/* CONTENT */}
+                <Typography
+                  fontSize={14}
+                  sx={{
+                    lineHeight: 1.6,
+                    color: 'text.primary',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {comment.content}
+                </Typography>
+
+                {/* ACTIONS */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
+                  {/* Voting */}
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
+                    borderRadius: 3,
+                    p: 0.5,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                    '&:hover': {
+                      backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
+                      transform: 'translateY(-1px)'
+                    }
+                  }}>
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5
+                    }}>
+                      <ExpandLessRoundedIcon
+                        sx={{
+                          color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
+                          height: 20,
+                          width: 20,
+                          cursor: 'pointer',
+                          opacity: 1,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
+                            transform: 'scale(1.1)'
+                          }
+                        }}
+                        onClick={() => handleVote('upvote', comment.id)}
+                      />
+                      <Typography variant='subtitle2' sx={{
+                        color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
+                        fontWeight: comment.userVote !== 0 ? 700 : 500,
+                        fontSize: '0.75rem',
+                        transition: 'all 0.2s ease',
+                        minWidth: '20px',
+                        textAlign: 'center'
+                      }}>
+                        {comment.net_score}
+                      </Typography>
+                      <ExpandMoreRoundedIcon
+                        sx={{
+                          color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
+                          height: 20,
+                          width: 20,
+                          cursor: 'pointer',
+                          opacity: 1,
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            color: comment.userVote === -1 ? '#F44336' : '#F44336',
+                            transform: 'scale(1.1)'
+                          }
+                        }}
+                        onClick={() => handleVote('downvote', comment.id)}
+                      />
+                    </Box>
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: 'text.secondary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main'
+                      },
+                      transition: 'color 0.2s ease'
+                    }}
+                    onClick={() =>
+                      setReplyingTo(
+                        replyingTo === comment.id ? null : comment.id
+                      )
+                    }
+                  >
+                    Reply
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: 'text.secondary',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main'
+                      },
+                      transition: 'color 0.2s ease'
+                    }}
+                  >
+                    Share
+                  </Typography>
+
+                  <IconButton
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      '&:hover': {
+                        color: 'primary.main',
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <MoreHorizIcon fontSize="small" />
+                  </IconButton>
 
                 </Box>
-              )}
-
+              </Box>
             </Box>
           </Box>
-        </Box>
-      </Slide>
+        )}
+
+        {/* VIEW REPLIES */}
+        {comment.replies?.length > 0 && !showReplies && (
+          <Button
+            onClick={() => toggleReplies(comment.id)}
+            sx={{
+              textTransform: 'none',
+              fontSize: 12,
+              mt: 1.5,
+              color: 'primary.main',
+              fontWeight: 500,
+              px: 0,
+              justifyContent: 'flex-start',
+              '&:hover': {
+                backgroundColor: 'transparent',
+                color: 'primary.dark'
+              }
+            }}
+          >
+            {comment.replies.length === 1 ? 'View reply' : `View ${comment.replies.length} replies`}
+          </Button>
+        )}
+
+        {/* REPLIES */}
+        {showReplies && (
+          <Box
+            sx={{
+              borderLeft: '2px solid',
+              borderColor: 'divider',
+              pl: 2,
+              mt: 2
+            }}
+          >
+
+            {comment.replies.map(reply => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                depth={depth + 1}
+              />
+            ))}
+
+            <Button
+              onClick={() => toggleReplies(comment.id)}
+              sx={{
+                textTransform: 'none',
+                fontSize: 12,
+                mt: 1,
+                color: 'text.secondary',
+                px: 0,
+                justifyContent: 'flex-start',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  color: 'primary.main'
+                }
+              }}
+            >
+              Hide replies
+            </Button>
+
+          </Box>
+        )}
+      </Box>
     );
   };
 
@@ -453,24 +611,46 @@ const CommentPanel = ({ threadId }) => {
       </Box>
       {/* COMMENTS */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {comments.map((comment, index) => (
-          <Box key={comment.id}>
-            <CommentItem
-              comment={comment}
-              depth={0}
-            />
-            {index < comments.length - 1 && (
-              <Divider
-                sx={{
-                  mt: 2,
-                  mb: 1,
-                  borderColor: 'divider',
-                  opacity: 0.6
-                }}
+        {loading ? (
+          // Show skeleton loaders when loading
+          <>
+            {Array.from({ length: comments.length || 3 }, (_, index) => (
+              <Box key={index}>
+                <CommentSkeleton />
+                {index < (comments.length || 3) - 1 && (
+                  <Divider
+                    sx={{
+                      mt: 2,
+                      mb: 1,
+                      borderColor: 'divider',
+                      opacity: 0.6
+                    }}
+                  />
+                )}
+              </Box>
+            ))}
+          </>
+        ) : (
+          // Show actual comments when loaded
+          comments.map((comment, index) => (
+            <Box key={comment.id}>
+              <CommentItem
+                comment={comment}
+                depth={0}
               />
-            )}
-          </Box>
-        ))}
+              {index < comments.length - 1 && (
+                <Divider
+                  sx={{
+                    mt: 2,
+                    mb: 1,
+                    borderColor: 'divider',
+                    opacity: 0.6
+                  }}
+                />
+              )}
+            </Box>
+          ))
+        )}
       </Box>
 
       <Divider sx={{ mb: 2, borderColor: 'divider' }} />

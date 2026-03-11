@@ -245,7 +245,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         alignItems: 'center', // This centers everything on the X-axis
         px: 2,
         py: 1,
-        border: '1px solid rgba(255,255,255,0.1)'
+        // border: '1px solid rgba(255,255,255,0.1)'
       }}
     >
       {/* Logo */}
@@ -262,9 +262,9 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               display: 'block' // Always visible
             }}
           >
-            THREAD
+            SPAC
             <Box component="span" sx={{ color: 'primary.main' }}>
-              LY
+              E
             </Box>
           </Typography>
         </Box>

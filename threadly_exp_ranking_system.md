@@ -1,8 +1,8 @@
-# Threadly Experience & Ranking System
+# Space Experience & Ranking System
 
 ## 1. Overview
 
-Threadly rewards users for community participation through an **Experience (EXP) system**.  
+Space rewards users for community participation through an **Experience (EXP) system**.  
 EXP is earned for positive contributions and can be lost through **moderation, rule violations, or excessive downvotes**.  
 
 - **EXP** → tracks activity and contribution; can increase or decrease.  

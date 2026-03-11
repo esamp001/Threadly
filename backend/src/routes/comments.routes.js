@@ -59,4 +59,44 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET - Fetch comments for a thread
+router.get('/', async (req, res) => {
+  const { thread_id } = req.query;
+
+  let comments = [];
+  let error_message = '';
+  let status = 200;
+  let success = true;
+
+  try {
+    // Fetch comments for the specific thread
+    const threadComments = await knex('comments')
+      .where('thread_id', thread_id)
+      .where('parent_id', null) // Only top-level comments
+      .orderBy('created_at', 'asc');
+
+    // Format each comment
+    comments = threadComments.map(comment => ({
+      ...comment,
+      author: 'Sarah Johnson', // Temporary until users table
+      avatar: 'S',
+      timestamp: formatRelativeTime(comment.created_at),
+      userVote: 0,
+      replies: [] // TODO: Fetch nested replies in future
+    }));
+
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  }
+
+  res.status(status).json({
+    success,
+    status,
+    error_message,
+    comments
+  });
+});
+
 module.exports = router;

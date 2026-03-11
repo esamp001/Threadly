@@ -1,7 +1,7 @@
-# About Threadly
-Threadly is a social media platform that allows users to share their thoughts and ideas with the world. It is built using React, Node.js, and PostgreSQL.
+# About Space
+Space is a social media platform that allows users to share their thoughts and ideas with the world. It is built using React, Node.js, and PostgreSQL.
 
-# Threadly Development Guide
+# Space Development Guide
 
 # Quick Start with Docker
 
@@ -16,7 +16,7 @@ This setup allows you to run the application with environment variables on any m
 1. **Clone the repository:**
 ```bash
 git clone <your-repo-url>
-cd Threadly
+cd Space
 ```
 
 2. **Create environment file:**
@@ -84,7 +84,7 @@ This setup ensures anyone can clone your repo, create a simple `.env` file, and 
 ## Project Structure
 
 ```
-Threadly/
+Space/
 ├── docker/
 │   └── docker-compose.yml
 ├── backend/

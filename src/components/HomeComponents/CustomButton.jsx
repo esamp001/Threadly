@@ -11,12 +11,12 @@ const CustomButton = ({ children, fetchOnclick }) => (
       border: '3px solid white',
       letterSpacing: '0.05rem',
       textTransform: 'none',
-      bgcolor: 'primary.light',
+      // bgcolor: 'primary.light',
       boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
     }}
     variant='contained'
   >
-    <Typography variant='subtitle1' sx={{ fontWeight: 300 }}>
+    <Typography variant='subtitle1' sx={{ fontWeight: 300, color: 'text.primary' }}>
       {children}
     </Typography>
   </Button>

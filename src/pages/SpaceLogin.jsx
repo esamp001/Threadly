@@ -1,10 +1,63 @@
 // import React from 'react'
+import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Button, Grid, Typography } from '@mui/material';
+import { signInWithPopup } from 'firebase/auth';
+import { useState } from 'react';
 import Space from "../assets/space.png";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
+import { useAuth } from '../context/AuthContext/AuthContext';
+import { auth, googleProvider } from '../firebase';
 
 const SpaceLogin = () => {
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  })
+
+  console.log(formData, "formData")
+
+
+  // Helper Function
+  const onChangeTextField = (field, value) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    })
+  }
+
+  const handleGoogleLogin = async () => {
+    try {
+      console.log("Google login clicked");
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Send user data to your backend
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        })
+      });
+
+      const { token, userData } = await response.json();
+
+      // Use context to set user
+      login(userData, token);
+
+      // Redirect
+      window.location.href = '/home';
+
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  };
+
   return (
     <Grid container sx={{ height: '100vh', bgcolor: 'background.default' }}>
       {/* Left Illustration Section */}
@@ -144,6 +197,8 @@ const SpaceLogin = () => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Email Field */}
             <LoginTextField
+              value={formData.email}
+              onChange={(e) => onChangeTextField('email', e.target.value)}
               label="Username or Email"
               placeholder="commander@space.io"
               type="email"
@@ -152,6 +207,8 @@ const SpaceLogin = () => {
 
             {/* Password Field */}
             <LoginTextField
+              value={formData.password}
+              onChange={(e) => onChangeTextField('password', e.target.value)}
               label="Password"
               placeholder="••••••••"
               type="password"
@@ -224,8 +281,9 @@ const SpaceLogin = () => {
               <Box sx={{ flex: 1, borderTop: '1px solid rgba(255, 255, 255, 0.3)' }} />
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2, mt: 3 }}>
               <Button
+                onClick={handleGoogleLogin}
                 variant="outlined"
                 sx={{
                   bgcolor: 'background.paper',
@@ -238,10 +296,12 @@ const SpaceLogin = () => {
                     bgcolor: 'background.paper'
                   }
                 }}
+                startIcon={<GoogleIcon />}
               >
                 Google
               </Button>
-              <Button
+            </Box>
+            {/* <Button
                 variant="outlined"
                 sx={{
                   bgcolor: 'background.paper',
@@ -256,8 +316,8 @@ const SpaceLogin = () => {
                 }}
               >
                 Apple
-              </Button>
-            </Box>
+              </Button> */}
+            {/* </Box> */}
           </Box>
 
           {/* Footer Links */}
@@ -290,7 +350,7 @@ const SpaceLogin = () => {
           </Box>
         </Box>
       </Grid>
-    </Grid>
+    </Grid >
   )
 }
 

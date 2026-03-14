@@ -1,29 +1,33 @@
 module.exports.up = async (knex) => {
-  await knex.schema.createTable('scores', (table) => {
-    table.increments('id').primary();
+  const hasScoresTable = await knex.schema.hasTable('scores');
 
-    table.integer('user_id').notNullable();
+  if (!hasScoresTable) {
+    await knex.schema.createTable('scores', (table) => {
+      table.increments('id').primary();
 
-    table.integer('thread_id')
-      .unsigned()
-      .notNullable()
-      .references('id')
-      .inTable('threads')
-      .onDelete('CASCADE');
+      table.integer('user_id').notNullable();
 
-    // 1 = upvote
-    // -1 = downvote
-    table.integer('vote_type').notNullable();
+      table.integer('thread_id')
+        .unsigned()
+        .notNullable()
+        .references('id')
+        .inTable('threads')
+        .onDelete('CASCADE');
 
-    table.timestamp('created_at').defaultTo(knex.fn.now());
+      // 1 = upvote
+      // -1 = downvote
+      table.integer('vote_type').notNullable();
 
-    // Prevent double voting
-    table.unique(['user_id', 'thread_id']);
+      table.timestamp('created_at').defaultTo(knex.fn.now());
 
-    // Performance indexes
-    table.index('thread_id');
-    table.index('user_id');
-  });
+      // Prevent double voting
+      table.unique(['user_id', 'thread_id']);
+
+      // Performance indexes
+      table.index('thread_id');
+      table.index('user_id');
+    });
+  }
 };
 
 module.exports.down = async (knex) => {

@@ -17,10 +17,12 @@ const cloudinary = require('./routes/cloudinary');
 const header = require('./routes/header.routes');
 const maincontent = require('./routes/maincontent.routes');
 const comments = require('./routes/comments.routes');
+const auth = require('./routes/auth.routes');
 
 app.use('/api/cloudinary', cloudinary);
 app.use('/api/header', header);
 app.use('/api/maincontent', maincontent);
 app.use('/api/comments', comments);
+app.use('/api/auth', auth);
 
 module.exports = app;

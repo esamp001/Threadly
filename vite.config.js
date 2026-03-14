@@ -12,4 +12,16 @@ export default defineConfig({
       },
     },
   },
+  // Add this for production routing
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  // Handle client-side routing in production
+  preview: {
+    historyApiFallback: true,
+  },
 })

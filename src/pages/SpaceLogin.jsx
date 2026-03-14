@@ -47,6 +47,10 @@ const SpaceLogin = () => {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const { token, userData } = await response.json();
 
       // Use context to set user

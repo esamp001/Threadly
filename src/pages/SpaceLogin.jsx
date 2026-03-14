@@ -47,9 +47,15 @@ const SpaceLogin = () => {
         })
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
 
       const { token, userData } = await response.json();
 

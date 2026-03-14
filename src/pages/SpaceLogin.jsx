@@ -3,6 +3,7 @@ import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Space from "../assets/space.png";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
@@ -11,6 +12,7 @@ import { auth, googleProvider } from '../firebase';
 
 const SpaceLogin = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -51,7 +53,7 @@ const SpaceLogin = () => {
       login(userData, token);
 
       // Redirect
-      window.location.href = '/home';
+      navigate('/home');
 
     } catch (error) {
       console.error('Login error:', error);

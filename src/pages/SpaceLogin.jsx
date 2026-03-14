@@ -29,14 +29,56 @@ const SpaceLogin = () => {
     })
   }
 
+  // const handleGoogleLogin = async () => {
+  //   try {
+  //     console.log("Google login clicked");
+  //     const result = await signInWithPopup(auth, googleProvider);
+  //     const user = result.user;
+
+  //     // Send user data to your backend
+  //     const response = await fetch('/api/auth/google', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         uid: user.uid,
+  //         email: user.email,
+  //         displayName: user.displayName,
+  //         photoURL: user.photoURL
+  //       })
+  //     });
+
+  //     console.log('Response status:', response);
+  //     // console.log('Response headers:', response);
+
+  //     const { token, userData } = await response.json();
+
+  //     console.log('Token:', token);
+  //     console.log('User Data:', userData);
+  //     // // Use context to set user
+  //     // login(userData, token);
+
+  //     // Redirect
+  //     console.log('About to navigate to home...');
+  //     navigate('/home');
+  //     console.log('Navigate call completed');
+
+  //   } catch (error) {
+  //     console.error('Login error:', error);
+  //   }
+  // };
+
+
   const handleGoogleLogin = async () => {
     try {
       console.log("Google login clicked");
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Send user data to your backend
-      const response = await fetch('/api/auth/google', {
+      // Use the same API URL as AuthContext
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      console.log('Calling API at:', apiUrl);
+
+      const response = await fetch(`${apiUrl}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -47,17 +89,19 @@ const SpaceLogin = () => {
         })
       });
 
-      console.log('Response status:', response);
-      // console.log('Response headers:', response);
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const { token, userData } = await response.json();
-
       console.log('Token:', token);
       console.log('User Data:', userData);
-      // // Use context to set user
-      // login(userData, token);
 
-      // Redirect
+      login(userData, token);
+
       console.log('About to navigate to home...');
       navigate('/home');
       console.log('Navigate call completed');

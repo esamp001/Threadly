@@ -47,23 +47,24 @@ const SpaceLogin = () => {
         })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      console.log('Response status:', response);
+      // console.log('Response headers:', response);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-
       const { token, userData } = await response.json();
 
+      console.log('Token:', token);
+      console.log('User Data:', userData);
       // Use context to set user
       login(userData, token);
 
       // Redirect
+      console.log('About to navigate to home...');
       navigate('/home');
+      console.log('Navigate call completed');
 
     } catch (error) {
       console.error('Login error:', error);

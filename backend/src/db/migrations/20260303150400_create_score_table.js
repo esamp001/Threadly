@@ -27,5 +27,8 @@ module.exports.up = async (knex) => {
 };
 
 module.exports.down = async (knex) => {
-  await knex.schema.dropTable('scores');
+  const hasScoresTable = await knex.schema.hasTable('scores');
+  if (hasScoresTable) {
+    await knex.schema.dropTable('scores');
+  }
 };

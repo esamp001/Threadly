@@ -326,35 +326,6 @@ const SpaceLogin = () => {
               </Button> */}
             {/* </Box> */}
           </Box>
-
-          {/* Footer Links */}
-          <Box sx={{ textAlign: 'center', pt: 4, borderTop: `1px solid ${theme => theme.palette.divider}`, mt: 4 }}>
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontSize: '0.875rem', fontWeight: 'medium' }}
-            >
-              New to the universe?{' '}
-              <Button
-                variant="text"
-                sx={{
-                  color: 'text.primary',
-                  textTransform: 'none',
-                  p: 0,
-                  minWidth: 'auto',
-                  fontWeight: 'medium',
-                  textDecoration: 'underline',
-                  textDecorationColor: 'primary.main',
-                  textDecorationThickness: 2,
-                  textUnderlineOffset: 4,
-                  '&:hover': {
-                    color: 'primary.main'
-                  }
-                }}
-              >
-                Create an account
-              </Button>
-            </Typography>
-          </Box>
         </Box>
       </Grid>
     </Grid >

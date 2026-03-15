@@ -7,18 +7,15 @@ import Header from '../components/HomeComponents/Header'
 import LeftContent from '../components/HomeComponents/LeftContent'
 import MainContent from '../components/HomeComponents/MainContent'
 import RightContent from '../components/HomeComponents/RightContent'
-import { useAuth } from '../context/AuthContext/AuthContext'
+
 
 const Home = () => {
   const [openDrawer, setOpenDrawer] = useState(false)
-  const { user } = useAuth();
-
   const [spaces, setSpaces] = useState([]) // Move spaces state here
 
   const addNewSpace = (newSpace) => {
     setSpaces(prev => [newSpace, ...prev]) // Add new space to the beginning
   }
-  console.log('Current logged-in user:', user);
 
   return (
     <>

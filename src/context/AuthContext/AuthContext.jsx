@@ -5,7 +5,6 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  console.log(user, "user")
   const [loading, setLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
@@ -25,13 +24,16 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
-      console.log('Responsexxxs:', response);
-
-      if (response) {
+      if (response.ok) {
         const data = await response.json();
-        console.log('Data:', data);
-        setUser(data.user);
+        if (data.success) {
+          setUser(data.user);
+        } else {
+          console.error('Backend error:', data.error);
+          localStorage.removeItem('token');
+        }
       } else {
+        console.error('HTTP error:', response.status);
         localStorage.removeItem('token');
       }
     } catch (error) {

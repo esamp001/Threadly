@@ -22,20 +22,31 @@ const authenticateToken = (req, res, next) => {
 
 // Get current user context
 router.get('/context', authenticateToken, async (req, res) => {
+
+  let user = [];
+  let error_message = '';
+  let success = true;
+  let status = 200;
+
   try {
-    const user = await db('users')
+    user = await db('users')
       .select('id', 'email', 'username', 'bio', 'avatar_url', 'is_active', 'created_at')
       .where('id', req.user.userId)
       .first();
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      success = false;
+      error_message = 'User not found';
+      status = 404;
     }
 
-    res.json({ user });
   } catch (error) {
     console.error('Error fetching user context:', error);
-    res.status(500).json({ error: 'Failed to fetch user data' });
+    success = false;
+    error_message = 'Failed to fetch user data';
+    status = 500;
+  } finally {
+    res.status(status).json({ success, error: error_message, user });
   }
 });
 
@@ -45,9 +56,11 @@ router.post('/google', async (req, res) => {
   try {
     // Check if user exists
     let user = await db('users').where({ email }).first();
+    let isNewUser = false;
 
     if (!user) {
       // Create new user
+      isNewUser = true;
       [user] = await db('users').insert({
         firebase_uid: uid,
         email,
@@ -60,7 +73,11 @@ router.post('/google', async (req, res) => {
     // Generate JWT token
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
 
-    res.json({ token, userData: { ...user, password: null } });
+    res.json({
+      token,
+      userData: { ...user, password: null },
+      isNewUser
+    });
   } catch (error) {
     console.error('Authentication failed:', error);
     res.status(500).json({ error: 'Authentication failed' });

@@ -4,7 +4,7 @@ import { Box, Button, Grid, Typography } from '@mui/material';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Space from "../assets/space.png";
+import Space from "../assets/space-astro.svg";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
 import { useAuth } from '../context/AuthContext/AuthContext';

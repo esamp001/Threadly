@@ -1,11 +1,12 @@
 import CasinoIcon from '@mui/icons-material/Casino'
-import { Avatar, Box, Button, LinearProgress, Paper, TextField, Typography } from '@mui/material'
+import { Avatar, Box, Button, CircularProgress, IconButton, InputAdornment, LinearProgress, Paper, TextField, Tooltip, Typography } from '@mui/material'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator'
 import welcomeSpace from '../../assets/welcome-space.svg'
 import { useAuth } from '../../context/AuthContext/AuthContext'
 import { generateAvatar } from '../../utils/avatarGenerator'
+import CustomButton from '../HomeComponents/CustomButton'
 
 const generateRandomUsername = () => {
   const randomName = uniqueNamesGenerator({
@@ -13,7 +14,7 @@ const generateRandomUsername = () => {
     separator: '_',
     style: 'lowerCase'
   })
-  return `u/${randomName}`
+  return randomName
 }
 
 const CardOnboarding = () => {
@@ -36,6 +37,7 @@ const CardOnboarding = () => {
     mouth: ['variant01', 'variant02', 'variant03']
   })
   const [finalAvatarUrl, setFinalAvatarUrl] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const steps = [
     'Welcome to Space',
@@ -122,6 +124,16 @@ const CardOnboarding = () => {
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1)
   }
+
+  const generateRandomAvatar = () => {
+    if (isGenerating) return;
+
+    setIsGenerating(true);
+    const newAvatarSeed = Math.random().toString(36).substring(2, 15);
+    setAvatarSeed(newAvatarSeed);
+
+    setTimeout(() => setIsGenerating(false), 100);
+  };
 
   // Functions
   const getStepContent = (step) => {
@@ -278,80 +290,131 @@ const CardOnboarding = () => {
 
             {/* Random Avatar */}
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-              <Button
-                variant="outlined"
-                startIcon={<CasinoIcon />}
-                onClick={() => {
-                  const newAvatarSeed = Math.random().toString(36).substring(2, 15);
-                  setAvatarSeed(newAvatarSeed);
-                }}
-                sx={{
-                  textTransform: 'none',
-                  borderRadius: 3
-                }}
-              >
-                Random Avatar
-              </Button>
+              <CustomButton
+                children={isGenerating ? "Generating..." : "Random Avatar"}
+                onClick={generateRandomAvatar}
+                startIcon={isGenerating ? <CircularProgress size={20} /> : <CasinoIcon />}
+                disabled={isGenerating}
+              />
             </Box>
 
             {/* Gender Selection */}
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  mb: 1,
+                  color: 'text.primary',
+                }}
+              >
                 Gender
               </Typography>
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  fullWidth
+              <Box sx={{
+                display: 'flex',
+                gap: 2,
+                justifyContent: 'center',
+                mt: 1
+              }}>
+                <CustomButton
+                  children="Male"
                   variant={avatarOptions.gender === 'male' ? 'contained' : 'outlined'}
-                  onClick={() =>
-                    setAvatarOptions({ ...avatarOptions, gender: 'male' })
-                  }
-                  sx={{ borderRadius: 2 }}
-                >
-                  Male
-                </Button>
+                  onClick={() => setAvatarOptions({ ...avatarOptions, gender: 'male' })}
+                  sx={{
+                    borderRadius: 3,
+                    width: '45%',
+                    py: 1.5,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: avatarOptions.gender === 'male' ? 4 : 2
+                    }
+                  }}
+                />
 
-                <Button
-                  fullWidth
+                <CustomButton
+                  children="Female"
                   variant={avatarOptions.gender === 'female' ? 'contained' : 'outlined'}
-                  onClick={() =>
-                    setAvatarOptions({ ...avatarOptions, gender: 'female' })
-                  }
-                  sx={{ borderRadius: 2 }}
-                >
-                  Female
-                </Button>
+                  onClick={() => setAvatarOptions({ ...avatarOptions, gender: 'female' })}
+                  sx={{
+                    borderRadius: 3,
+                    width: '45%',
+                    py: 1.5,
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: avatarOptions.gender === 'female' ? 4 : 2
+                    }
+                  }}
+                />
               </Box>
             </Box>
 
             {/* Username */}
             <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Username
-              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 1,
+                    color: 'text.primary'
+                  }}
+                >
+                  Choose Username
+                </Typography>
 
-              <TextField
-                fullWidth
-                placeholder="Choose a username"
-                variant="outlined"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <Button
-                      onClick={() => setUsername(generateRandomUsername())}
-                      sx={{
-                        minWidth: 36,
-                        p: 1,
-                        borderRadius: 2
-                      }}
-                    >
-                      <CasinoIcon />
-                    </Button>
-                  )
-                }}
-              />
+                <TextField
+                  fullWidth
+                  placeholder="username"
+                  variant="outlined"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      fontSize: "0.95rem",
+                    }
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Typography
+                          sx={{
+                            fontWeight: 500,
+                            color: "text.secondary",
+                            fontSize: "0.9rem"
+                          }}
+                        >
+                          u/
+                        </Typography>
+                      </InputAdornment>
+                    ),
+
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setUsername(generateRandomUsername())}
+                          sx={{
+                            color: "text.secondary",
+                            "&:hover": {
+                              backgroundColor: "action.hover"
+                            }
+                          }}
+                        >
+                          <Tooltip title="Generate random username" placement="top">
+                            <CasinoIcon fontSize="small" />
+                          </Tooltip>
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
         )}

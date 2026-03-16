@@ -1,8 +1,9 @@
 import { Button, Typography } from '@mui/material'
 
-const CustomButton = ({ children, fetchOnclick }) => (
+const CustomButton = ({ children, fetchOnclick, startIcon, onClick }) => (
   <Button
-    onClick={fetchOnclick}
+    onClick={onClick || fetchOnclick}
+    startIcon={startIcon}
     sx={{
       borderRadius: 7,
       typography: 'button',

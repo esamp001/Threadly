@@ -1,7 +1,11 @@
 // import React from 'react'
 import FacebookIcon from '@mui/icons-material/Facebook';
 import GoogleIcon from '@mui/icons-material/Google';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Box, Button, Grid, Typography } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,15 +13,22 @@ import Space from "../assets/space-astro.svg";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
 import { useAuth } from '../context/AuthContext/AuthContext';
+import { useSnackbar } from '../context/SnackbarContext';
 import { auth, facebookProvider, googleProvider } from '../firebase';
 
 const SpaceLogin = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { showSnackbar } = useSnackbar();
+
+  // States
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
+
+  console.log(formData, "setFormData")
 
   // Helper Function
   const onChangeTextField = (field, value) => {
@@ -26,6 +37,8 @@ const SpaceLogin = () => {
       [field]: value
     })
   }
+
+  const handleClickShowPassword = () => setShowPassword(!showPassword);
 
   const handleGoogleLogin = async () => {
     try {
@@ -102,6 +115,41 @@ const SpaceLogin = () => {
     } catch (error) {
       console.error('Facebook login error:', error);
       // Handle error (show message to user)
+    }
+  };
+
+  const handleSpaceLogin = async () => {
+    try {
+      // Validate form data
+      if (!formData.email || !formData.password) {
+        showSnackbar('Please fill in all fields', 'error');
+        return;
+      }
+
+      // Call your login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { token, userData, isNewUser } = await response.json();
+
+      login(userData, token);
+
+      // Conditional redirect based on whether it's a first-time user
+      if (isNewUser) {
+        navigate('/onboarding');
+      } else {
+        navigate('/home');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      showSnackbar('Login failed. Please try again.', 'error');
     }
   };
 
@@ -246,7 +294,7 @@ const SpaceLogin = () => {
             <LoginTextField
               value={formData.email}
               onChange={(e) => onChangeTextField('email', e.target.value)}
-              label="Username or Email"
+              label="Email"
               placeholder="commander@space.io"
               type="email"
             />
@@ -257,32 +305,28 @@ const SpaceLogin = () => {
               value={formData.password}
               onChange={(e) => onChangeTextField('password', e.target.value)}
               label="Password"
-              placeholder="••••••••"
-              type="password"
-              rightAction={
-                <Button
-                  variant="text"
-                  sx={{
-                    fontSize: '0.75rem',
-                    color: 'text.secondary',
-                    textTransform: 'none',
-                    fontWeight: 'medium',
-                    p: 0,
-                    minWidth: 'auto',
-                    '&:hover': {
-                      color: 'primary.main'
-                    }
-                  }}
-                >
-                  Forgot password?
-                </Button>
-              }
+              placeholder="•••••••"
+              type={showPassword ? 'text' : 'password'}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end" sx={{ mr: 2 }}>
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                      sx={{ padding: 0.5 }}
+                    >
+                      {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
 
             {/* Submit Button */}
             <CustomButton
               children="Log In"
-            // onClick={() => {}}
+              fetchOnclick={handleSpaceLogin}
             />
           </Box>
 

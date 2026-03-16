@@ -5,9 +5,8 @@ import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSnackbar } from '../../context/SnackbarContext';
-import TextFieldThreadly from './TextFieldThreadly';
-// Add this import at the top with your other imports
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
+import TextFieldThreadly from './TextFieldThreadly';
 
 const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();

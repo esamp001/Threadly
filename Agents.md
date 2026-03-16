@@ -16,3 +16,7 @@ Space is a social media platform built with React, Node.js, and PostgreSQL.
 - Use ES modules (import/export)
 - Follow the existing file structure and component organization
 - Follow consistent naming conventions (camelCase for JS, snake_case for DB)
+
+
+## Privacy Policy
+https://www.termsfeed.com/live/259c2212-361f-4406-b8ea-806fa0e708a4

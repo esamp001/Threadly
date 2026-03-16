@@ -1,4 +1,5 @@
 // import React from 'react'
+import FacebookIcon from '@mui/icons-material/Facebook';
 import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { signInWithPopup } from 'firebase/auth';
@@ -8,7 +9,7 @@ import Space from "../assets/space-astro.svg";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
 import { useAuth } from '../context/AuthContext/AuthContext';
-import { auth, googleProvider } from '../firebase';
+import { auth, facebookProvider, googleProvider } from '../firebase';
 
 const SpaceLogin = () => {
   const { login } = useAuth();
@@ -62,6 +63,45 @@ const SpaceLogin = () => {
 
     } catch (error) {
       console.error('Login error:', error);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      const user = result.user;
+
+      // Use the same API URL as AuthContext
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+      const response = await fetch(`${apiUrl}/api/auth/facebook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { token, userData, isNewUser } = await response.json();
+
+      login(userData, token);
+
+      // Conditional redirect based on whether it's a first-time user
+      if (isNewUser) {
+        navigate('/onboarding');
+      } else {
+        navigate('/home');
+      }
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      // Handle error (show message to user)
     }
   };
 
@@ -240,28 +280,6 @@ const SpaceLogin = () => {
             />
 
             {/* Submit Button */}
-            {/* <Button
-              fullWidth
-              variant="contained"
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'text.primary',
-                fontWeight: 'bold',
-                py: 2,
-                borderRadius: '28px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                fontSize: '0.875rem',
-                '&:hover': {
-                  bgcolor: 'primary.dark'
-                },
-                '&:active': {
-                  transform: 'scale(0.98)'
-                }
-              }}
-            >
-              Log In
-            </Button> */}
             <CustomButton
               children="Log In"
             // onClick={() => {}}
@@ -288,11 +306,13 @@ const SpaceLogin = () => {
               <Box sx={{ flex: 1, borderTop: '1px solid rgba(255, 255, 255, 0.3)' }} />
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2, mt: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+              {/* Google */}
               <Button
                 onClick={handleGoogleLogin}
                 variant="outlined"
                 sx={{
+                  flex: 1, // This makes the button take up equal space
                   bgcolor: 'background.paper',
                   border: `1px solid ${theme => theme.palette.divider}`,
                   color: 'text.primary',
@@ -307,10 +327,12 @@ const SpaceLogin = () => {
               >
                 Google
               </Button>
-            </Box>
-            {/* <Button
+              {/* Facebook */}
+              <Button
+                onClick={handleFacebookLogin}
                 variant="outlined"
                 sx={{
+                  flex: 1, // This makes the button take up equal space
                   bgcolor: 'background.paper',
                   border: `1px solid ${theme => theme.palette.divider}`,
                   color: 'text.primary',
@@ -321,10 +343,11 @@ const SpaceLogin = () => {
                     bgcolor: 'background.paper'
                   }
                 }}
+                startIcon={<FacebookIcon />}
               >
-                Apple
-              </Button> */}
-            {/* </Box> */}
+                Facebook
+              </Button>
+            </Box>
           </Box>
         </Box>
       </Grid>

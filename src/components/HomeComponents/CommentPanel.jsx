@@ -18,10 +18,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 const CommentPanel = ({ threadId }) => {
   const API_URL = import.meta.env.VITE_API_URL;
+  const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
-  const [isPostingComment, setIsPostingComment] = useState(false);
   const [newCommentId, setNewCommentId] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ const CommentPanel = ({ threadId }) => {
           const vote_value = voteType === 'upvote' ? 1 : -1;
           const currentVote = comment.userVote || 0;
 
-          // If user clicked same vote again → remove vote
+          // If user clicked same vote again will remove vote
           if (currentVote === vote_value) {
             return {
               ...comment,
@@ -51,11 +51,11 @@ const CommentPanel = ({ threadId }) => {
             };
           }
 
-          // If user clicked opposite vote → switch vote
+          // If user clicked opposite vote will switch vote
           if (comment.userVote === -vote_value) {
             return {
               ...comment,
-              net_score: comment.net_score + (vote_value * 2), // Remove old vote, add new vote
+              net_score: comment.net_score + (vote_value * 2),
               userVote: vote_value
             };
           }
@@ -93,7 +93,7 @@ const CommentPanel = ({ threadId }) => {
     setComments(prev => [newComment.comment, ...prev]);
     setNewCommentId(newComment.comment.id);
     setNewCommentText('');
-    setNewCommentId(null); // Add this line
+    setNewCommentId(null);
     setIsPostingComment(false);
   };
 

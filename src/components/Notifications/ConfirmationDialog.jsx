@@ -1,4 +1,3 @@
-// src/components/Global/ConfirmationDialog.jsx
 import {
   Box,
   Button,
@@ -14,7 +13,6 @@ const ConfirmationDialog = ({
   onClose,
   onConfirm,
   title = 'Are you sure?',
-  message,
   subMessage,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
@@ -48,18 +46,6 @@ const ConfirmationDialog = ({
 
       <DialogContent sx={{ pt: 1 }}>
         <Box>
-          {/* {message && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#000',        // Black main message
-                mb: subMessage ? 0.5 : 0
-              }}
-            >
-              {message}
-            </Typography>
-          )} */}
-
           {subMessage && (
             <Typography
               variant="caption"

@@ -90,11 +90,9 @@ const CardOnboarding = () => {
         navigate('/home');
       } else {
         console.error('Failed to save onboarding:', result.error);
-        // Handle error (show message to user)
       }
     } catch (error) {
       console.error('Error saving onboarding data:', error);
-      // Handle error (show message to user)
     }
   };
 

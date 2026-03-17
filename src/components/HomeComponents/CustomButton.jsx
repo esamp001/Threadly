@@ -12,7 +12,6 @@ const CustomButton = ({ children, fetchOnclick, startIcon, onClick }) => (
       border: '3px solid white',
       letterSpacing: '0.05rem',
       textTransform: 'none',
-      // bgcolor: 'primary.light',
       boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
     }}
     variant='contained'

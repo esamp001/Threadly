@@ -12,7 +12,7 @@ const SearchButton = ({ expanded, onExpand, title, setTitle }) => {
         onChange={(e) => setTitle(e.target.value)}
         onClick={() => {
           if (!expanded) {
-            onExpand(); // Only expand if not already expanded
+            onExpand();
           }
         }}
         placeholder="Create a title..."
@@ -22,10 +22,10 @@ const SearchButton = ({ expanded, onExpand, title, setTitle }) => {
           boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
           bgcolor: 'search.backgroundColor',
           borderRadius: 2,
-          transition: 'all 0.2s ease-in-out',  // Add smooth transition
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
-            boxShadow: 'none',  // Remove shadow on hover
-            transform: 'translateY(2px)',  // Slight upward movement
+            boxShadow: 'none',
+            transform: 'translateY(2px)',
           },
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
@@ -58,7 +58,7 @@ const SearchButton = ({ expanded, onExpand, title, setTitle }) => {
                   size="small"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onExpand(); // This toggles (open/close)
+                    onExpand();
                   }}
                 >
                   <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} />

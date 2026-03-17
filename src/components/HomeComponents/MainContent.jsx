@@ -12,24 +12,27 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 
 const MainContent = ({ spaces, setSpaces }) => {
-  const API_URL = import.meta.env.VITE_API_URL;
-  const [isExpanded, setIsExpanded] = useState(false);
   const quillRef = useRef(null);
   const { showSnackbar } = useSnackbar();
   const quillInstanceRef = useRef(null);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  const limit = 10;
-  const [threads, setThreads] = useState([]);
+
+  // States
   const [openCommentThreads, setOpenCommentThreads] = useState(false);
   const [threadsHasMore, setThreadsHasMore] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [threadsPage, setThreadsPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [threads, setThreads] = useState([]);
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const [formData, setFormData] = useState({
     title: '',
     spaceId: '',
     content: ''
   });
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
 
   // Function Handlers
@@ -143,7 +146,6 @@ const MainContent = ({ spaces, setSpaces }) => {
     }
   };
 
-
   const handleVote = async (voteType, threadId) => {
     // 1. Optimistic update - update UI immediately
     setThreads(prev =>
@@ -247,12 +249,11 @@ const MainContent = ({ spaces, setSpaces }) => {
     }));
   }, []);
 
-  // Simple useEffect for initial load
+  // UseEffect
   useEffect(() => {
     listSpaces();
     fetchThreads();
   }, []);
-
 
   useEffect(() => {
     if (isExpanded && quillRef.current && !quillInstanceRef.current) {
@@ -496,8 +497,8 @@ const MainContent = ({ spaces, setSpaces }) => {
             userVote={thread.userVote}
             avatar={thread.avatar_url}
             spaceName={thread.space_name || 'Unknown Space'}
-            postedBy="u/John Doe"  // You'll need to add user info to threads
-            timeAgo={thread.timeAgo}   // You'll need to calculate relative time
+            postedBy="u/John Doe"
+            timeAgo={thread.timeAgo}
             title={thread.title}
             content={thread.content}
             upvotes={thread.upvotes || 0}

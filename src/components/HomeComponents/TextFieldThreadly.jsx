@@ -21,11 +21,11 @@ const TextFieldThreadly = (props) => {
           boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
           bgcolor: 'search.backgroundColor',
           borderRadius: 7,
-          transition: 'all 0.2s ease-in-out', // Smooth transition
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
-            transform: 'translateY(-2px)', // Lift effect
-            boxShadow: theme => `0 6px 0 0 ${theme.palette.primary.main}`, // Deeper shadow
-            bgcolor: 'rgba(247, 244, 244, 0.94)', // Slight background change
+            transform: 'translateY(-2px)',
+            boxShadow: theme => `0 6px 0 0 ${theme.palette.primary.main}`,
+            bgcolor: 'rgba(247, 244, 244, 0.94)',
           },
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
@@ -42,7 +42,7 @@ const TextFieldThreadly = (props) => {
             color: 'text.main',
             opacity: 1,
           },
-          ...sx, // Merge passed sx styles
+          ...sx,
         }}
         InputProps={{
           sx: {

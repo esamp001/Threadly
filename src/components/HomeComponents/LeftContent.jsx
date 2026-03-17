@@ -44,7 +44,7 @@ const LeftContent = () => {
             borderRadius: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-end',  // This pushes content to bottom
+            justifyContent: 'flex-end',
             border: '1px solid red'
           }}>
             <Box
@@ -65,7 +65,7 @@ const LeftContent = () => {
             borderRadius: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-end',  // This pushes content to bottom
+            justifyContent: 'flex-end',
             border: '1px solid red'
           }}>
             <Box

@@ -159,7 +159,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           avatarPublicId: formData.avatarPublicId,
           communityType: formData.communityType,
           isMature: formData.isMature,
-          topics: formData.topics // Array of topic objects
+          topics: formData.topics
         }),
       });
 
@@ -202,7 +202,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     if (activeStep === 1) {
       if (formData.topics.length === 0) {
         setShowTopicsConfirmation(true);
-        return true; // Block navigation until confirmation
+        return true;
       }
     }
 
@@ -210,17 +210,16 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
     if (Object.keys(errors).length > 0) {
       showSnackbar('Please fill in all required fields', 'error');
-      return true; // Has errors
+      return true;
     }
 
-    return false; // No errors
+    return false;
   };
 
   const handleNext = () => {
     if (validateStep()) return;
 
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
-    // activeStep === 0 && fetchTopics();
 
     if (activeStep === steps.length - 1) {
       saveSpace();
@@ -241,10 +240,9 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       container
       spacing={2}
       sx={{
-        alignItems: 'center', // This centers everything on the X-axis
+        alignItems: 'center',
         px: 2,
-        py: 1,
-        // border: '1px solid rgba(255,255,255,0.1)'
+        py: 1
       }}
     >
       {/* Logo */}
@@ -257,8 +255,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               letterSpacing: '0.12em',
               fontFamily: 'Inter, sans-serif',
               textTransform: 'uppercase',
-              fontSize: { xs: '0.8rem', sm: '1.25rem' }, // Smaller on mobile
-              display: 'block' // Always visible
+              fontSize: { xs: '0.8rem', sm: '1.25rem' },
+              display: 'block'
             }}
           >
             SPAC
@@ -385,7 +383,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                   borderColor: 'primary.main',
                   boxShadow: theme => `0 4px 0 0 ${theme.palette.success.main}`,
                   bgcolor: 'search.backgroundColor',
-                  position: 'relative', // needed for overlay
+                  position: 'relative',
                   overflow: 'hidden',
                   transition: 'all 0.2s ease-in-out',
                   '&:hover': {
@@ -438,14 +436,14 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                       }}
                     />
                     <Box
-                      onClick={() => { setAvatarPreview(null) }} // replace with your remove logic
+                      onClick={() => { setAvatarPreview(null) }}
                       sx={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        bgcolor: 'rgba(0,0,0,0)', // fully transparent initially
+                        bgcolor: 'rgba(0,0,0,0)',
                         color: 'white',
                         display: 'flex',
                         alignItems: 'center',
@@ -455,7 +453,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                         cursor: 'pointer',
                         transition: 'background-color 0.2s ease',
                         '&:hover': {
-                          bgcolor: 'rgba(0,0,0,0.4)', // semi-transparent on hover
+                          bgcolor: 'rgba(0,0,0,0.4)',
                         },
                         '&:hover span': {
                           opacity: 1,
@@ -526,8 +524,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                     sx={{
                       mt: 2,
                       width: '100%',
-                      pointerEvents: 'none', // Prevents clicking
-                      cursor: 'not-allowed' // Shows not-allowed cursor
+                      pointerEvents: 'none',
+                      cursor: 'not-allowed'
                     }}
                     value={`spaces/${formData.spaceSlug}`}
                     disabled

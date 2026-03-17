@@ -11,10 +11,10 @@ import RightContent from '../components/HomeComponents/RightContent'
 
 const Home = () => {
   const [openDrawer, setOpenDrawer] = useState(false)
-  const [spaces, setSpaces] = useState([]) // Move spaces state here
+  const [spaces, setSpaces] = useState([])
 
   const addNewSpace = (newSpace) => {
-    setSpaces(prev => [newSpace, ...prev]) // Add new space to the beginning
+    setSpaces(prev => [newSpace, ...prev])
   }
 
   return (

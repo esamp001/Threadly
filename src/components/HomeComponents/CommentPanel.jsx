@@ -15,9 +15,9 @@ import {
 } from '@mui/material';
 import { MessageSquare } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import apiRequest from '../../config/api';
 
 const CommentPanel = ({ threadId }) => {
-  const API_URL = import.meta.env.VITE_API_URL;
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
@@ -25,7 +25,6 @@ const CommentPanel = ({ threadId }) => {
   const [newCommentId, setNewCommentId] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-
 
   const toggleReplies = (id) => {
     setExpandedReplies(prev => ({
@@ -77,16 +76,13 @@ const CommentPanel = ({ threadId }) => {
 
     setIsPostingComment(true);
 
-    const response = await fetch(`${API_URL}/api/comments`, {
+    const response = await apiRequest(`/api/comments`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         content: newCommentText,
         thread_id: threadId,
         parent_id: null
-      }),
+      })
     });
 
     const newComment = await response.json();
@@ -98,7 +94,7 @@ const CommentPanel = ({ threadId }) => {
   };
 
   const fetchComments = useCallback(async () => {
-    const response = await fetch(`${API_URL}/api/comments?thread_id=${threadId}`);
+    const response = await apiRequest(`/api/comments?thread_id=${threadId}`);
     const data = await response.json();
 
     setComments(data.comments);

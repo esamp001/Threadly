@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import Space from "../assets/space-astro.svg";
 import CustomButton from '../components/HomeComponents/CustomButton';
 import LoginTextField from '../components/Login/LoginTextField';
+import apiRequest from '../config/api';
 import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { auth, facebookProvider, googleProvider } from '../firebase';
@@ -28,8 +29,6 @@ const SpaceLogin = () => {
     password: ''
   })
 
-  console.log(formData, "setFormData")
-
   // Helper Function
   const onChangeTextField = (field, value) => {
     setFormData({
@@ -45,12 +44,8 @@ const SpaceLogin = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Use the same API URL as AuthContext
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-      const response = await fetch(`${apiUrl}/api/auth/google`, {
+      const response = await apiRequest(`/api/auth/google`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uid: user.uid,
           email: user.email,
@@ -84,12 +79,8 @@ const SpaceLogin = () => {
       const result = await signInWithPopup(auth, facebookProvider);
       const user = result.user;
 
-      // Use the same API URL as AuthContext
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-      const response = await fetch(`${apiUrl}/api/auth/facebook`, {
+      const response = await apiRequest(`/api/auth/facebook`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           uid: user.uid,
           email: user.email,
@@ -127,9 +118,8 @@ const SpaceLogin = () => {
       }
 
       // Call your login API
-      const response = await fetch('/api/auth/login', {
+      const response = await apiRequest(`/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 

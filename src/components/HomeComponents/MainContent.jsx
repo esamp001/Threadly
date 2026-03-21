@@ -1,4 +1,5 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ThreadContent from "../Global/ThreadContent";
 import CommentPanel from './CommentPanel';
@@ -59,7 +60,7 @@ const MainContent = ({ spaces, setSpaces }) => {
     const currentPage = loadMore ? page + 1 : 1;
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
+      const response = await apiRequest(`/api/maincontent/all_spaces?page=${currentPage}&limit=${limit}`);
       const result = await response.json();
       if (response.ok) {
         const newSpaces = result.spaces;
@@ -85,7 +86,7 @@ const MainContent = ({ spaces, setSpaces }) => {
     const currentPage = loadMore ? threadsPage + 1 : 1;
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/maincontent/all_threads?page=${currentPage}&limit=10`);
+      const response = await apiRequest(`/api/maincontent/all_threads?page=${currentPage}&limit=10`);
       const result = await response.json();
 
       if (result.success) {
@@ -107,11 +108,8 @@ const MainContent = ({ spaces, setSpaces }) => {
 
   const handleCreateThread = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/maincontent/create_thread`, {
+      const response = await apiRequest(`/api/maincontent/create_thread`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify(formData)
       });
 
@@ -188,15 +186,12 @@ const MainContent = ({ spaces, setSpaces }) => {
 
     try {
       // Make API call
-      const response = await fetch(`${API_URL}/api/maincontent/threads/vote`, {
+      const response = await apiRequest(`/api/maincontent/threads/vote`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           threadId: threadId,
           voteType: voteType
-        }),
+        })
       });
 
       const result = await response.json();

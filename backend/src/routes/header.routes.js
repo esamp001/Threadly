@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
+const { checkAuth } = require('../middleware/checkAuth');
 
 // GET all topics
 router.get('/', async (_, res) => {
@@ -24,7 +25,8 @@ router.get('/', async (_, res) => {
 });
 
 // PUT - Create new space
-router.put('/', async (req, res) => {
+router.put('/', checkAuth, async (req, res) => {
+
   const {
     spaceName,
     spaceDescription,

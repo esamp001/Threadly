@@ -4,6 +4,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 import TextFieldThreadly from './TextFieldThreadly';
@@ -92,6 +93,9 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
         const response = await fetch(`${API_URL}/api/cloudinary/upload`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`  // Add this if needed
+          },
           body: formData,
         });
 
@@ -127,7 +131,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     const fetchTopics = async () => {
       try {
         setTopicsLoading(true);
-        const response = await fetch(`${API_URL}/api/header`);
+        const response = await apiRequest(`/api/header`);
         const result = await response.json();
         if (response.ok) {
           setTopics(result.topics);
@@ -146,11 +150,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/api/header`, {
+      const response = await apiRequest(`/api/header`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           spaceName: formData.spaceName,
           spaceDescription: formData.spaceDescription,

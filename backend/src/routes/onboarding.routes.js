@@ -1,27 +1,11 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const db = require('../db/knex');
+const { checkAuth } = require('../middleware/checkAuth');
 
 const router = express.Router();
 
-// JWT Authentication Middleware (same as auth.routes.js)
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-};
-
 // POST /api/onboarding - Save onboarding data
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', checkAuth, async (req, res) => {
   const { username, avatar_url, selected_topics, avatar_preferences } = req.body;
   const userId = req.user.userId;
 

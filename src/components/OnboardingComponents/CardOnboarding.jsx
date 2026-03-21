@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adjectives, animals, colors, uniqueNamesGenerator } from 'unique-names-generator'
 import welcomeSpace from '../../assets/welcome-space.svg'
+import apiRequest from '../../config/api'
 import { useAuth } from '../../context/AuthContext/AuthContext'
 import { generateAvatar } from '../../utils/avatarGenerator'
 import CustomButton from '../HomeComponents/CustomButton'
@@ -48,8 +49,7 @@ const CardOnboarding = () => {
   // Fetch for topics
   const fetchTopics = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/header`)
+      const response = await apiRequest(`/api/header`)
       const data = await response.json()
       if (data.success) {
         setTopics(data.topics)
@@ -61,8 +61,6 @@ const CardOnboarding = () => {
 
   const handleSaveOnboarding = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
       // Prepare the data to send
       const onboardingData = {
         username,
@@ -72,9 +70,10 @@ const CardOnboarding = () => {
           seed: avatarSeed,
           options: avatarOptions
         }
+        
       };
 
-      const response = await fetch(`${apiUrl}/api/onboarding`, {
+      const response = await apiRequest(`/api/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

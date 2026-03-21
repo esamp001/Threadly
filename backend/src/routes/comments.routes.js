@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
+const { checkAuth } = require('../middleware/checkAuth');
 
 // Add this function at the top of your comments.routes.js
 function formatRelativeTime(dateString) {
@@ -16,7 +17,7 @@ function formatRelativeTime(dateString) {
 }
 
 // POST - Create new comment
-router.post('/', async (req, res) => {
+router.post('/', checkAuth, async (req, res) => {
   const { content, thread_id, parent_id } = req.body;
 
   let comment = null;

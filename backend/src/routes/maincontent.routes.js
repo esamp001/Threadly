@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
 const moment = require('moment');
+const { checkAuth } = require('../middleware/checkAuth');
 
 // GET - List all spaces with pagination
 router.get('/all_spaces', async (req, res) => {
@@ -124,7 +125,7 @@ router.get('/all_threads', async (req, res) => {
   }
 });
 
-router.post('/create_thread', async (req, res) => {
+router.post('/create_thread', checkAuth, async (req, res) => {
   const { title, content, spaceId } = req.body;
 
   let status = 200
@@ -165,7 +166,7 @@ router.post('/create_thread', async (req, res) => {
 
 });
 
-router.post('/threads/vote', async (req, res) => {
+router.post('/threads/vote', checkAuth, async (req, res) => {
   const { threadId, voteType } = req.body;
   // const userId = req.user.id; // from auth middleware
 

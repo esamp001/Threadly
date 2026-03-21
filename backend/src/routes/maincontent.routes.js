@@ -54,6 +54,7 @@ router.get('/all_threads', async (req, res) => {
     // Get the threads for current page with user votes
     threads = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
+      .leftJoin('users', 'threads.created_by', 'users.id')
       .leftJoin('scores', function () {
         this.on('threads.id', '=', 'scores.thread_id')
           .andOn('scores.user_id', '=', 1) // Using hardcoded user ID for now
@@ -63,6 +64,7 @@ router.get('/all_threads', async (req, res) => {
         'threads.content',
         'threads.space_id',
         'threads.created_by',
+        'users.username',
         'threads.created_at',
         'threads.updated_at',
         'threads.upvotes',

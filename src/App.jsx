@@ -19,6 +19,8 @@ const ProtectedRoutes = (path, component) => {
 }
 
 
+
+
 function App() {
   return (
     <AuthProvider>

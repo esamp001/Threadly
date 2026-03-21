@@ -1,5 +1,6 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
 import apiRequest from '../../config/api';
+import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ThreadContent from "../Global/ThreadContent";
 import CustomButton from './CustomButton';
@@ -12,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 
 const MainContent = ({ spaces, setSpaces }) => {
+  const { user } = useAuth();
   const quillRef = useRef(null);
   const { showSnackbar } = useSnackbar();
   const quillInstanceRef = useRef(null);
@@ -302,7 +304,13 @@ const MainContent = ({ spaces, setSpaces }) => {
 
             {/* Content */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Avatar sx={{ height: 50, width: 50 }}>J</Avatar>
+              <Avatar
+                sx={{ height: 50, width: 50 }}
+                src={user?.avatar_url}
+                alt={user?.username}
+              >
+                {user?.username ? user.username.charAt(0).toUpperCase() : 'J'}
+              </Avatar>
               <SearchButton sx={{ borderColor: 'white' }}
                 expanded={isExpanded}
                 onExpand={() => setIsExpanded(!isExpanded)}
@@ -505,7 +513,7 @@ const MainContent = ({ spaces, setSpaces }) => {
             userVote={thread.userVote}
             avatar={thread.avatar_url}
             spaceName={thread.space_name || 'Unknown Space'}
-            postedBy="u/John Doe"
+            postedBy={thread.username}
             timeAgo={thread.timeAgo}
             title={thread.title}
             content={thread.content}

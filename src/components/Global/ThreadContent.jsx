@@ -34,14 +34,28 @@ const ThreadContent = ({
           {spaceName ? spaceName.charAt(0).toUpperCase() : 'S'}
         </Avatar>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {/* Primary: Space Name (The Subject) */}
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 600, // Added slight bold for emphasis
+                fontSize: '0.9rem'
+              }}
+            >
               {spaceName}
             </Typography>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-              {username}
-            </Typography>
-            <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
+
+            {/* Secondary: Posted By (The Metadata) */}
+            <Typography
+              variant="caption" // Changed from subtitle2 to caption for a smaller, cleaner look
+              sx={{
+                color: 'text.secondary',
+                display: 'flex',
+                gap: 0.5
+              }}
+            >
               Posted by {postedBy}
             </Typography>
           </Box>

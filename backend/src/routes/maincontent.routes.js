@@ -127,6 +127,7 @@ router.get('/all_threads', async (req, res) => {
 
 router.post('/create_thread', checkAuth, async (req, res) => {
   const { title, content, spaceId } = req.body;
+  const userId = req.user.userId;
 
   let status = 200
   let error_message = ''
@@ -139,7 +140,7 @@ router.post('/create_thread', checkAuth, async (req, res) => {
         title,
         content,
         space_id: spaceId,
-        created_by: 1  // Placeholder user ID since you don't have users table yet
+        created_by: userId
       })
       .returning('*');
 

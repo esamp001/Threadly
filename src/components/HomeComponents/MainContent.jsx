@@ -2,7 +2,6 @@ import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ThreadContent from "../Global/ThreadContent";
-import CommentPanel from './CommentPanel';
 import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
@@ -32,9 +31,6 @@ const MainContent = ({ spaces, setSpaces }) => {
     spaceId: '',
     content: ''
   });
-
-  const API_URL = import.meta.env.VITE_API_URL;
-
 
   // Function Handlers
   const handleQuillChange = useCallback(() => {
@@ -483,10 +479,27 @@ const MainContent = ({ spaces, setSpaces }) => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Thread Content */}
-      {threads.map(thread => (
-        <Box key={thread.id}>
+
+      {threads && threads.length === 0 ? (
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 8,
+          textAlign: 'center'
+        }}>
+          <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
+            No threads created yet
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Be the first to start a discussion!
+          </Typography>
+        </Box>
+      ) : (
+        threads.map(thread => (
           <ThreadContent
+            key={thread.id}
             net_score={thread.net_score}
             handleVote={handleVote}
             userVote={thread.userVote}
@@ -499,15 +512,12 @@ const MainContent = ({ spaces, setSpaces }) => {
             upvotes={thread.upvotes || 0}
             comments={thread.comments || 0}
             shares={thread.shares || 0}
+            username={thread.username}
             threadId={thread.id}
             onCommentOpen={handleCommentOpen}
           />
-          {openCommentThreads[thread.id] && (
-            <CommentPanel threadId={thread.id} isOpen={openCommentThreads[thread.id]} />
-          )}
-        </Box>
-      ))}
-
+        ))
+      )}
     </Box>
   )
 }

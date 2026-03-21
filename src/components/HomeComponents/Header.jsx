@@ -5,12 +5,15 @@ import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import apiRequest from '../../config/api';
+import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 import TextFieldThreadly from './TextFieldThreadly';
 
 const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();
+  const { user } = useAuth();
+  console.log(user, "user");
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -39,6 +42,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
 
+  // Stepper steps for creating a space
   const steps = [
     'About your Space',
     'Space Topics',
@@ -46,7 +50,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     'Space Members (Optional)'
   ];
 
-  // Helper function
+  // Handle avatar upload
   const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
 
@@ -127,6 +131,14 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     }
   };
 
+  // Get avatar URL from user data
+  const getAvatarUrl = () => {
+    if (user?.avatar_url) return user.avatar_url; // This will be the complete URL
+
+    return null;
+  };
+
+  // Fetch topics on component mount
   useEffect(() => {
     const fetchTopics = async () => {
       try {
@@ -787,7 +799,13 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
           <Box sx={{ position: 'relative' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Avatar sx={{ width: 50, height: 50, }}>J</Avatar>
+              <Avatar
+                sx={{ width: 50, height: 50 }}
+                src={getAvatarUrl()}
+                alt={user?.username}
+              >
+                {user?.username ? user.username.charAt(0).toUpperCase() : 'J'}
+              </Avatar>
             </Box>
 
             <Box
@@ -809,12 +827,14 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           </Box>
 
           <Box sx={{
-            alignItems: 'center',
+            alignItems: 'flex-start',
             flexDirection: 'column',
             gap: 1,
             display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }
           }}>
-            <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
+            <Typography sx={{ fontWeight: 700 }}>
+              {user?.username || 'Guest'}
+            </Typography>
             <Typography
               sx={{
                 display: 'inline-block',
@@ -828,7 +848,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                 letterSpacing: 0.3,
               }}
             >
-              Head Hunter
+              {user?.role || 'Head Hunter'}
             </Typography>
           </Box>
         </Box>

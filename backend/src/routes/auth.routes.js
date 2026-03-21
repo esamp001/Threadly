@@ -30,7 +30,7 @@ router.get('/context', authenticateToken, async (req, res) => {
 
   try {
     user = await db('users')
-      .select('id', 'email', 'username', 'bio', 'avatar_url', 'is_active', 'created_at')
+      .select('id', 'email', 'username', 'bio', 'avatar_url', 'avatar_seed', 'avatar_options', 'is_active', 'created_at')
       .where('id', req.user.userId)
       .first();
 

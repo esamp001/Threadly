@@ -21,9 +21,7 @@ router.post('/', checkAuth, async (req, res) => {
         .where('id', userId)
         .update({
           username: username,
-          avatar_url: null,
-          avatar_seed: avatar_preferences?.seed || null,
-          avatar_options: JSON.stringify(avatar_preferences?.options || {}),
+          avatar_url: avatar_url,
           gender: avatar_preferences?.options?.gender || null,
           updated_at: new Date()
         });

@@ -20,7 +20,7 @@ const generateRandomUsername = () => {
 
 const CardOnboarding = () => {
   const navigate = useNavigate()
-  const { user } = useAuth();
+  const { fetchUser } = useAuth();
   const [activeStep, setActiveStep] = useState(0)
   const [topics, setTopics] = useState([])
   const [selectedTopics, setSelectedTopics] = useState([])
@@ -39,12 +39,13 @@ const CardOnboarding = () => {
   })
   const [finalAvatarUrl, setFinalAvatarUrl] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-
   const steps = [
     'Welcome to Space',
     'Choose Your Interests',
     'Complete Profile'
   ]
+
+  const progress = ((activeStep + 1) / steps.length) * 100
 
   // Fetch for topics
   const fetchTopics = useCallback(async () => {
@@ -59,18 +60,15 @@ const CardOnboarding = () => {
     }
   }, [setTopics])
 
+
+  // Handle save onboarding data
   const handleSaveOnboarding = async () => {
     try {
       // Prepare the data to send
       const onboardingData = {
         username,
-        avatar_url: null,
+        avatar_url: finalAvatarUrl,
         selected_topics: selectedTopics,
-        avatar_preferences: {
-          seed: avatarSeed,
-          options: avatarOptions
-        }
-        
       };
 
       const response = await apiRequest(`/api/onboarding`, {
@@ -86,6 +84,7 @@ const CardOnboarding = () => {
 
       if (result.success) {
         console.log('Onboarding saved successfully:', result);
+        await fetchUser();
         navigate('/home');
       } else {
         console.error('Failed to save onboarding:', result.error);
@@ -101,15 +100,14 @@ const CardOnboarding = () => {
   }, [fetchTopics])
 
 
+  // Generate avatar URL whenever options or seed changes
   useEffect(() => {
-    // Generate avatar URL whenever options or seed changes
     const avatarUrl = generateAvatar(avatarOptions, avatarSeed);
     setFinalAvatarUrl(avatarUrl);
   }, [avatarOptions, avatarSeed]);
 
-  // Handlers
-  const progress = ((activeStep + 1) / steps.length) * 100
 
+  // Handle next button
   const handleNext = () => {
     if (activeStep === steps.length - 1) {
       navigate('/home')
@@ -118,10 +116,12 @@ const CardOnboarding = () => {
     }
   }
 
+  // Handle back button
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1)
   }
 
+  // Generate random avatar when button is clicked
   const generateRandomAvatar = () => {
     if (isGenerating) return;
 
@@ -132,7 +132,7 @@ const CardOnboarding = () => {
     setTimeout(() => setIsGenerating(false), 100);
   };
 
-  // Functions
+  // Get the content for each step
   const getStepContent = (step) => {
     switch (step) {
       case 0:
@@ -165,6 +165,7 @@ const CardOnboarding = () => {
 
   const currentStep = getStepContent(activeStep)
 
+  // Render the component
   return (
     <Paper
       elevation={3}

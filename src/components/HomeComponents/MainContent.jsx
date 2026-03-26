@@ -3,6 +3,7 @@ import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import ThreadContent from "../Global/ThreadContent";
+import CommentPanel from '../HomeComponents/CommentPanel';
 import CustomButton from './CustomButton';
 import SearchButton from './SearchButton';
 
@@ -19,6 +20,7 @@ const MainContent = ({ spaces, setSpaces }) => {
   const quillInstanceRef = useRef(null);
 
   // States
+  const [selectedThreadData, setSelectedThreadData] = useState(null);
   const [openCommentThreads, setOpenCommentThreads] = useState(false);
   const [threadsHasMore, setThreadsHasMore] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -28,6 +30,7 @@ const MainContent = ({ spaces, setSpaces }) => {
   const [threads, setThreads] = useState([]);
   const [page, setPage] = useState(1);
   const limit = 10;
+
   const [formData, setFormData] = useState({
     title: '',
     spaceId: '',
@@ -235,12 +238,21 @@ const MainContent = ({ spaces, setSpaces }) => {
     }
   };
 
-  const handleCommentOpen = useCallback((threadId) => {
+  const handleCommentOpen = useCallback((thread) => {
+    setSelectedThreadData(thread);
     setOpenCommentThreads(prev => ({
       ...prev,
-      [threadId]: !prev[threadId]
+      [thread.id]: true
     }));
   }, []);
+
+  const handleCommentClose = useCallback((threadId) => {
+    setOpenCommentThreads(prev => ({
+      ...prev,
+      [threadId]: false
+    }));
+  }, []);
+
 
   // UseEffect
   useEffect(() => {
@@ -522,10 +534,22 @@ const MainContent = ({ spaces, setSpaces }) => {
             shares={thread.shares || 0}
             username={thread.username}
             threadId={thread.id}
-            onCommentOpen={handleCommentOpen}
+            onCommentOpen={() => handleCommentOpen(thread)}
           />
         ))
       )}
+
+      {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
+        isOpen && (
+          <CommentPanel
+            key={threadId}
+            isClose={() => handleCommentClose(threadId)}
+            isOpen={isOpen}
+            threadId={threadId}
+            threadData={selectedThreadData}
+          />
+        )
+      ))}
     </Box>
   )
 }

@@ -3,6 +3,7 @@ const router = express.Router();
 const knex = require('../db/knex');
 const moment = require('moment');
 const { checkAuth } = require('../middleware/checkAuth');
+const { formatRelativeTime } = require('../utils/timeHelpers');
 
 // GET - List all spaces with pagination
 router.get('/all_spaces', async (req, res) => {
@@ -51,30 +52,50 @@ router.get('/all_threads', async (req, res) => {
   let threads = []
 
   try {
-    // Get the threads for current page with user votes
+    // Get the threads for current page with user votes and comment count
     threads = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
       .leftJoin('users', 'threads.created_by', 'users.id')
       .leftJoin('scores', function () {
         this.on('threads.id', '=', 'scores.thread_id')
-          .andOn('scores.user_id', '=', 1) // Using hardcoded user ID for now
+          .andOn('scores.user_id', '=', 1)
       })
+      .leftJoin('comments', 'threads.id', 'comments.thread_id')
       .select('threads.id',
         'threads.title',
         'threads.content',
         'threads.space_id',
         'threads.created_by',
         'users.username',
+        'users.avatar_url as user_avatar_url',
         'threads.created_at',
         'threads.updated_at',
         'threads.upvotes',
-        'threads.comments',
         'threads.shares',
         'threads.net_score',
         'spaces.space_name',
         'spaces.avatar_url',
         'spaces.space_name',
         'scores.vote_type as userVote')
+      .count('comments.id as comment_count')
+      .groupBy(
+        'threads.id',
+        'threads.title',
+        'threads.content',
+        'threads.space_id',
+        'threads.created_by',
+        'users.username',
+        'users.avatar_url',
+        'threads.created_at',
+        'threads.updated_at',
+        'threads.upvotes',
+        'threads.shares',
+        'threads.net_score',
+        'spaces.space_name',
+        'spaces.avatar_url',
+        'spaces.space_name',
+        'scores.vote_type'
+      )
       .orderBy('threads.created_at', 'desc')
       .limit(limit)
       .offset(offset);
@@ -84,27 +105,11 @@ router.get('/all_threads', async (req, res) => {
       .count('* as count')
       .first();
 
-    const threadsWithTimeAgo = threads.map(thread => {
-      const now = moment();
-      const createdAt = moment(thread.created_at);
-      const diffMinutes = now.diff(createdAt, 'minutes');
-
-      let timeAgo;
-      if (diffMinutes < 1) {
-        timeAgo = 'Just now';
-      } else if (diffMinutes < 60) {
-        timeAgo = `${diffMinutes}min ago`;
-      } else if (diffMinutes < 1440) { // Less than 24 hours
-        timeAgo = `${Math.floor(diffMinutes / 60)}hr ago`;
-      } else {
-        timeAgo = createdAt.format('MMM DD');
-      }
-
-      return {
-        ...thread,
-        timeAgo
-      };
-    });
+    const threadsWithTimeAgo = threads.map(thread => ({
+      ...thread,
+      timeAgo: formatRelativeTime(thread.created_at),
+      comments: parseInt(thread.comment_count) || 0  // Use actual comment count
+    }));
 
     const hasMore = (offset + threads.length) < totalCount.count;
 
@@ -118,6 +123,54 @@ router.get('/all_threads', async (req, res) => {
         hasMore,
         totalPages: Math.ceil(totalCount.count / limit)
       }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Get thread by ID
+router.get('/thread/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const thread = await knex('threads AS ts')
+      .leftJoin('users AS u', 'u.id', 'ts.created_by')
+      .leftJoin('spaces AS spc', 'spc.id', 'ts.space_id')
+      .select(
+        'u.id AS user_id',
+        'u.avatar_url',
+        'u.username',
+        'ts.id AS thread_id',
+        'ts.title',
+        'ts.content',
+        'ts.upvotes',
+        'ts.downvotes',
+        'ts.created_at',
+        'spc.space_name',
+        'spc.avatar_url AS space_avatar_url'
+      )
+      .where('ts.id', id)
+      .first();
+
+    if (!thread) {
+      return res.status(404).json({
+        success: false,
+        message: 'Thread not found'
+      });
+    }
+
+    const threadWithTimeAgo = {
+      ...thread,
+      timeAgo: formatRelativeTime(thread.created_at)
+    };
+
+    res.json({
+      success: true,
+      thread: threadWithTimeAgo
     });
   } catch (error) {
     res.status(500).json({
@@ -146,10 +199,17 @@ router.post('/create_thread', checkAuth, async (req, res) => {
       })
       .returning('*');
 
-    // Return Thread with spaces
+    // Return Thread with spaces and user data
     threadWithSpace = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
-      .select('threads.*', 'spaces.space_name', 'spaces.avatar_url')
+      .leftJoin('users', 'threads.created_by', 'users.id')
+      .select(
+        'threads.*',
+        'spaces.space_name',
+        'spaces.avatar_url as space_avatar_url',
+        'users.username',
+        'users.avatar_url as user_avatar_url'
+      )
       .where('threads.id', thread[0].id)
       .first();
 

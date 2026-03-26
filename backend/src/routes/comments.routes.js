@@ -2,23 +2,12 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
-
-// Add this function at the top of your comments.routes.js
-function formatRelativeTime(dateString) {
-  const now = new Date();
-  const past = new Date(dateString);
-  const diffInSeconds = Math.floor((now - past) / 1000);
-
-  if (diffInSeconds < 60) return 'just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}hr ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return `${Math.floor(diffInSeconds / 604800)}w ago`;
-}
+const { formatRelativeTime } = require('../utils/timeHelpers');
 
 // POST - Create new comment
 router.post('/', checkAuth, async (req, res) => {
   const { content, thread_id, parent_id } = req.body;
+  const userId = req.user?.userId;
 
   let comment = null;
   let error_message = '';
@@ -26,25 +15,56 @@ router.post('/', checkAuth, async (req, res) => {
   let success = true;
 
   try {
+    if (!content || !thread_id || !userId) {
+      throw new Error('Missing required fields: content, thread_id, or user ID');
+    }
 
-    const [commentId] = await knex('comments').insert({
+    const commentIdResult = await knex('comments').insert({
       content,
       thread_id,
       parent_id,
+      created_by: userId
     }).returning('id');
 
-    comment = await knex('comments').where('id', commentId.id).first();
+    const commentId = commentIdResult[0]?.id;
 
-    // Add the remaining data need for the comment
+    if (!commentId) {
+      throw new Error('Failed to create comment - no ID returned');
+    }
+
+    comment = await knex('comments AS c')
+      .leftJoin('users AS u', 'u.id', 'c.created_by')
+      .where('c.id', commentId)
+      .select(
+        'c.id',
+        'c.content',
+        'c.thread_id',
+        'c.parent_id',
+        'c.created_by',
+        'c.created_at',
+        'c.updated_at',
+        'u.username',
+        'u.avatar_url AS user_avatar_url'
+      )
+      .first();
+
+    if (!comment) {
+      throw new Error('Failed to retrieve created comment');
+    }
+
     comment = {
       ...comment,
-      author: 'Sarah Johnson',
-      avatar: 'S',
+      author: comment.username || 'Anonymous',
+      avatar: comment.avatar_url || comment.username?.[0]?.toUpperCase() || 'A',
       timestamp: formatRelativeTime(comment.created_at),
-      net_score: 12,
+      net_score: 0,
       userVote: 0,
       replies: []
     };
+
+    if (!comment.id || !comment.content) {
+      throw new Error('Invalid comment data structure');
+    }
 
   } catch (error) {
     status = 500;
@@ -63,41 +83,180 @@ router.post('/', checkAuth, async (req, res) => {
 // GET - Fetch comments for a thread
 router.get('/', async (req, res) => {
   const { thread_id } = req.query;
-
-  let comments = [];
-  let error_message = '';
-  let status = 200;
-  let success = true;
+  const userId = req.user?.userId;
 
   try {
-    // Fetch comments for the specific thread
-    const threadComments = await knex('comments')
-      .where('thread_id', thread_id)
-      .where('parent_id', null) // Only top-level comments
-      .orderBy('created_at', 'asc');
+    // Fetch ALL comments for this thread (both top-level and replies)
+    const allComments = await knex('comments AS c')
+      .leftJoin('users AS u', 'u.id', 'c.created_by')
+      .leftJoin('comment_votes AS cv', 'cv.comment_id', 'c.id')
+      .where('c.thread_id', thread_id)
+      .orderBy('c.created_at', 'desc')
+      .select(
+        'c.id',
+        'c.content',
+        'c.thread_id',
+        'c.parent_id',
+        'c.created_by',
+        'c.created_at',
+        'c.updated_at',
+        'c.upvotes',
+        'c.downvotes',
+        'c.net_score',
+        'u.username',
+        'u.avatar_url AS user_avatar_url',
+        'cv.vote_type AS user_vote',
+        'cv.user_id AS vote_user_id'
+      );
 
-    // Format each comment
-    comments = threadComments.map(comment => ({
-      ...comment,
-      author: 'Sarah Johnson', // Temporary until users table
-      avatar: 'S',
-      timestamp: formatRelativeTime(comment.created_at),
-      userVote: 0,
-      replies: [] // TODO: Fetch nested replies in future
-    }));
+    // Build comment tree
+    const commentsMap = new Map();
+    const topLevelComments = [];
+
+    // First pass: create all comment objects
+    allComments.forEach(row => {
+      const commentId = row.id;
+
+      if (!commentsMap.has(commentId)) {
+        const comment = {
+          id: row.id,
+          content: row.content,
+          thread_id: row.thread_id,
+          parent_id: row.parent_id,
+          created_by: row.created_by,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          upvotes: row.upvotes || 0,
+          downvotes: row.downvotes || 0,
+          net_score: row.net_score || 0,
+          username: row.username,
+          user_avatar_url: row.user_avatar_url,
+          userVote: row.user_vote || 0,
+          votes: [],
+          replies: []
+        };
+
+        commentsMap.set(commentId, comment);
+      }
+
+      const comment = commentsMap.get(commentId);
+
+      // Handle user vote
+      if (userId && row.vote_user_id === userId && row.user_vote !== null) {
+        comment.userVote = row.user_vote;
+      }
+    });
+
+    // Second pass: build parent-child relationships
+    commentsMap.forEach(comment => {
+      if (comment.parent_id === null) {
+        // Top-level comment
+        topLevelComments.push(comment);
+      } else {
+        // Reply - add to parent's replies
+        const parentComment = commentsMap.get(comment.parent_id);
+        if (parentComment) {
+          parentComment.replies.push(comment);
+        }
+      }
+    });
+
+    // Recursive formatting function
+    const formatCommentRecursively = (comment) => {
+      return {
+        ...comment,
+        author: comment.username || 'Anonymous',
+        avatar: comment.user_avatar_url || comment.username?.[0]?.toUpperCase() || 'A',
+        timestamp: formatRelativeTime(comment.created_at),
+        user_avatar_url: comment.user_avatar_url,
+        net_score: comment.net_score || 0,
+        userVote: comment.userVote || 0,
+        replies: comment.replies.map(formatCommentRecursively) // Recursively format replies
+      };
+    };
+
+    // Format response - apply recursive formatting to all comments
+    const formattedComments = topLevelComments.map(formatCommentRecursively);
+
+    res.json({
+      success: true,
+      comments: formattedComments
+    });
 
   } catch (error) {
-    status = 500;
-    error_message = error.message;
-    success = false;
+    res.status(500).json({ success: false, error: error.message });
   }
+});
 
-  res.status(status).json({
-    success,
-    status,
-    error_message,
-    comments
-  });
+router.post('/vote', checkAuth, async (req, res) => {
+  const { commentId, voteType } = req.body;
+  const userId = req.user?.userId;
+
+  const numericVote = voteType === 'upvote' ? 1 : -1;
+
+  let updatedComment;
+
+  try {
+    await knex.transaction(async (trx) => {
+      const existingVote = await trx('comment_votes')
+        .where({ user_id: userId, comment_id: commentId })
+        .first();
+
+      // Case 1: No previous vote
+      if (!existingVote) {
+        await trx('comment_votes').insert({
+          user_id: userId,
+          comment_id: commentId,
+          vote_type: numericVote
+        });
+
+        await trx('comments')
+          .where({ id: commentId })
+          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .increment('net_score', numericVote);
+      }
+
+      // Case 2: Same vote clicked again → remove vote
+      else if (existingVote.vote_type === numericVote) {
+        await trx('comment_votes')
+          .where({ user_id: userId, comment_id: commentId })
+          .delete();
+
+        await trx('comments')
+          .where({ id: commentId })
+          .decrement(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement('net_score', numericVote);
+      }
+
+      // Case 3: Switching vote
+      else {
+        await trx('comment_votes')
+          .where({ user_id: userId, comment_id: commentId })
+          .update({ vote_type: numericVote });
+
+        await trx('comments')
+          .where({ id: commentId })
+          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
+          .increment('net_score', numericVote * 2);
+      }
+
+      updatedComment = await trx('comments')
+        .where({ id: commentId })
+        .first();
+    });
+
+    res.json({
+      success: true,
+      updatedComment,
+      new_score: updatedComment.net_score,
+      user_vote: numericVote
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 module.exports = router;

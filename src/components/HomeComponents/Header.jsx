@@ -13,7 +13,6 @@ import TextFieldThreadly from './TextFieldThreadly';
 const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
-  console.log(user, "user");
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);

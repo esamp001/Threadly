@@ -1,76 +1,36 @@
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import {
   Avatar,
   Box,
   Button,
-  Divider,
-  IconButton,
+  Modal,
   Paper,
   Skeleton,
-  Slide,
   TextField,
   Typography
 } from '@mui/material';
-import { MessageSquare } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import apiRequest from '../../config/api';
+import CommentItem from './CommentItem';
 
-const CommentPanel = ({ threadId }) => {
+const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [newCommentText, setNewCommentText] = useState('');
   const [newCommentId, setNewCommentId] = useState(null);
   const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [replyTexts, setReplyTexts] = useState({});
 
-  const toggleReplies = (id) => {
-    setExpandedReplies(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  // Toggles the visibility of replies for a given comment ID.
+  // const toggleReplies = (id) => {
+  //   setExpandedReplies(prev => ({
+  //     ...prev,
+  //     [id]: !prev[id]
+  //   }));
+  // };
 
-  const handleVote = (voteType, commentId) => {
-    // Optimistic update - update UI immediately
-    setComments(prev =>
-      prev.map(comment => {
-        if (comment.id === commentId) {
-          const vote_value = voteType === 'upvote' ? 1 : -1;
-          const currentVote = comment.userVote || 0;
-
-          // If user clicked same vote again will remove vote
-          if (currentVote === vote_value) {
-            return {
-              ...comment,
-              net_score: comment.net_score - vote_value,
-              userVote: 0
-            };
-          }
-
-          // If user clicked opposite vote will switch vote
-          if (comment.userVote === -vote_value) {
-            return {
-              ...comment,
-              net_score: comment.net_score + (vote_value * 2),
-              userVote: vote_value
-            };
-          }
-
-          // New vote
-          return {
-            ...comment,
-            net_score: comment.net_score + vote_value,
-            userVote: vote_value
-          };
-        }
-        return comment;
-      })
-    );
-  };
-
+  // Handles posting a new comment to a thread.
   const handlePostComment = async (threadId) => {
     if (!newCommentText.trim()) return;
 
@@ -81,7 +41,7 @@ const CommentPanel = ({ threadId }) => {
       body: JSON.stringify({
         content: newCommentText,
         thread_id: threadId,
-        parent_id: null
+        parent_id: null,
       })
     });
 
@@ -93,18 +53,30 @@ const CommentPanel = ({ threadId }) => {
     setIsPostingComment(false);
   };
 
+  // Fetches comments for a given thread ID.
   const fetchComments = useCallback(async () => {
-    const response = await apiRequest(`/api/comments?thread_id=${threadId}`);
-    const data = await response.json();
+    if (!threadId) return;
 
-    setComments(data.comments);
-    setLoading(false);
+    // Set loading to true BEFORE the fetch
+    setLoading(true);
+
+    try {
+      const response = await apiRequest(`/api/comments?thread_id=${threadId}`);
+      const data = await response.json();
+
+      // Set comments AFTER successful fetch
+      setComments(data.comments || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      // Set empty array on error
+      setComments([]);
+    } finally {
+      // Always set loading to false when done
+      setLoading(false);
+    }
   }, [threadId]);
 
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
-
+  // Comment skeleton component
   const CommentSkeleton = () => (
     <Box sx={{ mb: 2 }}>
       <Box sx={{ display: 'flex', gap: 1.5 }}>
@@ -127,635 +99,251 @@ const CommentPanel = ({ threadId }) => {
     </Box>
   );
 
-  const CommentItem = ({ comment, depth = 0 }) => {
-    const showReplies = expandedReplies[comment.id];
-    const isNewComment = comment.id === newCommentId;
-
-    return (
-      <Box sx={{ mb: 2 }}>
-        {/* SLIDE ONLY FOR NEW COMMENTS */}
-        {isNewComment ? (
-          <Slide
-            direction="right"
-            in={true}
-            timeout={500}
-            easing="cubic-bezier(0.4, 0, 0.2, 1)"
-          >
-            <Box sx={{ mb: 2 }}>
-              {/* COMMENT */}
-              <Box sx={{ display: 'flex', gap: 1.5 }}>
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    fontSize: 13,
-                    bgcolor: 'primary.main',
-                    border: '2px solid',
-                    borderColor: 'background.paper',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {comment.avatar}
-                </Avatar>
-
-                <Box sx={{ flex: 1 }}>
-                  {/* HEADER */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography
-                      fontWeight={600}
-                      fontSize={14}
-                      sx={{
-                        color: 'text.primary',
-                        '&:hover': {
-                          color: 'primary.main',
-                          cursor: 'pointer'
-                        }
-                      }}
-                    >
-                      {comment.author}
-                    </Typography>
-
-                    <Typography
-                      fontSize={12}
-                      color="text.secondary"
-                      sx={{ fontWeight: 500 }}
-                    >
-                      {comment.timestamp}
-                    </Typography>
-
-                    {comment.userVote !== 0 && (
-                      <Box
-                        sx={{
-                          px: 1,
-                          py: 0.2,
-                          borderRadius: 1,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          backgroundColor: comment.userVote === 1 ? 'success.main' : 'error.main',
-                          color: 'white'
-                        }}
-                      >
-                        {comment.userVote === 1 ? '↑' : '↓'}
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* CONTENT */}
-                  <Typography
-                    fontSize={14}
-                    sx={{
-                      lineHeight: 1.6,
-                      color: 'text.primary',
-                      wordBreak: 'break-word'
-                    }}
-                  >
-                    {comment.content}
-                  </Typography>
-
-                  {/* ACTIONS */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
-                    {/* Voting */}
-                    <Box sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
-                      borderRadius: 3,
-                      p: 0.5,
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-                      '&:hover': {
-                        backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-                        transform: 'translateY(-1px)'
-                      }
-                    }}>
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}>
-                        <ExpandLessRoundedIcon
-                          sx={{
-                            color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
-                            height: 20,
-                            width: 20,
-                            cursor: 'pointer',
-                            opacity: 1,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
-                              transform: 'scale(1.1)'
-                            }
-                          }}
-                          onClick={() => handleVote('upvote', comment.id)}
-                        />
-                        <Typography variant='subtitle2' sx={{
-                          color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
-                          fontWeight: comment.userVote !== 0 ? 700 : 500,
-                          fontSize: '0.75rem',
-                          transition: 'all 0.2s ease',
-                          minWidth: '20px',
-                          textAlign: 'center'
-                        }}>
-                          {comment.net_score}
-                        </Typography>
-                        <ExpandMoreRoundedIcon
-                          sx={{
-                            color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
-                            height: 20,
-                            width: 20,
-                            cursor: 'pointer',
-                            opacity: 1,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              color: comment.userVote === -1 ? '#F44336' : '#F44336',
-                              transform: 'scale(1.1)'
-                            }
-                          }}
-                          onClick={() => handleVote('downvote', comment.id)}
-                        />
-                      </Box>
-                    </Box>
-
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: 'text.secondary',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          color: 'primary.main'
-                        },
-                        transition: 'color 0.2s ease'
-                      }}
-                      onClick={() =>
-                        setReplyingTo(
-                          replyingTo === comment.id ? null : comment.id
-                        )
-                      }
-                    >
-                      Reply
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: 'text.secondary',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          color: 'primary.main'
-                        },
-                        transition: 'color 0.2s ease'
-                      }}
-                    >
-                      Share
-                    </Typography>
-
-                    <IconButton
-                      size="small"
-                      sx={{
-                        color: 'text.secondary',
-                        '&:hover': {
-                          color: 'primary.main',
-                          backgroundColor: 'action.hover'
-                        }
-                      }}
-                    >
-                      <MoreHorizIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          </Slide>
-        ) : (
-          /* REGULAR COMMENT WITHOUT SLIDE */
-          <Box sx={{ mb: 2 }}>
-            {/* COMMENT */}
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  fontSize: 13,
-                  bgcolor: 'primary.main',
-                  border: '2px solid',
-                  borderColor: 'background.paper',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-              >
-                {comment.avatar}
-              </Avatar>
-
-              <Box sx={{ flex: 1 }}>
-                {/* HEADER */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Typography
-                    fontWeight={600}
-                    fontSize={14}
-                    sx={{
-                      color: 'text.primary',
-                      '&:hover': {
-                        color: 'primary.main',
-                        cursor: 'pointer'
-                      }
-                    }}
-                  >
-                    {comment.author}
-                  </Typography>
-
-                  <Typography
-                    fontSize={12}
-                    color="text.secondary"
-                    sx={{ fontWeight: 500 }}
-                  >
-                    {comment.timestamp}
-                  </Typography>
-
-                  {comment.userVote !== 0 && (
-                    <Box
-                      sx={{
-                        px: 1,
-                        py: 0.2,
-                        borderRadius: 1,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        backgroundColor: comment.userVote === 1 ? 'success.main' : 'error.main',
-                        color: 'white'
-                      }}
-                    >
-                      {comment.userVote === 1 ? '↑' : '↓'}
-                    </Box>
-                  )}
-                </Box>
-
-                {/* CONTENT */}
-                <Typography
-                  fontSize={14}
-                  sx={{
-                    lineHeight: 1.6,
-                    color: 'text.primary',
-                    wordBreak: 'break-word'
-                  }}
-                >
-                  {comment.content}
-                </Typography>
-
-                {/* ACTIONS */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1.5 }}>
-                  {/* Voting */}
-                  <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
-                    borderRadius: 3,
-                    p: 0.5,
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-                    '&:hover': {
-                      backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-                      transform: 'translateY(-1px)'
-                    }
-                  }}>
-                    <Box sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.5
-                    }}>
-                      <ExpandLessRoundedIcon
-                        sx={{
-                          color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
-                          height: 20,
-                          width: 20,
-                          cursor: 'pointer',
-                          opacity: 1,
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
-                            transform: 'scale(1.1)'
-                          }
-                        }}
-                        onClick={() => handleVote('upvote', comment.id)}
-                      />
-                      <Typography variant='subtitle2' sx={{
-                        color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
-                        fontWeight: comment.userVote !== 0 ? 700 : 500,
-                        fontSize: '0.75rem',
-                        transition: 'all 0.2s ease',
-                        minWidth: '20px',
-                        textAlign: 'center'
-                      }}>
-                        {comment.net_score}
-                      </Typography>
-                      <ExpandMoreRoundedIcon
-                        sx={{
-                          color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
-                          height: 20,
-                          width: 20,
-                          cursor: 'pointer',
-                          opacity: 1,
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            color: comment.userVote === -1 ? '#F44336' : '#F44336',
-                            transform: 'scale(1.1)'
-                          }
-                        }}
-                        onClick={() => handleVote('downvote', comment.id)}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      color: 'text.secondary',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        color: 'primary.main'
-                      },
-                      transition: 'color 0.2s ease'
-                    }}
-                    onClick={() =>
-                      setReplyingTo(
-                        replyingTo === comment.id ? null : comment.id
-                      )
-                    }
-                  >
-                    Reply
-                  </Typography>
-
-                  <Typography
-                    sx={{
-                      fontSize: 12,
-                      color: 'text.secondary',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        color: 'primary.main'
-                      },
-                      transition: 'color 0.2s ease'
-                    }}
-                  >
-                    Share
-                  </Typography>
-
-                  <IconButton
-                    size="small"
-                    sx={{
-                      color: 'text.secondary',
-                      '&:hover': {
-                        color: 'primary.main',
-                        backgroundColor: 'action.hover'
-                      }
-                    }}
-                  >
-                    <MoreHorizIcon fontSize="small" />
-                  </IconButton>
-
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        )}
-
-        {/* VIEW REPLIES */}
-        {comment.replies?.length > 0 && !showReplies && (
-          <Button
-            onClick={() => toggleReplies(comment.id)}
-            sx={{
-              textTransform: 'none',
-              fontSize: 12,
-              mt: 1.5,
-              color: 'primary.main',
-              fontWeight: 500,
-              px: 0,
-              justifyContent: 'flex-start',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: 'primary.dark'
-              }
-            }}
-          >
-            {comment.replies.length === 1 ? 'View reply' : `View ${comment.replies.length} replies`}
-          </Button>
-        )}
-
-        {/* REPLIES */}
-        {showReplies && (
-          <Box
-            sx={{
-              borderLeft: '2px solid',
-              borderColor: 'divider',
-              pl: 2,
-              mt: 2
-            }}
-          >
-
-            {comment.replies.map(reply => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                depth={depth + 1}
-              />
-            ))}
-
-            <Button
-              onClick={() => toggleReplies(comment.id)}
-              sx={{
-                textTransform: 'none',
-                fontSize: 12,
-                mt: 1,
-                color: 'text.secondary',
-                px: 0,
-                justifyContent: 'flex-start',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  color: 'primary.main'
-                }
-              }}
-            >
-              Hide replies
-            </Button>
-
-          </Box>
-        )}
-      </Box>
-    );
+  // Handler for closing the modal
+  const isCloseHandler = () => {
+    isClose();
   };
 
+  // All useEffect hooks
+  useEffect(() => {
+    if (isOpen) {
+      fetchComments();
+    }
+  }, [isOpen, fetchComments, threadId]);
+
   return (
-    <Paper
+    // Comment Panel Modal - Parent
+    <Modal
+      open={isOpen}
+      onClose={isCloseHandler}
       sx={{
-        p: 3,
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        mt: 3
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}
     >
-
-      {/* TITLE */}
-      <Box sx={{ mb: 2 }}>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-            fontWeight: 500
-          }}
-        >
-          Discussion
-        </Typography>
-      </Box>
-      {/* COMMENTS */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {loading ? (
-          // Show skeleton loaders when loading
-          <>
-            {Array.from({ length: comments.length || 3 }, (_, index) => (
-              <Box key={index}>
-                <CommentSkeleton />
-                {index < (comments.length || 3) - 1 && (
-                  <Divider
-                    sx={{
-                      mt: 2,
-                      mb: 1,
-                      borderColor: 'divider',
-                      opacity: 0.6
-                    }}
-                  />
-                )}
-              </Box>
-            ))}
-          </>
-        ) : (
-          // Show actual comments when loaded
-          comments.map((comment, index) => (
-            <Box key={comment.id}>
-              <CommentItem
-                comment={comment}
-                depth={0}
-              />
-              {index < comments.length - 1 && (
-                <Divider
-                  sx={{
-                    mt: 2,
-                    mb: 1,
-                    borderColor: 'divider',
-                    opacity: 0.6
-                  }}
-                />
-              )}
-            </Box>
-          ))
-        )}
-      </Box>
-
-      <Divider sx={{ mb: 2, borderColor: 'divider' }} />
-
-      {/* COMMENT INPUT */}
-      <Box
+      <Paper
         sx={{
-          display: 'flex',
-          gap: 1.5,
-          mb: 3,
-          p: 2,
-          backgroundColor: 'background.paper',
-          borderRadius: 2,
+          width: '60%',
+          maxWidth: 800,
+          p: 3,
           border: '1px solid',
           borderColor: 'divider',
-          '&:hover': {
-            borderColor: 'primary.main'
-          }
+          mt: 3,
+          bgcolor: 'background.default',
+          maxHeight: '90vh',
+          overflowY: 'auto'
         }}
       >
 
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: 'primary.main',
-            fontSize: 14,
-            fontWeight: 600
-          }}
-        >
-          Y
-        </Avatar>
+        {/* ACTUAL THREAD CONTENT */}
+        {threadData && (
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Avatar
+                src={threadData.user_avatar_url}
+                sx={{ width: 30, height: 30 }}
+              >
+                {threadData.username?.[0]?.toUpperCase()}
+              </Avatar>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: 500, color: 'text.primary', lineHeight: 1.2 }}
+                  >
+                    {threadData.username}
+                  </Typography>
 
-        <Box sx={{ flex: 1 }}>
-          <TextField
-            fullWidth
-            value={newCommentText}
-            onChange={(e) => setNewCommentText(e.target.value)}
-            placeholder="What are your thoughts?"
-            multiline
-            maxRows={4}
-            variant="outlined"
-            size="small"
-            disabled={isPostingComment}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handlePostComment(threadId);
-              }
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: 'transparent',
-                border: 'none',
-                '& fieldset': {
-                  border: 'none'
-                },
-                '&:hover fieldset': {
-                  border: 'none'
-                },
-                '&.Mui-focused fieldset': {
-                  border: 'none'
-                },
-                '& .MuiInputBase-input': {
-                  fontSize: 14,
-                  lineHeight: 1.4,
-                  color: 'text.primary',
-                  '&::placeholder': {
-                    color: 'text.secondary',
-                    opacity: 0.7
-                  }
-                }
-              }
-            }}
-          />
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              Press Enter to submit, Shift+Enter for new line
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary', fontSize: '0.72rem' }}
+                  >
+                    Posted in {threadData.space_name}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {threadData.timeAgo}
+                </Typography>
+              </Box>
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+              {threadData.title}
             </Typography>
+            <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
+              {threadData.content}
+            </Typography>
+          </Box>
+        )}
 
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<MessageSquare size={16} />}
-              disabled={isPostingComment || !newCommentText.trim()}
-              onClick={() => handlePostComment(threadId)}
-              sx={{
-                textTransform: 'none',
-                borderRadius: 2,
-                fontSize: 13,
-                px: 2,
-                py: 0.8,
-                backgroundColor: 'primary.main',
-                '&:hover': {
-                  backgroundColor: 'primary.dark'
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: 'action.disabled',
-                  color: 'action.disabled'
+        {/* TITLE */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              fontWeight: 600,
+              color: 'primary.main',
+              letterSpacing: 0.3
+            }}
+          >
+            Discussions
+          </Typography>
+        </Box>
+
+        {/* COMMENT INPUT */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+          <Avatar
+            src={threadData?.user_avatar_url}
+            sx={{ width: 30, height: 30 }}
+          >
+            {threadData?.username?.[0]?.toUpperCase()}
+          </Avatar>
+
+          <Box sx={{ flex: 1 }}>
+            <TextField
+              fullWidth
+              value={newCommentText}
+              onChange={(e) => setNewCommentText(e.target.value)}
+              placeholder="Write a reply..."
+              multiline
+              maxRows={4}
+              variant="standard"
+              disabled={isPostingComment}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handlePostComment(threadId);
                 }
               }}
-            >
-              {isPostingComment ? 'Discussing...' : 'Discuss'}
-            </Button>
+              sx={{
+                '& .MuiInputBase-root': {
+                  fontSize: 14,
+                },
+                '& .MuiInputBase-input': {
+                  py: 0.5,
+                },
+                '& .MuiInput-underline:before': {
+                  borderBottomColor: 'divider',
+                },
+                '& .MuiInput-underline:hover:before': {
+                  borderBottomColor: 'text.secondary',
+                },
+                '& .MuiInput-underline:after': {
+                  borderBottomColor: 'primary.main',
+                }
+              }}
+            />
+
+            {/* Action row (only appears when typing) */}
+            {newCommentText.trim() && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  mt: 0.5
+                }}
+              >
+                <Button
+                  size="small"
+                  disabled={isPostingComment}
+                  onClick={() => handlePostComment(threadId)}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    minWidth: 'auto',
+                    px: 1.5
+                  }}
+                >
+                  {isPostingComment ? 'Posting...' : 'Reply'}
+                </Button>
+              </Box>
+            )}
+
           </Box>
         </Box>
-      </Box>
-    </Paper >
+
+        {/* COMMENTS DISPLAY */}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 400,
+            pr: 1,
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'divider',
+              borderRadius: '3px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: 'text.secondary',
+            }
+          }}
+        >
+          {/* Conditional rendering for loading state - shows skeleton loaders */}
+          {loading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <Box
+                key={index}
+                sx={{
+                  animation: `fadeIn 0.3s ease-in-out ${index * 0.1}s both`,
+                  animationFillMode: 'both'
+                }}
+              >
+                <CommentSkeleton key={index} />
+              </Box>
+            ))
+          ) : comments.length === 0 ? (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                py: 8,
+                color: 'text.secondary'
+              }}
+            >
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                No comments yet
+              </Typography>
+              <Typography variant="caption">
+                Be the first to share your thoughts!
+              </Typography>
+            </Box>
+          ) : (
+            // Conditional rendering for comments - shows actual comments
+            comments.map((comment) => (
+              <Box
+                key={comment.id}
+                sx={{
+                  py: 1.5,
+                }}
+              >
+                {/* Shows actual each comment item */}
+                <CommentItem
+                  comment={comment}
+                  depth={0}
+                  expandedReplies={expandedReplies}
+                  newCommentId={newCommentId}
+                  replyTexts={replyTexts}
+                  replyingTo={replyingTo}
+                  comments={comments}
+                  setComments={setComments}
+                  onReplyingTo={setReplyingTo}
+                  onReplyTextsChange={setReplyTexts}
+                />
+              </Box>
+            ))
+          )}
+        </Box>
+      </Paper >
+    </Modal>
   );
 };
 

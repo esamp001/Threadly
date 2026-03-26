@@ -83,7 +83,6 @@ const CardOnboarding = () => {
       const result = await response.json();
 
       if (result.success) {
-        console.log('Onboarding saved successfully:', result);
         await fetchUser();
         navigate('/home');
       } else {

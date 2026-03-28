@@ -46,9 +46,11 @@ router.get('/all_spaces', async (req, res) => {
   }
 });
 
-router.get('/all_threads', async (req, res) => {
+router.get('/all_threads', checkAuth, async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
+  const userId = req.user?.userId;
+
   let threads = []
 
   try {
@@ -58,9 +60,10 @@ router.get('/all_threads', async (req, res) => {
       .leftJoin('users', 'threads.created_by', 'users.id')
       .leftJoin('scores', function () {
         this.on('threads.id', '=', 'scores.thread_id')
-          .andOn('scores.user_id', '=', 1)
+          .andOn('scores.user_id', '=', knex.raw('?', [userId]))
       })
       .leftJoin('comments', 'threads.id', 'comments.thread_id')
+      .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]))  // Join current user
       .select('threads.id',
         'threads.title',
         'threads.content',
@@ -76,7 +79,8 @@ router.get('/all_threads', async (req, res) => {
         'spaces.space_name',
         'spaces.avatar_url',
         'spaces.space_name',
-        'scores.vote_type as userVote')
+        'scores.vote_type as userVote',
+        'current_user.avatar_url as current_user_avatar_url')  // Add current user avatar
       .count('comments.id as comment_count')
       .groupBy(
         'threads.id',
@@ -94,7 +98,8 @@ router.get('/all_threads', async (req, res) => {
         'spaces.space_name',
         'spaces.avatar_url',
         'spaces.space_name',
-        'scores.vote_type'
+        'scores.vote_type',
+        'current_user.avatar_url'
       )
       .orderBy('threads.created_at', 'desc')
       .limit(limit)
@@ -231,7 +236,7 @@ router.post('/create_thread', checkAuth, async (req, res) => {
 
 router.post('/threads/vote', checkAuth, async (req, res) => {
   const { threadId, voteType } = req.body;
-  // const userId = req.user.id; // from auth middleware
+  const userId = req.user.userId;
 
   const numericVote = voteType === 'upvote' ? 1 : -1;
 
@@ -241,14 +246,14 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
     await knex.transaction(async (trx) => {
 
       const existingVote = await trx('scores')
-        .where({ user_id: 1, thread_id: threadId })
+        .where({ user_id: userId, thread_id: threadId })
         .first();
 
       // Case 1: No previous vote
       if (!existingVote) {
 
         await trx('scores').insert({
-          user_id: 1,
+          user_id: userId,
           thread_id: threadId,
           vote_type: numericVote
         });
@@ -264,7 +269,7 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
       else if (existingVote.vote_type === numericVote) {
 
         await trx('scores')
-          .where({ user_id: 1, thread_id: threadId })
+          .where({ user_id: userId, thread_id: threadId })
           .delete();
 
         await trx('threads')
@@ -277,7 +282,7 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
       // Case 3: Switching vote
       else {
         await trx('scores')
-          .where({ user_id: 1, thread_id: threadId })
+          .where({ user_id: userId, thread_id: threadId })
           .update({ vote_type: numericVote });
 
         await trx('threads')

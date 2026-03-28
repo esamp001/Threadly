@@ -22,14 +22,6 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
   const [loading, setLoading] = useState(false);
   const [replyTexts, setReplyTexts] = useState({});
 
-  // Toggles the visibility of replies for a given comment ID.
-  // const toggleReplies = (id) => {
-  //   setExpandedReplies(prev => ({
-  //     ...prev,
-  //     [id]: !prev[id]
-  //   }));
-  // };
-
   // Handles posting a new comment to a thread.
   const handlePostComment = async (threadId) => {
     if (!newCommentText.trim()) return;
@@ -193,10 +185,10 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
         {/* COMMENT INPUT */}
         <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
           <Avatar
-            src={threadData?.user_avatar_url}
+            src={threadData?.current_user_avatar_url}
             sx={{ width: 30, height: 30 }}
           >
-            {threadData?.username?.[0]?.toUpperCase()}
+            {threadData?.current_user_avatar_url?.[0]?.toUpperCase()}
           </Avatar>
 
           <Box sx={{ flex: 1 }}>

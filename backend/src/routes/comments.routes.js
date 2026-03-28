@@ -81,7 +81,7 @@ router.post('/', checkAuth, async (req, res) => {
 });
 
 // GET - Fetch comments for a thread
-router.get('/', async (req, res) => {
+router.get('/', checkAuth, async (req, res) => {
   const { thread_id } = req.query;
   const userId = req.user?.userId;
 
@@ -89,7 +89,10 @@ router.get('/', async (req, res) => {
     // Fetch ALL comments for this thread (both top-level and replies)
     const allComments = await knex('comments AS c')
       .leftJoin('users AS u', 'u.id', 'c.created_by')
-      .leftJoin('comment_votes AS cv', 'cv.comment_id', 'c.id')
+      .leftJoin('comment_votes AS cv', function () {
+        this.on('cv.comment_id', '=', 'c.id')
+          .andOn('cv.user_id', '=', knex.raw('?', [userId]))
+      })
       .where('c.thread_id', thread_id)
       .orderBy('c.created_at', 'desc')
       .select(

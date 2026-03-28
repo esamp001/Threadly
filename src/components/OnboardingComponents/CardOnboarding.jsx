@@ -314,6 +314,7 @@ const CardOnboarding = () => {
                 mt: 1
               }}>
                 <CustomButton
+                  disabled={avatarOptions.gender === 'male'}
                   children="Male"
                   variant={avatarOptions.gender === 'male' ? 'contained' : 'outlined'}
                   onClick={() => setAvatarOptions({ ...avatarOptions, gender: 'male' })}
@@ -332,6 +333,7 @@ const CardOnboarding = () => {
                 />
 
                 <CustomButton
+                  disabled={avatarOptions.gender === 'female'}
                   children="Female"
                   variant={avatarOptions.gender === 'female' ? 'contained' : 'outlined'}
                   onClick={() => setAvatarOptions({ ...avatarOptions, gender: 'female' })}

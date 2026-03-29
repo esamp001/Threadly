@@ -23,6 +23,7 @@ router.post('/', checkAuth, async (req, res) => {
           username: username,
           avatar_url: avatar_url,
           gender: avatar_preferences?.options?.gender || null,
+          is_onboarded: true,
           updated_at: new Date()
         });
 

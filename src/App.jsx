@@ -5,18 +5,26 @@ import Home from "./pages/Home"
 import Onboarding from "./pages/Onboarding"
 import ThreadlyLogin from "./pages/SpaceLogin"
 
-const ProtectedRoutes = (path, component) => {
-  return (
-    <Route
-      path={path}
-      element={
-        <ProtectedRoute>
-          {component}
-        </ProtectedRoute>
-      }
-    />
-  )
-}
+// const ProtectedRoutes = (path, component) => {
+//   return (
+//     <Route
+//       path={path}
+//       element={
+//         <ProtectedRoute>
+//           {component}
+//         </ProtectedRoute>
+//       }
+//     />
+//   )
+// }
+
+const ProtectedRoutes = (path, component) => (
+  <Route path={path} element={<ProtectedRoute requireOnboarding={true}>{component}</ProtectedRoute>} />
+);
+
+const OnboardingRoute = (path, component) => (
+  <Route path={path} element={<ProtectedRoute requireOnboarding={false}>{component}</ProtectedRoute>} />
+);
 
 
 
@@ -28,7 +36,7 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<ThreadlyLogin />} />
         {ProtectedRoutes("/home", <Home />)}
-        {ProtectedRoutes("/onboarding", <Onboarding />)}
+        {OnboardingRoute("/onboarding", <Onboarding />)}
       </Routes>
     </AuthProvider>
   )

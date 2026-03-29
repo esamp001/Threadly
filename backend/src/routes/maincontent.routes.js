@@ -105,8 +105,6 @@ router.get('/all_threads', checkAuth, async (req, res) => {
       .limit(limit)
       .offset(offset);
 
-    console.log(threadsData);
-
     threads = threadsData.map(thread => ({
       ...thread,
       space_avatar_url: thread.avatar_url

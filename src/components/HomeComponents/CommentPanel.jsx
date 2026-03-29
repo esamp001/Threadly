@@ -14,7 +14,7 @@ import apiRequest from '../../config/api';
 import CommentItem from './CommentItem';
 
 
-const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
+const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpdate }) => {
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
@@ -45,6 +45,8 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
     setNewCommentText('');
     setNewCommentId(null);
     setIsPostingComment(false);
+    // Update comment count
+    onCommentCountUpdate(newComment.comment.comments);
   };
 
   // Fetches comments for a given thread ID.

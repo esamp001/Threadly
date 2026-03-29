@@ -548,6 +548,14 @@ const MainContent = ({ spaces, setSpaces }) => {
             isOpen={isOpen}
             threadId={threadId}
             threadData={selectedThreadData}
+            onCommentCountUpdate={(newCount) => {
+              setThreads(prev => {
+                const updated = prev.map(thread => {
+                  return thread.id === parseInt(threadId) ? { ...thread, comments: newCount } : thread;
+                });
+                return updated;
+              });
+            }}
           />
         )
       ))}

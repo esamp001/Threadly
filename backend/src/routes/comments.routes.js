@@ -13,6 +13,7 @@ router.post('/', checkAuth, async (req, res) => {
   let error_message = '';
   let status = 201;
   let success = true;
+  let comment_count = 0;
 
   try {
     if (!content || !thread_id || !userId) {
@@ -31,6 +32,14 @@ router.post('/', checkAuth, async (req, res) => {
     if (!commentId) {
       throw new Error('Failed to create comment - no ID returned');
     }
+
+    // Get the comment count for this thread
+    const countResult = await knex('comments')
+      .where('thread_id', thread_id)
+      .count('* as count')
+      .first();
+
+    comment_count = parseInt(countResult.count) || 0;
 
     comment = await knex('comments AS c')
       .leftJoin('users AS u', 'u.id', 'c.created_by')
@@ -59,7 +68,8 @@ router.post('/', checkAuth, async (req, res) => {
       timestamp: formatRelativeTime(comment.created_at),
       net_score: 0,
       userVote: 0,
-      replies: []
+      replies: [],
+      comments: comment_count
     };
 
     if (!comment.id || !comment.content) {

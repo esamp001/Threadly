@@ -510,13 +510,18 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
             <Box sx={{ display: 'flex', gap: 3, mt: 3 }}>
               {/* Left side - Form fields */}
               <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 1 }}>
-                  <TextFieldThreadly
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  width: '100%',
+                  justifyContent: 'space-between',
+                  gap: 1
+                }}>                  <TextFieldThreadly
                     label="Space Name"
                     variant="outlined"
                     value={formData.spaceName}
                     size="small"
-                    sx={{ mt: 2, width: '100%' }}
+                    sx={{ mt: 1, width: '100%' }}
                     required
                     onChange={(e) => {
                       const slug = e.target.value
@@ -534,7 +539,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                     variant="outlined"
                     size="small"
                     sx={{
-                      mt: 2,
+                      mt: 1,
                       width: '100%',
                       pointerEvents: 'none',
                       cursor: 'not-allowed'
@@ -695,7 +700,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
             <Box sx={{ mt: 3 }}>
               <TextFieldThreadly
-                sx={{ width: '50%' }}
+                sx={{ width: { xs: '100%', md: '100%' } }}
                 label="Invite by username or email"
                 placeholder="Enter usernames or emails separated by commas"
               />

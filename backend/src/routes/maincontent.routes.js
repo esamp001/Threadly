@@ -55,7 +55,7 @@ router.get('/all_threads', checkAuth, async (req, res) => {
 
   try {
     // Get the threads for current page with user votes and comment count
-    threads = await knex('threads')
+    const threadsData = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
       .leftJoin('users', 'threads.created_by', 'users.id')
       .leftJoin('scores', function () {
@@ -104,6 +104,13 @@ router.get('/all_threads', checkAuth, async (req, res) => {
       .orderBy('threads.created_at', 'desc')
       .limit(limit)
       .offset(offset);
+
+    console.log(threadsData);
+
+    threads = threadsData.map(thread => ({
+      ...thread,
+      space_avatar_url: thread.avatar_url
+    }));
 
     // Get total count for pagination info
     const totalCount = await knex('threads')
@@ -208,12 +215,14 @@ router.post('/create_thread', checkAuth, async (req, res) => {
     threadWithSpace = await knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
       .leftJoin('users', 'threads.created_by', 'users.id')
+      .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]))
       .select(
         'threads.*',
         'spaces.space_name',
         'spaces.avatar_url as space_avatar_url',
         'users.username',
-        'users.avatar_url as user_avatar_url'
+        'users.avatar_url as user_avatar_url',
+        'current_user.avatar_url as current_user_avatar_url'
       )
       .where('threads.id', thread[0].id)
       .first();

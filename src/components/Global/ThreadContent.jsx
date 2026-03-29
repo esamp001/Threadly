@@ -8,6 +8,7 @@ import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
 const ThreadContent = ({
   net_score,
   avatar,
+  spaceAvatar,
   postedBy,
   timeAgo,
   title,
@@ -27,7 +28,7 @@ const ThreadContent = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar
           sx={{ height: 40, width: 40, mr: 1 }}
-          src={avatar}
+          src={spaceAvatar}
           alt={spaceName}
         >
           {spaceName ? spaceName.charAt(0).toUpperCase() : 'S'}

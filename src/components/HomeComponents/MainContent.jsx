@@ -524,6 +524,7 @@ const MainContent = ({ spaces, setSpaces }) => {
             handleVote={handleVote}
             userVote={thread.userVote}
             avatar={thread.avatar_url}
+            spaceAvatar={thread.space_avatar_url}
             spaceName={thread.space_name || 'Unknown Space'}
             postedBy={thread.username}
             timeAgo={thread.timeAgo}

@@ -1,3 +1,4 @@
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
   Avatar,
   Box,
@@ -11,6 +12,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import apiRequest from '../../config/api';
 import CommentItem from './CommentItem';
+
 
 const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
   const [isPostingComment, setIsPostingComment] = useState(false);
@@ -110,23 +112,72 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
       onClose={isCloseHandler}
       sx={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
+        alignItems: { xs: 'flex-start', md: 'center' }, // Top align on mobile, center on desktop
+        justifyContent: 'center',
+        pt: { xs: 0, md: 0 } // No top padding on mobile
       }}
     >
       <Paper
         sx={{
-          width: '60%',
-          maxWidth: 800,
-          p: 3,
+          width: { xs: '100%', md: '60%' },
+          maxWidth: { xs: '100%', md: 800 },
+          height: { xs: '100vh', md: 'auto' },
+          maxHeight: { xs: '100vh', md: '90vh' },
+          m: { xs: 0, md: 2 }, // No margin on mobile, margin on desktop
+          p: { xs: 2, md: 3 }, // Less padding on mobile
           border: '1px solid',
           borderColor: 'divider',
-          mt: 3,
           bgcolor: 'background.default',
-          maxHeight: '90vh',
-          overflowY: 'auto'
+          overflowY: 'auto',
+          borderRadius: { xs: 0, md: 2 }, // No radius on mobile, radius on desktop
+          position: { xs: 'relative', md: 'static' } // Relative on mobile for full screen
         }}
       >
+
+        {/* Header for mobile */}
+        <Box sx={{
+          display: { xs: 'flex', md: 'none' },
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+          px: 1,
+          py: 1,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'background.paper'
+        }}>
+          <Button
+            onClick={isCloseHandler}
+            startIcon={<ArrowBackIcon />}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+              color: 'primary.main',
+              fontSize: '0.875rem',
+              minWidth: 'auto',
+              p: 1
+            }}
+          >
+            Back
+          </Button>
+
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              color: 'text.primary',
+              textAlign: 'center',
+              flex: 1,
+              mx: 2
+            }}
+          >
+            Thread
+          </Typography>
+
+          <Box sx={{ width: 60 }} /> {/* Spacer to balance the layout */}
+        </Box>
+
 
         {/* ACTUAL THREAD CONTENT */}
         {threadData && (
@@ -302,7 +353,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData }) => {
               }}
             >
               <Typography variant="body1" sx={{ mb: 1 }}>
-                No comments yet
+                No discussions yet
               </Typography>
               <Typography variant="caption">
                 Be the first to share your thoughts!

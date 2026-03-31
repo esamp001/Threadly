@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const db = require('../db/knex');
+const { checkAuth } = require('../middleware/checkAuth');
 
 const router = express.Router();
 
@@ -81,6 +82,24 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     console.error('Authentication failed:', error);
     res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
+// POST - Logout user
+router.post('/logout', checkAuth, async (req, res) => {
+  try {
+    // This should work fine - no database calls, no complex logic
+    res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    // This only runs if something unexpected breaks
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed'
+    });
   }
 });
 

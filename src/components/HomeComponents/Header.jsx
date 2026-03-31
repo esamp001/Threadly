@@ -1,9 +1,11 @@
 import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Skeleton, Switch, TextField, Tooltip, Typography } from '@mui/material';
+import Menu from '@mui/material/Menu';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -13,7 +15,10 @@ import TextFieldThreadly from './TextFieldThreadly';
 const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeStep, setActiveStep] = useState(0);
@@ -32,12 +37,13 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     spaceName: '',
     spaceDescription: '',
     spaceSlug: '',
-    avatarUrl: '',  // Store the Cloudinary URL here
-    avatarPublicId: '',  // Store Cloudinary public_id
+    avatarUrl: '',
+    avatarPublicId: '',
     topics: [],
     communityType: 'public',
     isMature: false,
   });
+
   // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -49,7 +55,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     'Space Members (Optional)'
   ];
 
-  // Handle avatar upload
+  // A fetch that handles avatar upload
   const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
 
@@ -157,6 +163,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     fetchTopics();
   }, []);
 
+  // A fetch that handles space creation
   const saveSpace = async () => {
     try {
       setLoading(true);
@@ -203,6 +210,47 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     }
   };
 
+  // Fetch that handles logout for the current user
+  const handleLogout = async () => {
+    try {
+      console.log('Starting logout...');
+
+      // Call logout API
+      const response = await apiRequest('/api/auth/logout', {
+        method: 'POST'
+      });
+
+      console.log('Logout response:', response);
+
+      // response return json
+      const result = await response.json();
+      console.log('Logout result:', result);
+
+      if (result && result.success) {
+        console.log('Logout successful, clearing token...');
+        // Clear local storage
+        localStorage.removeItem('token');
+
+        showSnackbar(result.message || 'Logged out successfully', 'success');
+        handleMenuClose();
+        console.log('Navigating to login...');
+        navigate('/login');
+      } else {
+        console.log('Logout failed:', result);
+        // Handle failed logout
+        showSnackbar(result?.message || 'Logout failed', 'error');
+      }
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear local data even if API fails
+      localStorage.removeItem('token');
+      // logout(); // Remove this too
+      navigate('/login');
+    }
+  };
+
+  // A function that validates the current step
   const validateStep = () => {
     const errors = {};
 
@@ -228,6 +276,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     return false;
   };
 
+  // A function that handles the next button
   const handleNext = () => {
     if (validateStep()) return;
 
@@ -238,16 +287,29 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     }
   };
 
+  // Function that handles the back button
   const handleBack = () => {
     setActiveStep((prev) => Math.max(prev - 1, 0));
   };
 
+  // Function that handles the reset button
   const handleReset = () => {
     setActiveStep(0);
     setOpenDrawer(false);
   };
 
+  // Function that handles the menu open
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Function that handles the menu close
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
+    // Main grid container for the header
     <Grid
       container
       spacing={2}
@@ -322,7 +384,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         </Box>
       </Grid>
 
-
+      {/* Drawer for creating a space */}
       <Drawer
         anchor="top"
         open={openDrawer}
@@ -799,18 +861,105 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       </Grid>
 
 
+      {/* User Avatar */}
       <Grid item size="auto">
         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
           <Box sx={{ position: 'relative' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Avatar
-                sx={{ width: 50, height: 50 }}
+                sx={{
+                  width: 50,
+                  height: 50,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    opacity: 0.8,
+                    transform: 'translateY(-2px)'
+                  },
+                  transition: 'all 0.2s ease-in-out'
+                }}
                 src={getAvatarUrl()}
                 alt={user?.username}
+                onClick={handleMenuOpen}
               >
                 {user?.username ? user.username.charAt(0).toUpperCase() : 'J'}
               </Avatar>
             </Box>
+
+            {/* Add the Menu component */}
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              PaperProps={{
+                sx: {
+                  bgcolor: 'background.default',
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                  minWidth: 180,
+                  mt: 1,
+                  '& .MuiList-root': {
+                    py: 1,
+                  }
+                }
+              }}
+            >
+              <MenuItem
+                // onClick={handleMenuClose}
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  fontSize: '0.875rem',
+                  color: 'text.primary',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    color: 'primary.main'
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'text.secondary'
+                  }
+                }}
+              >
+                Profile
+              </MenuItem>
+              <MenuItem
+                // onClick={handleMenuClose}
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  fontSize: '0.875rem',
+                  color: 'text.primary',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    color: 'primary.main'
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'text.secondary'
+                  }
+                }}
+              >
+                Settings
+              </MenuItem>
+              <MenuItem
+                onClick={handleLogout}
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  fontSize: '0.875rem',
+                  color: 'text.primary',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    color: 'error.main'
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'text.secondary'
+                  }
+                }}
+              >
+                Logout
+              </MenuItem>
+            </Menu>
 
             <Box
               sx={{

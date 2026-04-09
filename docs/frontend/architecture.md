@@ -419,6 +419,186 @@ const MainContent = () => {
 };
 ```
 
+## Coding Standards
+
+### Performance Guidelines
+
+#### 1. Use Helper Functions
+Avoid performance-heavy operations like `filter`, `reduce`, and explicit loops when possible. Use `map` for transformations and helper functions for complex logic.
+
+**Preferred:**
+```jsx
+// Helper function for data transformation
+const transformComments = (comments) => {
+  return comments.map(comment => ({
+    ...comment,
+    formatted: formatComment(comment)
+  }));
+};
+
+// Use helper for complex logic
+const findCommentById = (comments, id) => {
+  for (const comment of comments) {
+    if (comment.id === id)
+    return comment;
+
+    if (comment.replies?.length > 0) {
+      const found = findCommentById(comment.replies, id);
+      if (found) 
+      return found;
+    }
+  }
+  return null;
+};
+```
+
+**Avoid:**
+```jsx
+// Performance issues with filter + map chain
+const filtered = comments.filter(c => c.id === targetId).map(c => transform(c));
+
+// Explicit loops in render
+for (const item of items) {
+  // ...
+}
+```
+
+#### 2. Display Logic - Use Ternary Operators
+For conditional rendering, use ternary operators instead of if/else blocks.
+
+**Preferred:**
+```jsx
+<Typography sx={{ color: isActive ? 'primary.main' : 'text.secondary' }}>
+  {isActive ? 'Active' : 'Inactive'}
+</Typography>
+```
+
+**Avoid:**
+```jsx
+{if (isActive) {
+  return <Typography color="primary.main">Active</Typography>;
+} else {
+  return <Typography color="text.secondary">Inactive</Typography>;
+}}
+```
+
+#### 3. API Calls - useCallback + useEffect Pattern
+Always wrap fetch functions in `useCallback` and use them with `useEffect` for effective memoization and dependency management.
+
+**Preferred:**
+```jsx
+const fetchData = useCallback(async () => {
+  try {
+    const response = await api.get('/threads');
+    setData(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}, []); // Dependencies
+
+useEffect(() => {
+  fetchData();
+}, [fetchData]); // Memoized function as dependency
+```
+
+**Avoid:**
+```jsx
+useEffect(() => {
+  const fetchData = async () => {
+    const response = await api.get('/threads');
+    setData(response.data);
+  };
+  fetchData();
+}, []); // Function recreated on every render
+```
+
+#### 4. State Updates
+Use functional updates when new state depends on previous state to avoid stale closures.
+
+**Preferred:**
+```jsx
+setCount(prev => prev + 1);
+setComments(prev => updateVoteRecursively(prev, commentId, voteType));
+```
+
+**Avoid:**
+```jsx
+setCount(count + 1); // Can have stale closure issues
+```
+
+#### 5. Theme Colors
+Always use theme colors for styling new features or components. Reference the theme palette for all color values.
+
+**Preferred:**
+```jsx
+// Use theme colors
+<Box sx={{ color: 'text.primary', backgroundColor: 'primary.main' }} />
+<Typography sx={{ color: 'secondary.main' }} />
+<Button sx={{ backgroundColor: 'button.backgroundColor' }} />
+
+// Access theme in components
+const theme = useTheme();
+<Box sx={{ color: theme.palette.text.primary }} />
+```
+
+**Avoid:**
+```jsx
+// Hardcoded colors
+<Box sx={{ color: '#FFFFFF', backgroundColor: '#1DB954' }} />
+<Typography sx={{ color: '#B3B3B3' }} />
+```
+
+### Code Organization
+
+#### 1. Import Order
+```jsx
+// 1. React imports
+import React, { useState, useEffect } from 'react';
+
+// 2. Third-party libraries
+import { Box, Typography } from '@mui/material';
+import { SomeIcon } from 'lucide-react';
+
+// 3. Internal imports (absolute paths preferred)
+import VotingComponent from './VotingComponent';
+import api from '../../config/api';
+```
+
+#### 2. Component Structure
+```jsx
+// 1. Imports
+import React from 'react';
+
+// 2. Component definition
+const Component = ({ prop1, prop2 }) => {
+  // 3. State and hooks
+  const [state, setState] = useState(null);
+  const memoizedValue = useMemo(() => computeValue(data), [data]);
+
+  // 4. Helper functions
+  const helperFunction = useCallback(() => {
+    // Logic
+  }, [dependencies]);
+
+  // 5. Effects
+  useEffect(() => {
+    // Side effects
+  }, [dependencies]);
+
+  // 6. Event handlers
+  const handleClick = () => {
+    // Handler logic
+  };
+
+  // 7. Render
+  return (
+    <div>{/* JSX */}</div>
+  );
+};
+
+export default Component;
+```
+
 ## Performance Optimization
 
 ### Code Splitting

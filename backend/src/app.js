@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const { globalRateLimit } = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 app.use(express.json());
@@ -11,6 +12,9 @@ app.use(cors({
   origin: process.env.ORIGIN,
   credentials: process.env.CREDENTIALS === 'true',
 }));
+
+// // Global rate limiting
+app.use(globalRateLimit);
 
 // All register routes here
 const cloudinary = require('./routes/cloudinary');

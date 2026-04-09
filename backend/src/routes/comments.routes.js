@@ -207,15 +207,13 @@ router.post('/vote', checkAuth, async (req, res) => {
 
   const numericVote = voteType === 'upvote' ? 1 : -1;
 
-  let updatedComment;
-
   try {
     await knex.transaction(async (trx) => {
       const existingVote = await trx('comment_votes')
         .where({ user_id: userId, comment_id: commentId })
         .first();
 
-      // Case 1: No previous vote
+      // Case 1: No previous vote - add new vote
       if (!existingVote) {
         await trx('comment_votes').insert({
           user_id: userId,
@@ -228,8 +226,7 @@ router.post('/vote', checkAuth, async (req, res) => {
           .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
           .increment('net_score', numericVote);
       }
-
-      // Case 2: Same vote clicked again → remove vote
+      // Case 2: Same vote clicked again → remove vote (neutral)
       else if (existingVote.vote_type === numericVote) {
         await trx('comment_votes')
           .where({ user_id: userId, comment_id: commentId })
@@ -240,8 +237,7 @@ router.post('/vote', checkAuth, async (req, res) => {
           .decrement(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
           .decrement('net_score', numericVote);
       }
-
-      // Case 3: Switching vote
+      // Case 3: Switching vote (upvote → downvote or vice versa)
       else {
         await trx('comment_votes')
           .where({ user_id: userId, comment_id: commentId })
@@ -253,19 +249,9 @@ router.post('/vote', checkAuth, async (req, res) => {
           .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
           .increment('net_score', numericVote * 2);
       }
-
-      updatedComment = await trx('comments')
-        .where({ id: commentId })
-        .first();
     });
 
-    res.json({
-      success: true,
-      updatedComment,
-      new_score: updatedComment.net_score,
-      user_vote: numericVote
-    });
-
+    res.json({ success: true });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: error.message });

@@ -43,6 +43,58 @@ src/components/
 - Redirects to `/onboarding` if onboarding required but not completed
 - Redirects to `/home` if onboarding not required but already completed
 
+### VotingComponent
+**Location**: `src/components/Global/VotingComponent.jsx`
+
+**Purpose**: Reusable voting UI component with upvote/downvote buttons and score display
+
+**Props**:
+```javascript
+{
+  net_score: number,           // Current vote score to display
+  userVote: number,            // Current user's vote (1, 0, or -1)
+  onVote: (voteType) => void, // Callback for vote actions ('upvote'/'downvote')
+  size: 'small' | 'large',     // Size variant (default: 'small')
+  loading: boolean             // Loading state for debounce (default: false)
+}
+```
+
+**Usage**:
+```javascript
+// Small size (for comments)
+<VotingComponent
+  net_score={comment.net_score}
+  userVote={comment.userVote}
+  onVote={(voteType) => handleCommentVote(voteType, comment.id)}
+  size="small"
+/>
+
+// Large size (for threads)
+<VotingComponent
+  net_score={localNetScore}
+  userVote={localUserVote}
+  onVote={handleVote}
+  size="large"
+/>
+```
+
+**Size Variants**:
+- **small**: 20px icons, 0.75rem font, 0.5 padding
+- **large**: 28px icons, 0.875rem font, 1 padding
+
+**Design Features**:
+- Dynamic background color based on vote state (green for upvote, red for downvote)
+- Visual feedback on hover (color change, scale transform)
+- Smooth transitions (0.3s for background, 0.2s for interactions)
+- Semi-transparent borders for unvoted state
+- Text color adjustment based on size (text.primary for large, text.secondary for small when not voted)
+
+**Integration**:
+- Used by CommentItem for comment voting (size="small")
+- Used by ThreadContent for thread voting (size="large")
+- Parent components handle debounce logic and API calls
+- Component is UI-only, no business logic
+
 ### ThreadContent
 **Location**: `src/components/Global/ThreadContent.jsx`
 
@@ -91,7 +143,7 @@ src/components/
 **Design Features**:
 - Paper card with semi-transparent background
 - Space avatar and name header
-- Optimistic voting with visual feedback
+- Uses VotingComponent for voting UI
 - Comment and share counters
 - Responsive layout
 
@@ -241,24 +293,63 @@ src/components/
 ### CommentItem
 **Location**: `src/components/HomeComponents/CommentItem.jsx`
 
-**Purpose**: Individual comment display with voting and replies
+**Purpose**: Individual comment display with voting and replies using debounce-based optimistic updates
 
 **Props**:
 ```javascript
 {
   comment: Object,         // Comment data
-  onVote: Function,        // Vote handler
-  onReply: Function,       // Reply handler
-  // Additional props for nested comments
+  comments: Array,         // All comments state
+  setComments: Function,   // Comments state setter
+  depth: number,           // Nesting depth for replies
+  expandedReplies: Object, // Expanded reply states
+  newCommentId: number,    // ID of newly created comment
 }
 ```
 
 **Features**:
-- Comment voting system
-- Reply functionality
-- Nested comment display
-- User avatars
-- Timestamp display
+- Comment voting system with debounce approach (500ms delay)
+- Reply functionality with Quill editor
+- Nested comment display with recursive rendering
+- User avatars and timestamps
+- Optimistic UI updates for voting
+- Spam clicking protection via request cancellation
+
+**Voting Implementation**:
+
+**Debounce Pattern**:
+- Immediate optimistic update on each click
+- 500ms debounce timer before sending to server
+- Cancels previous pending requests on new clicks
+- Only final vote state is sent to server
+
+**Vote Logic (Toggle-based)**:
+```javascript
+// Frontend toggle logic
+if (actionType === 'upvote') {
+  newUserVote = (oldUserVote === 1) ? 0 : 1;
+} else {
+  newUserVote = (oldUserVote === -1) ? 0 : -1;
+}
+// Score change = newUserVote - oldUserVote
+```
+
+**Helper Functions**:
+- `updateVoteRecursively`: Updates vote state through comment tree
+- `findCommentById`: Locates specific comment in nested structure
+
+**State Management**:
+- Uses local state for reply inputs
+- Receives comments array from parent for voting
+- Optimistic updates modify comments array directly
+- Rollback on error to maintain consistency
+
+**Integration with Backend**:
+- Sends `voteValue` (1, 0, or -1) to backend - final vote state
+- Backend updates vote record and returns `{ success: true }` (no data)
+- Frontend uses optimistic updates, does not sync server response
+- Rollback on error if API call fails (excluding AbortError)
+- No idempotency keys (debounce handles spam protection)
 
 ### LeftContent / RightContent
 **Location**: `src/components/HomeComponents/LeftContent.jsx` / `RightContent.jsx`

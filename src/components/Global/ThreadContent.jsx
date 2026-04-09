@@ -1,13 +1,14 @@
 // ThreadCard.jsx
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
+import { useState } from 'react';
+import apiRequest from '../../config/api';
+import { useSnackbar } from '../../context/SnackbarContext';
+import VotingComponent from './VotingComponent';
 
 const ThreadContent = ({
   net_score,
-  avatar,
   spaceAvatar,
   postedBy,
   timeAgo,
@@ -16,11 +17,85 @@ const ThreadContent = ({
   comments,
   shares,
   spaceName,
-  handleVote,
   threadId,
   userVote,
   onCommentOpen,
+  onVoteUpdate,
 }) => {
+  const { showSnackbar } = useSnackbar();
+
+  // Local state for optimistic updates
+  const [localNetScore, setLocalNetScore] = useState(net_score);
+  const [localUserVote, setLocalUserVote] = useState(userVote);
+  const [isVoting, setIsVoting] = useState(false);
+
+  // Debounce refs
+  let voteTimeout = null;
+  let abortController = null;
+
+  // Handle vote for thread
+  const handleVote = (voteType) => {
+    const oldUserVote = localUserVote || 0;
+    let newUserVote;
+
+    // Toggle logic
+    if (voteType === 'upvote') {
+      newUserVote = (oldUserVote === 1) ? 0 : 1;
+    } else {
+      newUserVote = (oldUserVote === -1) ? 0 : -1;
+    }
+
+    const scoreChange = newUserVote - oldUserVote;
+
+    // Immediate optimistic update
+    setLocalNetScore(prev => prev + scoreChange);
+    setLocalUserVote(newUserVote);
+
+    // Clear previous pending requests
+    if (voteTimeout) clearTimeout(voteTimeout);
+    if (abortController) abortController.abort();
+
+    // Set loading state
+    setIsVoting(true);
+
+    // Set debounce timer
+    voteTimeout = setTimeout(async () => {
+      abortController = new AbortController();
+
+      try {
+        await apiRequest(`/api/maincontent/threads/vote`, {
+          method: 'POST',
+          signal: abortController.signal,
+          body: JSON.stringify({
+            threadId,
+            voteType,
+          }),
+        });
+
+        // Optimistic update already applied, just notify parent
+        if (onVoteUpdate) {
+          onVoteUpdate({
+            id: threadId,
+            net_score: localNetScore,
+            userVote: localUserVote
+          });
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log('Request cancelled because user clicked again');
+        } else {
+          console.error("Actual Error:", error);
+          showSnackbar('Error voting', 'error');
+          // Rollback on error
+          setLocalNetScore(prev => prev - scoreChange);
+          setLocalUserVote(oldUserVote);
+        }
+      } finally {
+        // Clear loading state
+        setIsVoting(false);
+      }
+    }, 500);
+  };
 
   return (
     <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
@@ -81,65 +156,13 @@ const ThreadContent = ({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           {/* Voting */}
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'transparent',
-            borderRadius: 3,
-            p: 1,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            border: userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-            '&:hover': {
-              backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-              transform: 'translateY(-1px)'
-            }
-          }}>
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5
-            }}>
-              <ExpandLessRoundedIcon
-                sx={{
-                  color: userVote === 1 ? '#4CAF50' : 'text.primary',
-                  height: 28,
-                  width: 28,
-                  cursor: 'pointer',
-                  opacity: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    color: userVote === 1 ? '#4CAF50' : '#4CAF50',
-                    transform: 'scale(1.1)'
-                  }
-                }}
-                onClick={() => handleVote('upvote', threadId)}
-              />
-              <Typography variant='subtitle2' sx={{
-                color: userVote !== 0 ? '#FFFFFF' : 'text.primary',
-                fontWeight: userVote !== 0 ? 700 : 500,
-                fontSize: '0.875rem',
-                transition: 'all 0.2s ease'
-              }}>
-                {net_score}
-              </Typography>
-              <ExpandMoreRoundedIcon
-                sx={{
-                  color: userVote === -1 ? '#F44336' : 'text.primary',
-                  height: 28,
-                  width: 28,
-                  cursor: 'pointer',
-                  opacity: 1,
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    color: userVote === -1 ? '#F44336' : '#F44336',
-                    transform: 'scale(1.1)'
-                  }
-                }}
-                onClick={() => handleVote('downvote', threadId)}
-              />
-            </Box>
-          </Box>
+          <VotingComponent
+            net_score={localNetScore}
+            userVote={localUserVote}
+            onVote={handleVote}
+            size="large"
+            loading={isVoting}
+          />
         </Box>
 
         <Box sx={{ gap: 1, display: 'flex' }}>

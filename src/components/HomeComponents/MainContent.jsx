@@ -145,99 +145,6 @@ const MainContent = ({ spaces, setSpaces }) => {
     }
   };
 
-  const handleVote = async (voteType, threadId) => {
-    // 1. Optimistic update - update UI immediately
-    setThreads(prev =>
-      prev.map(thread => {
-        if (thread.id !== threadId) {
-          return thread;
-        }
-
-        const vote_value = voteType === 'upvote' ? 1 : -1;
-        const currentVote = thread.userVote || 0;
-
-        // If user clicked same vote again → remove vote
-        if (currentVote === vote_value) {
-          return {
-            ...thread,
-            upvotes: voteType === 'upvote' ? thread.upvotes - 1 : thread.upvotes,
-            downvotes: voteType === 'downvote' ? thread.downvotes - 1 : thread.downvotes,
-            net_score: thread.net_score - vote_value,
-            userVote: null
-          };
-        }
-
-        // If user clicked opposite vote → switch vote
-        if (thread.userVote === -vote_value) {
-          return {
-            ...thread,
-            net_score: thread.net_score + (vote_value * 2), // Remove old vote, add new vote
-            userVote: vote_value
-          };
-        }
-
-        // New vote
-        return {
-          ...thread,
-          net_score: thread.net_score + vote_value,
-          userVote: vote_value
-        };
-      })
-    );
-
-    try {
-      // Make API call
-      const response = await apiRequest(`/api/maincontent/threads/vote`, {
-        method: 'POST',
-        body: JSON.stringify({
-          threadId: threadId,
-          voteType: voteType
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Success - update with actual server data
-        setThreads(prevThreads =>
-          prevThreads.map(thread =>
-            thread.id === result.updatedThread.id
-              ? { ...thread, ...result.updatedThread }
-              : thread
-          )
-        );
-      } else {
-        // Server failed - revert optimistic update
-        setThreads(prevThreads =>
-          prevThreads.map(thread =>
-            thread.id === threadId
-              ? {
-                ...thread,
-                net_score: thread.net_score - (voteType === 'upvote' ? 1 : -1),
-                userVote: thread.userVote === (voteType === 'upvote' ? 1 : -1) ? null : thread.userVote
-              }
-              : thread
-          )
-        );
-        showSnackbar(result.error_message || 'Failed to vote', 'error');
-      }
-    } catch (error) {
-      // Network error - revert optimistic update
-      setThreads(prevThreads =>
-        prevThreads.map(thread =>
-          thread.id === threadId
-            ? {
-              ...thread,
-              net_score: thread.net_score - (voteType === 'upvote' ? 1 : -1),
-              userVote: thread.userVote === (voteType === 'upvote' ? 1 : -1) ? null : thread.userVote
-            }
-            : thread
-        )
-      );
-      showSnackbar('Error voting', 'error');
-    }
-  };
-
   const handleCommentOpen = useCallback((thread) => {
     setSelectedThreadData(thread);
     setOpenCommentThreads(prev => ({
@@ -245,6 +152,16 @@ const MainContent = ({ spaces, setSpaces }) => {
       [thread.id]: true
     }));
   }, []);
+
+  const handleVoteUpdate = (updatedThread) => {
+    setThreads(prevThreads =>
+      prevThreads.map(thread =>
+        thread.id === updatedThread.id
+          ? { ...thread, ...updatedThread }
+          : thread
+      )
+    );
+  };
 
   const handleCommentClose = useCallback((threadId) => {
     setOpenCommentThreads(prev => ({
@@ -521,7 +438,6 @@ const MainContent = ({ spaces, setSpaces }) => {
           <ThreadContent
             key={thread.id}
             net_score={thread.net_score}
-            handleVote={handleVote}
             userVote={thread.userVote}
             avatar={thread.avatar_url}
             spaceAvatar={thread.space_avatar_url}
@@ -536,6 +452,7 @@ const MainContent = ({ spaces, setSpaces }) => {
             username={thread.username}
             threadId={thread.id}
             onCommentOpen={() => handleCommentOpen(thread)}
+            onVoteUpdate={handleVoteUpdate}
           />
         ))
       )}

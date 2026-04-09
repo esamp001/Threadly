@@ -1,6 +1,3 @@
-
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import {
   Accordion,
@@ -14,9 +11,10 @@ import {
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import { MessageCircle } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
+import VotingComponent from '../Global/VotingComponent';
 
 const CommentItem = ({
   comment,
@@ -26,107 +24,106 @@ const CommentItem = ({
   comments,
   setComments,
 }) => {
-  const pendingRequests = useRef({});
   const { showSnackbar } = useSnackbar();
 
   // States
   const [replyTexts, setReplyTexts] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
+  const [votingCommentIds, setVotingCommentIds] = useState(new Set());
 
-  // Handle comment voting with optimistic update and request cancellation
-  const handleCommentVote = async (voteType, commentId) => {
-    // 1. Spam Protection
-    if (pendingRequests.current[commentId]) {
-      pendingRequests.current[commentId].abort();
-    }
+  let voteTimeout = null;
+  let abortController = null;
 
-    const abortController = new AbortController();
-    pendingRequests.current[commentId] = abortController;
+  // Helper function - update vote recursively
+  const updateVoteRecursively = (comments, commentId, actionType) => {
+    return comments.map(comment => {
+      if (comment.id === commentId) {
+        const oldUserVote = comment.userVote || 0; // 1, 0, or -1
+        let newUserVote;
 
-    // Helper functions need to be defined BEFORE using them
-    const updateVoteRecursively = (comments, commentId, voteType, onCommentFound) => {
-      return comments.map(comment => {
-        if (comment.id === commentId) {
-          if (onCommentFound) onCommentFound(comment);
-
-          const newNetScore = voteType === 'upvote'
-            ? (comment.userVote === 1 ? comment.net_score - 1 : comment.net_score + 1)
-            : (comment.userVote === -1 ? comment.net_score + 1 : comment.net_score - 1);
-
-          const newUserVote = voteType === 'upvote'
-            ? (comment.userVote === 1 ? 0 : 1)
-            : (comment.userVote === -1 ? 0 : -1);
-
-          return {
-            ...comment,
-            net_score: newNetScore,
-            userVote: newUserVote
-          };
+        // 1. Determine the NEW userVote state
+        if (actionType === 'upvote') {
+          newUserVote = (oldUserVote === 1) ? 0 : 1;
+        } else {
+          newUserVote = (oldUserVote === -1) ? 0 : -1;
         }
 
-        if (comment.replies && comment.replies.length > 0) {
-          return {
-            ...comment,
-            replies: updateVoteRecursively(comment.replies, commentId, voteType, onCommentFound)
-          };
-        }
+        // 2. Calculate the "Swing"
+        // Example: If old was -1 and new is 1, change is 1 - (-1) = +2
+        const scoreChange = newUserVote - oldUserVote;
 
-        return comment;
-      });
-    };
+        return {
+          ...comment,
+          net_score: comment.net_score + scoreChange,
+          userVote: newUserVote
+        };
+      }
 
-    const updateWithServerDataRecursively = (comments, commentId, serverData) => {
-      return comments.map(comment => {
-        if (comment.id === commentId) {
-          return { ...comment, ...serverData };
-        }
+      if (comment.replies?.length > 0) {
+        return {
+          ...comment,
+          replies: updateVoteRecursively(comment.replies, commentId, actionType)
+        };
+      }
 
-        if (comment.replies && comment.replies.length > 0) {
-          return {
-            ...comment,
-            replies: updateWithServerDataRecursively(comment.replies, commentId, serverData)
-          };
-        }
-
-        return comment;
-      });
-    };
-
-    // We'll store previous state of just this comment to rollback if needed
-    let previousCommentData = null;
-
-    // 2. Optimistic Update
-    setComments(prev => {
-      // Helper to find and "snapshot" comment before we change it
-      // This ensures our rollback is precise
-      return updateVoteRecursively(prev, commentId, voteType, (oldComment) => {
-        previousCommentData = oldComment;
-      });
+      return comment;
     });
+  };
 
-    try {
-      const response = await apiRequest(`/api/comments/vote`, {
-        method: 'POST',
-        body: JSON.stringify({ commentId, voteType }),
-        signal: abortController.signal
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        setComments(prev => updateWithServerDataRecursively(prev, commentId, result.updatedComment));
-      }
-    } catch (error) {
-      if (error.name === 'AbortError') return;
-
-      // 3. PRECISION ROLLBACK
-      // Instead of resetting the whole array, reset only this comment
-      setComments(prev => updateWithServerDataRecursively(prev, commentId, previousCommentData));
-      showSnackbar('Error voting', 'error');
-    } finally {
-      if (pendingRequests.current[commentId] === abortController) {
-        delete pendingRequests.current[commentId];
+  // Helper function - find comment by id
+  const findCommentById = (comments, id) => {
+    for (const comment of comments) {
+      if (comment.id === id) return comment;
+      if (comment.replies && comment.replies.length > 0) {
+        const found = findCommentById(comment.replies, id);
+        if (found) return found;
       }
     }
+    return null;
+  };
+
+  // Handle comment vote
+  const handleCommentVote = (actionType, commentId) => {
+    // 1. IMMEDIATE OPTIMISTIC UPDATE
+    setComments(prev => updateVoteRecursively(prev, commentId, actionType));
+
+    // 2. CLEAR PREVIOUS PENDING REQUESTS FOR THIS SPECIFIC COMMENT
+    if (voteTimeout) clearTimeout(voteTimeout);
+    // If a network request is already flying, cancel it
+    if (abortController) abortController.abort();
+
+    // 3. SET LOADING STATE
+    setVotingCommentIds(prev => new Set(prev).add(commentId));
+
+    // 4. SET A DEBOUNCE TIMER
+    voteTimeout = setTimeout(async () => {
+      // Create a new controller for this specific request
+      abortController = new AbortController();
+
+      try {
+        await apiRequest(`/api/comments/vote`, {
+          method: 'POST',
+          signal: abortController.signal,
+          body: JSON.stringify({
+            commentId,
+            voteType: actionType, // Send the action type ('upvote'/'downvote')
+          }),
+        });
+
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          // Rollback optimistic update
+          setComments(prev => updateVoteRecursively(prev, commentId, actionType));
+        }
+      } finally {
+        // Clear loading state
+        setVotingCommentIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(commentId);
+          return newSet;
+        });
+      }
+    }, 500); // Wait 500ms for the user to stop "spamming"
   };
 
   // Handle reply submission
@@ -181,7 +178,6 @@ const CommentItem = ({
 
   return (
     // THIS WHOLE COMPONENT IS MAPPED EACH COMMENT ITEM
-
     <Box sx={{ ml: depth > 0 ? 5 : 0, position: 'relative' }}>
       {depth > 0 && (
         <Box
@@ -267,69 +263,13 @@ const CommentItem = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1.5 }}>
             {/* COMMENT ITEM VOTING */}
             <Box sx={{ display: 'flex' }}>
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'transparent',
-                borderRadius: 3,
-                p: 0.5,
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                border: comment.userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-                '&:hover': {
-                  backgroundColor: comment.userVote === 1 ? '#a2cca26e' : comment.userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-                  transform: 'translateY(-1px)'
-                }
-              }}>
-                <Box sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5
-                }}>
-                  {/* UPVOTE BUTTON */}
-                  <ExpandLessRoundedIcon
-                    sx={{
-                      color: comment.userVote === 1 ? '#4CAF50' : 'text.secondary',
-                      height: 20,
-                      width: 20,
-                      cursor: 'pointer',
-                      opacity: 1,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: comment.userVote === 1 ? '#4CAF50' : '#4CAF50',
-                        transform: 'scale(1.1)'
-                      }
-                    }}
-                    onClick={() => handleCommentVote('upvote', comment.id)}
-                  />
-                  <Typography variant='subtitle2' sx={{
-                    color: comment.userVote !== 0 ? '#FFFFFF' : 'text.secondary',
-                    fontWeight: comment.userVote !== 0 ? 700 : 500,
-                    fontSize: '0.75rem',
-                    transition: 'all 0.2s ease',
-                    minWidth: '20px',
-                    textAlign: 'center'
-                  }}>
-                    {comment.net_score}
-                  </Typography>
-                  {/* DOWNVOTE BUTTON */}
-                  <ExpandMoreRoundedIcon
-                    sx={{
-                      color: comment.userVote === -1 ? '#F44336' : 'text.secondary',
-                      height: 20,
-                      width: 20,
-                      cursor: 'pointer',
-                      opacity: 1,
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: comment.userVote === -1 ? '#F44336' : '#F44336',
-                        transform: 'scale(1.1)'
-                      }
-                    }}
-                    onClick={() => handleCommentVote('downvote', comment.id)}
-                  />
-                </Box>
-              </Box>
+
+              <VotingComponent
+                net_score={comment.net_score}
+                userVote={comment.userVote}
+                onVote={(voteType) => handleCommentVote(voteType, comment.id)}
+                loading={votingCommentIds.has(comment.id)}
+              />
 
               {/* REPLY BUTTON */}
               <Box
@@ -451,40 +391,42 @@ const CommentItem = ({
       </Box>
 
       {/* RECURSIVE REPLIES RENDERING */}
-      {comment.replies && comment.replies.length > 0 && (
-        <Accordion sx={{ mt: 1, boxShadow: 'none', '&:before': { display: 'none' }, bgcolor: 'background.default' }}>
-          <AccordionSummary
-            sx={{
-              minHeight: 'auto',
-              py: 0.5,
-              '& .MuiAccordionSummary-content': { margin: '5px 0' }
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails sx={{ p: 0 }}>
-            {comment.replies.map((reply, index) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                depth={depth + 1}
-                isLastChild={index === comment.replies.length - 1}
-                expandedReplies={expandedReplies}
-                newCommentId={newCommentId}
-                replyTexts={replyTexts}
-                replyingTo={replyingTo}
-                comments={comments}
-                setComments={setComments}
-                onReplyingTo={setReplyingTo}
-                onReplyTextsChange={setReplyTexts}
-              />
-            ))}
-          </AccordionDetails>
-        </Accordion>
-      )}
-    </Box>
+      {
+        comment.replies && comment.replies.length > 0 && (
+          <Accordion sx={{ mt: 1, boxShadow: 'none', '&:before': { display: 'none' }, bgcolor: 'background.default' }}>
+            <AccordionSummary
+              sx={{
+                minHeight: 'auto',
+                py: 0.5,
+                '& .MuiAccordionSummary-content': { margin: '5px 0' }
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: 0 }}>
+              {comment.replies.map((reply, index) => (
+                <CommentItem
+                  key={reply.id}
+                  comment={reply}
+                  depth={depth + 1}
+                  isLastChild={index === comment.replies.length - 1}
+                  expandedReplies={expandedReplies}
+                  newCommentId={newCommentId}
+                  replyTexts={replyTexts}
+                  replyingTo={replyingTo}
+                  comments={comments}
+                  setComments={setComments}
+                  onReplyingTo={setReplyingTo}
+                  onReplyTextsChange={setReplyTexts}
+                />
+              ))}
+            </AccordionDetails>
+          </Accordion>
+        )
+      }
+    </Box >
   )
 }
 

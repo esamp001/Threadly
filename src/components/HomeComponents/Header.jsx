@@ -213,30 +213,22 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   // Fetch that handles logout for the current user
   const handleLogout = async () => {
     try {
-      console.log('Starting logout...');
-
       // Call logout API
       const response = await apiRequest('/api/auth/logout', {
         method: 'POST'
       });
 
-      console.log('Logout response:', response);
-
       // response return json
       const result = await response.json();
-      console.log('Logout result:', result);
 
       if (result && result.success) {
-        console.log('Logout successful, clearing token...');
         // Clear local storage
         localStorage.removeItem('token');
 
         showSnackbar(result.message || 'Logged out successfully', 'success');
         handleMenuClose();
-        console.log('Navigating to login...');
         navigate('/login');
       } else {
-        console.log('Logout failed:', result);
         // Handle failed logout
         showSnackbar(result?.message || 'Logout failed', 'error');
       }

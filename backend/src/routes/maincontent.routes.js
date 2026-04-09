@@ -247,8 +247,6 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
 
   const numericVote = voteType === 'upvote' ? 1 : -1;
 
-  let updatedThread;
-
   try {
     await knex.transaction(async (trx) => {
 
@@ -300,12 +298,9 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
 
       }
 
-      updatedThread = await trx('threads')
-        .where({ id: threadId })
-        .first();
     });
 
-    res.json({ success: true, updatedThread });
+    res.json({ success: true });
 
   } catch (error) {
     console.error(error);

@@ -548,6 +548,41 @@ const theme = useTheme();
 <Typography sx={{ color: '#B3B3B3' }} />
 ```
 
+#### 6. Code Comments
+Use meaningful step-by-step comments that explain the logic clearly. Comments should be detailed enough to understand the code but concise enough to not clutter. Only comment parts that need explanation.
+
+**Guidelines:**
+- Write comments in third-person perspective
+- Focus on explaining WHY, not just WHAT
+- Avoid mentioning who made changes or when
+- Comment complex logic, business rules, and non-obvious implementations
+- Keep comments up-to-date with code changes
+
+**Preferred:**
+```jsx
+// Calculate the net score change when user toggles their vote
+// Handles three scenarios: new vote, removing vote, switching vote type
+const scoreChange = newUserVote - oldUserVote;
+
+// Apply optimistic update immediately to provide instant feedback
+// Rollback will occur if API call fails
+setLocalNetScore(prev => prev + scoreChange);
+
+// Debounce API call to prevent excessive requests during rapid clicking
+// 500ms delay allows user to complete voting actions before sending request
+voteTimeout = setTimeout(async () => {
+  await apiRequest('/vote', { method: 'POST', body: data });
+}, 500);
+```
+
+**Avoid:**
+```jsx
+// Increased from 100
+// Added 10px solid red
+// I changed this to fix the bug
+// TODO: fix this later
+```
+
 ### Code Organization
 
 #### 1. Import Order

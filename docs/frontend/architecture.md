@@ -552,27 +552,53 @@ const theme = useTheme();
 Use meaningful step-by-step comments that explain the logic clearly. Comments should be detailed enough to understand the code but concise enough to not clutter. Only comment parts that need explanation.
 
 **Guidelines:**
-- Write comments in third-person perspective
+- Write comments in third-person perspective (use verbs like "calculates", "fetches", "formats" instead of "calculate", "fetch", "format")
 - Focus on explaining WHY, not just WHAT
 - Avoid mentioning who made changes or when
 - Comment complex logic, business rules, and non-obvious implementations
 - Keep comments up-to-date with code changes
 
+**JSDoc Comments for Functions:**
+For functions that need documentation, use JSDoc-style comments with parameter and return type descriptions.
+
+```jsx
+/**
+ * Fetches space data from the API by ID
+ * @param {string} spaceId - The unique identifier of the space
+ * @returns {Promise<Object>} The space data including name, description, and avatar
+ * @throws {Error} When the API request fails or space is not found
+ */
+const fetchSpace = async (spaceId) => {
+  const response = await api.get(`/spaces/${spaceId}`);
+  return response.data;
+};
+```
+
+**Inline Comments (Third-Person POV):**
+Use third-person perspective for inline comments explaining logic flow.
+
 **Preferred:**
 ```jsx
-// Calculate the net score change when user toggles their vote
+// Calculates the net score change when user toggles their vote
 // Handles three scenarios: new vote, removing vote, switching vote type
 const scoreChange = newUserVote - oldUserVote;
 
-// Apply optimistic update immediately to provide instant feedback
-// Rollback will occur if API call fails
+// Applies optimistic update immediately to provide instant feedback
+// Rollback occurs if API call fails
 setLocalNetScore(prev => prev + scoreChange);
 
-// Debounce API call to prevent excessive requests during rapid clicking
+// Debounces API call to prevent excessive requests during rapid clicking
 // 500ms delay allows user to complete voting actions before sending request
 voteTimeout = setTimeout(async () => {
   await apiRequest('/vote', { method: 'POST', body: data });
 }, 500);
+
+// Formats the response to match frontend expectations
+const formattedSpace = {
+  id: space.id,
+  name: space.name,
+  // ...
+};
 ```
 
 **Avoid:**
@@ -581,6 +607,7 @@ voteTimeout = setTimeout(async () => {
 // Added 10px solid red
 // I changed this to fix the bug
 // TODO: fix this later
+// Format response to match expectations (not third-person POV)
 ```
 
 ### Code Organization

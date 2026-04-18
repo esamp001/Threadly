@@ -15,6 +15,63 @@ src/components/
 └── OnboardingComponents/ # Onboarding flow components
 ```
 
+## Pages
+
+### Space
+**Location**: `src/pages/Space.jsx`
+
+**Purpose**: Page for viewing a specific space and its posts
+
+**Route**: `/spaces/:spaceId`
+
+**Features**:
+- Cover photo display
+- Space avatar centered on cover photo
+- Space name and description
+- Posts section for space-specific content
+
+**Usage**:
+```javascript
+// Navigation to space page
+<Link to={`/spaces/${spaceId}`}>
+  View Space
+</Link>
+
+// Route parameter access
+const { spaceId } = useParams();
+```
+
+**Component Structure**:
+```jsx
+<Container maxWidth="lg">
+  {/* Cover Photo Section */}
+  <Box sx={{ height: 300, position: 'relative' }}>
+    <Box sx={{ backgroundColor: 'divider', opacity: 0.3 }} />
+    <Avatar sx={{ width: 120, height: 120, zIndex: 1 }}>
+      S
+    </Avatar>
+  </Box>
+
+  {/* Space Information */}
+  <Box>
+    <Typography variant="h4">Space Name</Typography>
+    <Typography variant="body1">Space description</Typography>
+  </Box>
+
+  {/* Posts Section */}
+  <Box>
+    <Typography variant="h6">Posts</Typography>
+    <Box>Posts content placeholder</Box>
+  </Box>
+</Container>
+```
+
+**Styling**:
+- Uses theme colors for all styling
+- Material-UI components for consistency
+- Responsive layout with Container
+- Placeholder styling for future enhancement
+
 ## Global Components
 
 ### ProtectedRoute

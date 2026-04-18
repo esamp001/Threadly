@@ -9,6 +9,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import DOMPurify from 'dompurify';
 import { useCallback, useEffect, useState } from 'react';
 import apiRequest from '../../config/api';
 import CommentItem from './CommentItem';
@@ -215,9 +216,21 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
               {threadData.title}
             </Typography>
-            <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
-              {threadData.content}
-            </Typography>
+            <Box
+              sx={{
+                color: 'text.primary',
+                mb: 2,
+                '& img': {
+                  maxWidth: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  margin: '1rem auto',
+                  borderRadius: '8px'
+                }
+              }}
+            >
+              <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(threadData.content) }} />
+            </Box>
           </Box>
         )}
 

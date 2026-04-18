@@ -1,8 +1,8 @@
-import { Box, IconButton, InputAdornment, TextField } from '@mui/material'
+import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material'
 
 import CustomHelperText from '../Global/CustomHelperText'
 const TextFieldThreadly = (props) => {
-  const { label, value, onChange, sx, multiline, rows, rowsMax, helperText, error } = props
+  const { label, value, onChange, sx, multiline, rows, maxRows, helperText, error, maxLength, showCharCount } = props
 
   return (
     <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -14,7 +14,7 @@ const TextFieldThreadly = (props) => {
         onChange={onChange}
         multiline={multiline}
         rows={rows}
-        rowsMax={rowsMax}
+        maxRows={maxRows}
         sx={{
           width: '100%',
           border: '3px solid',
@@ -52,7 +52,17 @@ const TextFieldThreadly = (props) => {
             <InputAdornment position="start">
               <IconButton size="small" sx={{ p: 0 }} />
             </InputAdornment>
-          )
+          ),
+          endAdornment: showCharCount && maxLength ? (
+            <InputAdornment position="end">
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px' }}>
+                {value?.length || 0}/{maxLength}
+              </Typography>
+            </InputAdornment>
+          ) : null
+        }}
+        inputProps={{
+          maxLength: maxLength
         }}
       />
       <CustomHelperText text={helperText} error={error} />

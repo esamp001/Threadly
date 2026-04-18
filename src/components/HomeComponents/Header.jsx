@@ -25,6 +25,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [showTopicsConfirmation, setShowTopicsConfirmation] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({
     spaceName: '',
     spaceDescription: '',
@@ -187,7 +188,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       if (response.ok) {
         showSnackbar('Space created successfully!', 'success');
         handleReset(); // Close drawer and reset form
-        onSpaceCreated(result.space)
+        onSpaceCreated(result.space);
 
         // Reset all forms in creating space
         setFormData({
@@ -200,6 +201,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           isMature: false,
           topics: []
         });
+
+        return result.space.id;
       } else {
         showSnackbar(result.message || 'Failed to create space', 'error');
       }
@@ -269,13 +272,16 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   };
 
   // A function that handles the next button
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateStep()) return;
 
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
 
     if (activeStep === steps.length - 1) {
-      saveSpace();
+      setSubmitting(true);
+      const spaceId = await saveSpace();
+      setSubmitting(false);
+      navigate(`/spaces/${spaceId}`);
     }
   };
 
@@ -308,7 +314,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       sx={{
         alignItems: 'center',
         px: 2,
-        py: 1
+        py: 1,
       }}
     >
       {/* Logo */}
@@ -801,12 +807,20 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
             <Button
               variant="contained"
               onClick={handleNext}
+              disabled={submitting}
               sx={{
                 textTransform: 'none',
                 backgroundColor: 'primary.main'
               }}
             >
-              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
+              {submitting ? (
+                <>
+                  <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                  Creating...
+                </>
+              ) : (
+                activeStep === steps.length - 1 ? 'Finish' : 'Next'
+              )}
             </Button>
           </Box>
         </Box>

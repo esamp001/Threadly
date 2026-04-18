@@ -213,6 +213,71 @@ router.post('/', validateRequest(exampleSchema), async (req, res) => {
 export { router as exampleRoutes };
 ```
 
+### Parameter Validation Requirements
+**Always validate parameters before executing database queries.** This is a mandatory security practice to prevent SQL injection, invalid data processing, and unnecessary database load.
+
+**Validation Checklist:**
+- **Route Parameters (req.params)**: Validate ID format, existence, and type before queries
+- **Query Parameters (req.query)**: Validate pagination, filters, and sorting parameters
+- **Request Body (req.body)**: Validate required fields, data types, and constraints
+- **File Uploads**: Validate file type, size, and format before processing
+
+**Preferred Pattern:**
+```javascript
+// GET /api/spaces/:id
+router.get('/:id', checkAuth, async (req, res) => {
+  const { id } = req.params;
+
+  let space = null;
+  let error_message = '';
+  let status = 200;
+  let success = true;
+
+  try {
+    // Validates required parameters before executing query
+    if (!id) {
+      status = 400;
+      error_message = 'Space ID is required';
+      success = false;
+      throw new Error('Space ID is required');
+    }
+
+    // Additional validation for ID format if needed
+    if (isNaN(id) || parseInt(id) <= 0) {
+      status = 400;
+      error_message = 'Invalid Space ID format';
+      success = false;
+      throw new Error('Invalid Space ID format');
+    }
+
+    // Proceed with database query only after validation passes
+    space = await knex('spaces')
+      .select('*')
+      .where('id', id)
+      .first();
+
+    // ... rest of route logic
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({ success, status, error_message, space });
+  }
+});
+```
+
+**Avoid:**
+```javascript
+// BAD: No validation before query
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  // Directly queries database without validating id
+  const space = await knex('spaces').where('id', id).first();
+  // ...
+});
+```
+
 ### Authentication Routes
 ```javascript
 // routes/auth.routes.js

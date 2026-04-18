@@ -83,6 +83,64 @@ This document defines all API routes in the Space platform backend, their endpoi
 - No idempotency key system (removed in favor of debounce)
 - No vote-specific rate limiting (removed to allow spam clicking)
 
+## Cloudinary Routes
+
+### POST /api/cloudinary/upload
+**Location**: `backend/src/routes/cloudinary.js`
+
+**Purpose**: Upload avatar images to Cloudinary
+
+**Authentication**: Required (checkAuth middleware)
+
+**Request Body**: `multipart/form-data` with field name `avatar`
+
+**Response**:
+```javascript
+{
+  status: 'success',
+  message: 'Avatar uploaded successfully',
+  url: string,              // Cloudinary secure URL
+  publicId: string          // Cloudinary public ID
+}
+```
+
+**Implementation Details**:
+- Uses multer memory storage for file handling
+- Uploads to `threadly/avatars` folder in Cloudinary
+- Public ID format: `space-avatar_${timestamp}`
+- Returns secure URL for immediate use
+
+### POST /api/cloudinary/upload_editor_image
+**Location**: `backend/src/routes/cloudinary.js`
+
+**Purpose**: Upload Quill editor images to Cloudinary
+
+**Authentication**: Required (checkAuth middleware)
+
+**Request Body**: `multipart/form-data` with field name `image`
+
+**Response**:
+```javascript
+{
+  status: 'success',
+  message: 'Image uploaded successfully',
+  url: string              // Cloudinary secure URL
+}
+```
+
+**Implementation Details**:
+- Used for post-processing images from Quill editor content
+- Frontend extracts base64 images from content, uploads them, and replaces with Cloudinary URLs
+- Uploads to `threadly/editor_images` folder in Cloudinary
+- Public ID format: `editor_image_${timestamp}`
+- Called when user clicks "Create Thread" to process all images in content
+
+**Integration Notes**:
+- Images stored as Cloudinary URLs instead of base64 to avoid database bloat
+- Text content stored as HTML in database
+- Final content contains both text (HTML) and images (Cloudinary URLs)
+- Provides CDN benefits and faster image loading
+
 ## Other Routes
 
 *Additional routes will be documented as they are implemented.*

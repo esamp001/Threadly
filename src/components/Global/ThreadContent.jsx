@@ -2,8 +2,10 @@
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
+import DOMPurify from 'dompurify';
 import { useState } from 'react';
 import apiRequest from '../../config/api';
+import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import VotingComponent from './VotingComponent';
 
@@ -21,8 +23,11 @@ const ThreadContent = ({
   userVote,
   onCommentOpen,
   onVoteUpdate,
+  componentRendered,
+  userAvatar,
 }) => {
   const { showSnackbar } = useSnackbar();
+  const { user } = useAuth();
 
   // Local state for optimistic updates
   const [localNetScore, setLocalNetScore] = useState(net_score);
@@ -103,10 +108,13 @@ const ThreadContent = ({
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar
           sx={{ height: 40, width: 40, mr: 1 }}
-          src={spaceAvatar}
-          alt={spaceName}
+          src={componentRendered?.current === 'Space' ? userAvatar : spaceAvatar}
+          alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
         >
-          {spaceName ? spaceName.charAt(0).toUpperCase() : 'S'}
+          {componentRendered?.current === 'Space'
+            ? (postedBy ? postedBy.charAt(0).toUpperCase() : 'U')
+            : (spaceName ? spaceName.charAt(0).toUpperCase() : 'S')
+          }
         </Avatar>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -119,20 +127,22 @@ const ThreadContent = ({
                 fontSize: '0.9rem'
               }}
             >
-              {spaceName}
+              {componentRendered?.current === 'Space' ? user?.username : spaceName}
             </Typography>
 
             {/* Secondary: Posted By (The Metadata) */}
-            <Typography
-              variant="caption" // Changed from subtitle2 to caption for a smaller, cleaner look
-              sx={{
-                color: 'text.secondary',
-                display: 'flex',
-                gap: 0.5
-              }}
-            >
-              Posted by {postedBy}
-            </Typography>
+            {componentRendered?.current !== 'Space' && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'text.secondary',
+                  display: 'flex',
+                  gap: 0.5
+                }}
+              >
+                Posted by {postedBy}
+              </Typography>
+            )}
           </Box>
           <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
             {timeAgo}
@@ -147,8 +157,19 @@ const ThreadContent = ({
 
       {/* Content */}
       {content && (
-        <Box sx={{ mt: 2 }}>
-          {content}
+        <Box
+          sx={{
+            mt: 2,
+            '& img': {
+              maxWidth: '100%',
+              height: 'auto',
+              display: 'block',
+              margin: '1rem auto',
+              borderRadius: '8px'
+            }
+          }}
+        >
+          <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
         </Box>
       )}
 

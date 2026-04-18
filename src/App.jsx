@@ -3,6 +3,7 @@ import ProtectedRoute from "../src/components/Global/ProtectedRoute"
 import { AuthProvider } from './context/AuthContext/AuthContext'
 import Home from "./pages/Home"
 import Onboarding from "./pages/Onboarding"
+import Space from "./pages/Space"
 import ThreadlyLogin from "./pages/SpaceLogin"
 
 // const ProtectedRoutes = (path, component) => {
@@ -29,6 +30,7 @@ const OnboardingRoute = (path, component) => (
 
 
 
+
 function App() {
   return (
     <AuthProvider>
@@ -37,6 +39,7 @@ function App() {
         <Route path="/login" element={<ThreadlyLogin />} />
         {ProtectedRoutes("/home", <Home />)}
         {OnboardingRoute("/onboarding", <Onboarding />)}
+        {ProtectedRoutes("/spaces/:spaceId", <Space />)}
       </Routes>
     </AuthProvider>
   )

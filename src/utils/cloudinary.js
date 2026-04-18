@@ -1,0 +1,85 @@
+import apiRequest from '../config/api';
+
+/**
+ * Helper function to convert data URL to File
+ * @param {string} dataUrl - The base64 data URL (e.g., "data:image/png;base64,iVBORw0KG...")
+ * @param {string} filename - The desired filename for the file
+ * @returns {File} - A File object created from the data URL
+ */
+export const dataURLtoFile = (dataUrl, filename) => {
+  // Split the data URL into header and base64 data
+  const [header, base64Data] = dataUrl.split(',');
+
+  // Extract the MIME type from the header (e.g., "image/png")
+  const mimeType = header.match(/:(.*?);/)[1];
+
+  // Decode base64 data to binary string
+  const binaryString = atob(base64Data);
+
+  // Convert binary string to Uint8Array
+  const byteArray = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    byteArray[i] = binaryString.charCodeAt(i);
+  }
+
+  // Create and return a File object
+  return new File([byteArray], filename, { type: mimeType });
+};
+
+/**
+ * Upload base64 images to Cloudinary and replace them with Cloudinary URLs
+ * @param {string} content - HTML content with base64 images
+ * @param {function} showSnackbar - Snackbar notification function
+ * @returns {Promise<string>} - Processed content with Cloudinary URLs
+ */
+
+export const uploadImagesToCloudinary = async (content, showSnackbar) => {
+  let processedContent = content;
+  let match;
+
+  const imgRegex = /<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/g;
+  const images = [];
+
+  // Extract all base64 images from content
+  while ((match = imgRegex.exec(content)) !== null) {
+    images.push({
+      fullMatch: match[0],
+      mimeType: match[1],
+      base64Data: match[2]
+    });
+  }
+
+  // Upload each image to Cloudinary
+  for (const image of images) {
+    try {
+      const file = dataURLtoFile(`data:image/${image.mimeType};base64,${image.base64Data}`, `image.${image.mimeType}`);
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        console.error('Image too large:', file.size / 1024 / 1024, 'MB');
+        showSnackbar('Image too large. Maximum size is 10MB', 'error');
+        return content; // Return original content on error
+      }
+
+      const formData_img = new FormData();
+      formData_img.append('image', file);
+
+      const response = await apiRequest('/api/cloudinary/upload_editor_image', {
+        method: 'POST',
+        body: formData_img
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        // Replace base64 URL with Cloudinary URL
+        processedContent = processedContent.replace(image.fullMatch, `<img src="${result.url}" />`);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  }
+
+  return processedContent;
+};
+

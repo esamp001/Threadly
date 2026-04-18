@@ -1,23 +1,20 @@
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { uploadImagesToCloudinary } from '../../utils/cloudinary';
 import ThreadContent from "../Global/ThreadContent";
 import CommentPanel from '../HomeComponents/CommentPanel';
 import CustomButton from './CustomButton';
+import QuillEditor from './QuillEditor';
 import SearchButton from './SearchButton';
-
-// Quill
-import Quill from 'quill';
-import 'quill/dist/quill.snow.css';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 
 const MainContent = ({ spaces, setSpaces }) => {
   const { user } = useAuth();
-  const quillRef = useRef(null);
   const { showSnackbar } = useSnackbar();
-  const quillInstanceRef = useRef(null);
+  const componentName = useRef('MainContent');
 
   // States
   const [selectedThreadData, setSelectedThreadData] = useState(null);
@@ -36,23 +33,7 @@ const MainContent = ({ spaces, setSpaces }) => {
     spaceId: '',
     content: ''
   });
-
-  // Function Handlers
-  const handleQuillChange = useCallback(() => {
-    if (quillInstanceRef.current) {
-      const htmlContent = quillInstanceRef.current.root.innerHTML;
-
-      // Strip HTML tags
-      const tmp = document.createElement('div');
-      tmp.innerHTML = htmlContent;
-      const plainText = tmp.textContent || tmp.innerText || '';
-
-      setFormData(prev => ({
-        ...prev,
-        content: plainText
-      }));
-    }
-  }, []);
+  const [editorKey, setEditorKey] = useState(0);
 
   // -------------- API FETCH -------------- //
   const listSpaces = useCallback(async (loadMore = false) => {
@@ -108,10 +89,31 @@ const MainContent = ({ spaces, setSpaces }) => {
   }, [loading, threadsHasMore, threadsPage]);
 
   const handleCreateThread = async () => {
+    // Validate required fields
+    if (!formData.title.trim()) {
+      showSnackbar('Please enter a title', 'error');
+      return;
+    }
+    if (!formData.content.trim()) {
+      showSnackbar('Please enter content', 'error');
+      return;
+    }
+    if (!formData.spaceId) {
+      showSnackbar('Please select a space', 'error');
+      return;
+    }
+
     try {
+      // Upload base64 images to Cloudinary using utility function
+      const processedContent = await uploadImagesToCloudinary(formData.content, showSnackbar);
+
+      // Send processed content to backend
       const response = await apiRequest(`/api/maincontent/create_thread`, {
         method: 'POST',
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          content: processedContent
+        })
       });
 
       const result = await response.json();
@@ -128,13 +130,11 @@ const MainContent = ({ spaces, setSpaces }) => {
           spaceId: ''
         });
 
+        // Force QuillEditor remount to clear content
+        setEditorKey(prev => prev + 1);
+
         // Close accordion
         setIsExpanded(false)
-
-        // Reset Quill content
-        if (quillInstanceRef.current) {
-          quillInstanceRef.current.setText(''); // Clear the editor
-        }
 
       } else {
         showSnackbar(result.error_message || 'Failed to create thread', 'error');
@@ -175,34 +175,6 @@ const MainContent = ({ spaces, setSpaces }) => {
   useEffect(() => {
     listSpaces();
     fetchThreads();
-  }, []);
-
-  useEffect(() => {
-    if (isExpanded && quillRef.current && !quillInstanceRef.current) {
-      // Initialize Quill when accordion expands
-      quillInstanceRef.current = new Quill(quillRef.current, {
-        theme: 'snow',
-        placeholder: 'Write your post...',
-        modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline'],
-            ['link', 'image'],
-            ['clean']
-          ]
-        }
-      });
-
-      // Add change listener
-      quillInstanceRef.current.on('text-change', handleQuillChange);
-    }
-  }, [isExpanded]);
-
-  useEffect(() => {
-    return () => {
-      if (quillInstanceRef.current) {
-        quillInstanceRef.current.off('text-change', handleQuillChange);
-      }
-    };
   }, []);
 
 
@@ -335,79 +307,17 @@ const MainContent = ({ spaces, setSpaces }) => {
           <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, ml: 1, fontWeight: 600 }}>
             Share your thoughts
           </Typography>
-          <Box
-            sx={{
-              width: '100%',
-              '& .ql-container': {
-                backgroundColor: 'paper.backgroundColor',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px',
-                fontFamily: 'Inter, Roboto, sans-serif',
-              },
-              '& .ql-editor': {
-                backgroundColor: 'paper.backgroundColor',
-                color: 'text.primary',
-                fontSize: '16px',
-                lineHeight: 1.5,
-                padding: '16px',
-                minHeight: '118px', // 150px - 32px padding,
-              },
-              '& .ql-editor.ql-blank::before': {
-                color: 'text.secondary',
-              },
-              '& .ql-toolbar': {
-                backgroundColor: 'paper.backgroundColor',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '12px 12px 0 0',
-              },
-              '& .ql-stroke': {
-                stroke: 'text.secondary !important',
-              },
-              '& .ql-fill': {
-                fill: 'text.secondary !important',
-              },
-              '& .ql-picker-label': {
-                color: 'text.secondary !important',
-              },
-              '& .ql-picker-options': {
-                backgroundColor: 'background.paper',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-              },
-              '& .ql-picker-item': {
-                color: 'text.primary',
-              },
-              '& .ql-picker-item:hover': {
-                backgroundColor: 'primary.light',
-                color: 'text.primary',
-              },
-              '& .ql-picker-item.ql-selected': {
-                backgroundColor: 'primary.main',
-                color: 'text.primary',
-              },
-              '& .ql-snow .ql-picker.ql-expanded .ql-picker-label': {
-                borderColor: 'primary.main',
-              },
-              '& .ql-snow .ql-picker.ql-expanded .ql-picker-options': {
-                borderColor: 'primary.main'
-              },
-              '& .ql-snow.ql-toolbar button:hover, & .ql-snow.ql-toolbar button:focus, & .ql-snow.ql-toolbar button.ql-active, & .ql-snow.ql-toolbar .ql-picker-label:hover, & .ql-snow.ql-toolbar .ql-picker-label.ql-active, & .ql-snow.ql-toolbar .ql-picker-item:hover, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected': {
-                color: '#FFFFFF'
-              },
-
-              '& .ql-snow.ql-toolbar button:hover .ql-stroke, & .ql-snow.ql-toolbar button:focus .ql-stroke, & .ql-snow.ql-toolbar button.ql-active .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke': {
-                stroke: '#FFFFFF !important', // Changes icon outlines
-              },
-              '& .ql-snow.ql-toolbar button:hover .ql-fill, & .ql-snow.ql-toolbar button:focus .ql-fill, & .ql-snow.ql-toolbar button.ql-active .ql-fill, & .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill, & .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill, & .ql-snow.ql-toolbar .ql-picker-item:hover .ql-fill, & .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-fill': {
-                fill: '#FFFFFF !important', // Changes icon interiors
-              },
-            }
-            }
-          >
-            <div
-              ref={quillRef}
-              style={{ height: '150px', marginBottom: '50px' }}
-            />
-          </Box>
+          {/* QuillEditor component */}
+          <QuillEditor
+            key={editorKey}
+            isExpanded={isExpanded}
+            value={formData.content}
+            onChange={(htmlContent) => {
+              setFormData(prev => ({ ...prev, content: htmlContent }));
+            }}
+            placeholder="Share your thoughts..."
+            height="150px"
+          />
 
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
             <CustomButton fetchOnclick={handleCreateThread}>Create Thread</CustomButton>
@@ -450,6 +360,7 @@ const MainContent = ({ spaces, setSpaces }) => {
             comments={thread.comments || 0}
             shares={thread.shares || 0}
             username={thread.username}
+            componentRendered={componentName}
             threadId={thread.id}
             onCommentOpen={() => handleCommentOpen(thread)}
             onVoteUpdate={handleVoteUpdate}

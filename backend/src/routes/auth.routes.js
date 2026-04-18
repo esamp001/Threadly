@@ -88,7 +88,6 @@ router.post('/google', async (req, res) => {
 // POST - Logout user
 router.post('/logout', checkAuth, async (req, res) => {
   try {
-    // This should work fine - no database calls, no complex logic
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

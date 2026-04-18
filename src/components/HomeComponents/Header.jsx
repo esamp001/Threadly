@@ -5,7 +5,7 @@ import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -16,6 +16,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const { showSnackbar } = useSnackbar();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -356,7 +357,17 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           mr: { lg: 10, xl: 20 },
           alignItems: 'center'
         }}>
-          <Home size={25} />
+          <Home
+            onClick={() => {
+              if (location.pathname === '/home') {
+                window.location.reload();
+              } else {
+                navigate('/home');
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+            size={25}
+          />
           <TrendingUp size={25} />
           <LayoutTemplate size={25} />
           <Tooltip

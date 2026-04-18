@@ -6,19 +6,6 @@ import Onboarding from "./pages/Onboarding"
 import Space from "./pages/Space"
 import ThreadlyLogin from "./pages/SpaceLogin"
 
-// const ProtectedRoutes = (path, component) => {
-//   return (
-//     <Route
-//       path={path}
-//       element={
-//         <ProtectedRoute>
-//           {component}
-//         </ProtectedRoute>
-//       }
-//     />
-//   )
-// }
-
 const ProtectedRoutes = (path, component) => (
   <Route path={path} element={<ProtectedRoute requireOnboarding={true}>{component}</ProtectedRoute>} />
 );
@@ -26,10 +13,6 @@ const ProtectedRoutes = (path, component) => (
 const OnboardingRoute = (path, component) => (
   <Route path={path} element={<ProtectedRoute requireOnboarding={false}>{component}</ProtectedRoute>} />
 );
-
-
-
-
 
 function App() {
   return (

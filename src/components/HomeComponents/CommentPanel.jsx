@@ -188,7 +188,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Avatar
                 src={threadData.user_avatar_url}
-                sx={{ width: 30, height: 30 }}
+                sx={{ width: 37, height: 37 }}
               >
                 {threadData.username?.[0]?.toUpperCase()}
               </Avatar>

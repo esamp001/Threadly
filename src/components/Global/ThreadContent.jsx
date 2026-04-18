@@ -4,6 +4,7 @@ import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -19,6 +20,7 @@ const ThreadContent = ({
   comments,
   shares,
   spaceName,
+  spaceId,
   threadId,
   userVote,
   onCommentOpen,
@@ -117,18 +119,42 @@ const ThreadContent = ({
           }
         </Avatar>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             {/* Primary: Space Name (The Subject) */}
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: 'primary.main',
-                fontWeight: 600, // Added slight bold for emphasis
-                fontSize: '0.9rem'
-              }}
-            >
-              {componentRendered?.current === 'Space' ? user?.username : spaceName}
-            </Typography>
+            {componentRendered?.current === 'Space' ? (
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  fontSize: '0.9rem'
+                }}
+              >
+                {user?.username}
+              </Typography>
+            ) : (
+              <Link
+                to={`/spaces/${spaceId}`}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit'
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: 'primary.main',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    '&:hover': {
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  {spaceName}
+                </Typography>
+              </Link>
+            )}
 
             {/* Secondary: Posted By (The Metadata) */}
             {componentRendered?.current !== 'Space' && (

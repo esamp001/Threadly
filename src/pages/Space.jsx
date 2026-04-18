@@ -546,6 +546,7 @@ const Space = () => {
                     comments={thread.comment_count || 0}
                     shares={0}
                     spaceName={thread.space_name}
+                    spaceId={spaceId}
                     threadId={thread.id}
                     userVote={thread.userVote}
                     userAvatar={thread.user_avatar_url}

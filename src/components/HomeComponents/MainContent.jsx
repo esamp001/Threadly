@@ -1,4 +1,5 @@
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Skeleton, Typography } from "@mui/material";
+import Paper from "@mui/material/Paper";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
@@ -327,7 +328,42 @@ const MainContent = ({ spaces, setSpaces }) => {
       </Accordion>
 
 
-      {threads && threads.length === 0 ? (
+      {loading && (!threads || threads.length === 0) ? (
+        // Show skeleton during initial load matching ThreadContent structure
+        Array.from({ length: 3 }).map((_, index) => (
+          <Paper key={index} sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
+            {/* Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Skeleton variant="circular" sx={{ height: 40, width: 40, mr: 1 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Skeleton variant="text" width={120} height={20} />
+                  <Skeleton variant="text" width={80} height={16} />
+                </Box>
+                <Skeleton variant="text" width={60} height={20} />
+              </Box>
+            </Box>
+
+            {/* Title */}
+            <Skeleton variant="text" width="60%" height={24} sx={{ mt: 1 }} />
+
+            {/* Content */}
+            <Skeleton variant="rectangular" height={60} sx={{ mt: 2 }} />
+
+            {/* Actions */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Skeleton variant="rectangular" width={80} height={36} />
+              </Box>
+              <Box sx={{ gap: 1, display: 'flex' }}>
+                <Skeleton variant="rectangular" width={60} height={36} />
+                <Skeleton variant="rectangular" width={60} height={36} />
+              </Box>
+            </Box>
+          </Paper>
+        ))
+      ) : threads && threads.length === 0 ? (
+        // Show empty state when no threads and not loading
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -352,6 +388,7 @@ const MainContent = ({ spaces, setSpaces }) => {
             avatar={thread.avatar_url}
             spaceAvatar={thread.space_avatar_url}
             spaceName={thread.space_name || 'Unknown Space'}
+            spaceId={thread.space_id}
             postedBy={thread.username}
             timeAgo={thread.timeAgo}
             title={thread.title}

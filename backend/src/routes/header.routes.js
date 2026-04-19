@@ -71,10 +71,11 @@ router.put('/', checkAuth, async (req, res) => {
       await trx('space_topics').insert(spaceTopics);
     }
 
-    // Auto-join the creator
+    // Auto-join the creator as owner
     await trx('space_members').insert({
       space_id: spaceId.id,
       user_id: req.user.userId,
+      role: 'owner',
       joined_at: knex.fn.now()
     });
 

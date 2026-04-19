@@ -1,4 +1,5 @@
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import InfoIcon from '@mui/icons-material/Info';
 import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
@@ -120,6 +121,128 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
           {joining ? 'Processing...' : 'Join Space'}
         </CustomButton>
       )}
+
+      {/* Space Rules Section */}
+      <Box sx={{ mt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Typography
+            sx={{
+              fontSize: 12,
+              letterSpacing: 2,
+              color: '#9ca3af',
+            }}
+          >
+            SPACE RULES
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography
+            sx={{
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: '#d1d5db',
+            }}
+          >
+            01. Be respectful and maintain academic rigor.
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: '#d1d5db',
+            }}
+          >
+            02. No self-promotion or low-effort link drops.
+          </Typography>
+          <Typography
+            sx={{
+              fontSize: 13,
+              lineHeight: 1.5,
+              color: '#d1d5db',
+            }}
+          >
+            03. Protect user privacy in shared case studies.
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Top Contributors Section */}
+      <Box sx={{ mt: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <EmojiEventsIcon sx={{ fontSize: 14, color: '#9ca3af', mr: 1 }} />
+          <Typography
+            sx={{
+              fontSize: 12,
+              letterSpacing: 2,
+              color: '#9ca3af',
+            }}
+          >
+            TOP CONTRIBUTORS
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                backgroundColor: '#6366f1',
+                fontSize: 14,
+              }}
+            >
+              DT
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                Dr. Aris Thorne
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+                2450 pts
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                backgroundColor: '#ec4899',
+                fontSize: 14,
+              }}
+            >
+              LV
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                Lila Vance
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+                1920 pts
+              </Typography>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                backgroundColor: '#10b981',
+                fontSize: 14,
+              }}
+            >
+              JG
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                Julian Gray
+              </Typography>
+              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+                1680 pts
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
     </Paper>
   );
 };
@@ -640,40 +763,44 @@ const Space = () => {
             style={{ display: 'none' }}
           />
 
-          {space?.cover_photo_url ? (
-            <StyledButton
-              onClick={handleRemoveCoverPhoto}
-              startIcon={<NoPhotographyRoundedIcon />}
-              variant="danger"
-              sx={{
-                zIndex: 30,
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                '& .MuiButton-startIcon': {
-                  mr: { xs: 0, sm: 1 }
-                }
-              }}
-            >
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Remove Photo</Box>
-            </StyledButton>
-          ) : (
-            <CustomButton
-              onClick={() => coverPhotoInputRef.current?.click()}
-              startIcon={<PhotoCameraRoundedIcon />}
-              sx={{
-                cursor: 'pointer',
-                zIndex: 30,
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                '& .MuiButton-startIcon': {
-                  mr: { xs: 0, sm: 1 }
-                }
-              }}
-            >
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Upload Cover Photo</Box>
-            </CustomButton>
+          {space?.userRole === 'owner' && (
+            <>
+              {space?.cover_photo_url ? (
+                <StyledButton
+                  onClick={handleRemoveCoverPhoto}
+                  startIcon={<NoPhotographyRoundedIcon />}
+                  variant="danger"
+                  sx={{
+                    zIndex: 30,
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    '& .MuiButton-startIcon': {
+                      mr: { xs: 0, sm: 1 }
+                    }
+                  }}
+                >
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Remove Photo</Box>
+                </StyledButton>
+              ) : (
+                <CustomButton
+                  onClick={() => coverPhotoInputRef.current?.click()}
+                  startIcon={<PhotoCameraRoundedIcon />}
+                  sx={{
+                    cursor: 'pointer',
+                    zIndex: 30,
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    '& .MuiButton-startIcon': {
+                      mr: { xs: 0, sm: 1 }
+                    }
+                  }}
+                >
+                  <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Upload Cover Photo</Box>
+                </CustomButton>
+              )}
+            </>
           )}
 
           {/* Cover Photo Placeholder */}
@@ -740,155 +867,153 @@ const Space = () => {
       <Grid sx={{ width: '100%', justifyContent: 'center', mt: 10 }} container spacing={2}>
         {/* Thread List */}
         <Grid size={{ xs: 12, md: 9 }}>
-          <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                Threads Discussions
-              </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '1rem', md: '1.25rem' } }}>
+              Threads Discussions
+            </Typography>
 
-              {!showThreadForm && (
-                <CustomButton
-                  onClick={() => setShowThreadForm(true)}
-                >
-                  Create Thread
-                </CustomButton>
-              )}
-            </Box>
+            {!showThreadForm && (
+              <CustomButton
+                onClick={() => setShowThreadForm(true)}
+              >
+                Create Thread
+              </CustomButton>
+            )}
+          </Box>
 
-            {/* Scrollable Thread List */}
-            <Box sx={{ p: 2 }}>
-              {/* Thread Creation Form */}
-              {showThreadForm && (
-                <Box sx={{ mb: 3, mt: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Avatar
-                      src={user?.avatar_url}
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: 'primary.main',
-                        fontSize: 20,
-                        mr: 1
-                      }}
-                    >
-                      {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                    </Avatar>
-                    <TextFieldThreadly
-                      label="Thread Title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      maxLength={300}
-                      showCharCount
-                    />
-                  </Box>
-                  <QuillEditor
-                    key={editorKey}
-                    isExpanded={showThreadForm}
-                    value={formData.content}
-                    onChange={(htmlContent) => {
-                      setFormData(prev => ({ ...prev, content: htmlContent }));
+          {/* Scrollable Thread List */}
+          <Box sx={{ p: 2 }}>
+            {/* Thread Creation Form */}
+            {showThreadForm && (
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Avatar
+                    src={user?.avatar_url}
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      backgroundColor: 'primary.main',
+                      fontSize: 20,
+                      mr: 1
                     }}
-                    placeholder="Share your thoughts..."
-                    height="150px"
+                  >
+                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                  </Avatar>
+                  <TextFieldThreadly
+                    label="Thread Title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    maxLength={300}
+                    showCharCount
                   />
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleCreateThread}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {creatingThread ? 'Creating...' : 'Create Thread'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setShowThreadForm(false);
-                        setFormData({ title: '', content: '' });
-                      }}
-                      disabled={creatingThread}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      Cancel
-                    </Button>
-                  </Box>
                 </Box>
-              )}
-
-              {/* Thread List */}
-              {threadsLoading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Skeleton variant="rectangular" height={150} />
-                  <Skeleton variant="rectangular" height={150} />
-                </Box>
-              ) : threads.length === 0 ? (
-                <Box
-                  sx={{
-                    p: 4,
-                    borderRadius: 2,
-                    minHeight: 200,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
+                <QuillEditor
+                  key={editorKey}
+                  isExpanded={showThreadForm}
+                  value={formData.content}
+                  onChange={(htmlContent) => {
+                    setFormData(prev => ({ ...prev, content: htmlContent }));
                   }}
-                >
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No posts have been made yet for this space
-                  </Typography>
+                  placeholder="Share your thoughts..."
+                  height="150px"
+                />
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    onClick={handleCreateThread}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    {creatingThread ? 'Creating...' : 'Create Thread'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      setShowThreadForm(false);
+                      setFormData({ title: '', content: '' });
+                    }}
+                    disabled={creatingThread}
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Cancel
+                  </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {threads.map((thread) => (
-                    <ThreadContent
-                      componentRendered={componentName}
-                      key={thread.id}
-                      net_score={thread.net_score}
-                      spaceAvatar={thread.avatar_url}
-                      postedBy={thread.username}
-                      timeAgo={thread.timeAgo}
-                      title={thread.title}
-                      content={thread.content}
-                      comments={thread.comment_count || 0}
-                      shares={0}
-                      spaceName={thread.space_name}
-                      spaceId={spaceId}
-                      threadId={thread.id}
-                      userVote={thread.userVote}
-                      userAvatar={thread.user_avatar_url}
-                      onCommentOpen={() => handleCommentOpen(thread)}
-                      onVoteUpdate={(updatedThread) => {
-                        setThreads(prev =>
-                          prev.map(t =>
-                            t.id === updatedThread.id ? { ...t, ...updatedThread } : t
-                          )
-                        );
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
+              </Box>
+            )}
 
-              {/* Comment Panels */}
-              {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
-                isOpen && (
-                  <CommentPanel
-                    key={threadId}
-                    isClose={() => handleCommentClose(threadId)}
-                    isOpen={isOpen}
-                    threadId={threadId}
-                    threadData={selectedThreadData}
-                    onCommentCountUpdate={(newCount) => {
-                      setThreads(prev => {
-                        const updated = prev.map(thread => {
-                          return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
-                        });
-                        return updated;
-                      });
+            {/* Thread List */}
+            {threadsLoading ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Skeleton variant="rectangular" height={150} />
+                <Skeleton variant="rectangular" height={150} />
+              </Box>
+            ) : threads.length === 0 ? (
+              <Box
+                sx={{
+                  p: 4,
+                  borderRadius: 2,
+                  minHeight: 200,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  No posts have been made yet for this space
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                {threads.map((thread) => (
+                  <ThreadContent
+                    componentRendered={componentName}
+                    key={thread.id}
+                    net_score={thread.net_score}
+                    spaceAvatar={thread.avatar_url}
+                    postedBy={thread.username}
+                    timeAgo={thread.timeAgo}
+                    title={thread.title}
+                    content={thread.content}
+                    comments={thread.comment_count || 0}
+                    shares={0}
+                    spaceName={thread.space_name}
+                    spaceId={spaceId}
+                    threadId={thread.id}
+                    userVote={thread.userVote}
+                    userAvatar={thread.user_avatar_url}
+                    onCommentOpen={() => handleCommentOpen(thread)}
+                    onVoteUpdate={(updatedThread) => {
+                      setThreads(prev =>
+                        prev.map(t =>
+                          t.id === updatedThread.id ? { ...t, ...updatedThread } : t
+                        )
+                      );
                     }}
                   />
-                )
-              ))}
+                ))}
+              </Box>
+            )}
 
-            </Box>
+            {/* Comment Panels */}
+            {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
+              isOpen && (
+                <CommentPanel
+                  key={threadId}
+                  isClose={() => handleCommentClose(threadId)}
+                  isOpen={isOpen}
+                  threadId={threadId}
+                  threadData={selectedThreadData}
+                  onCommentCountUpdate={(newCount) => {
+                    setThreads(prev => {
+                      const updated = prev.map(thread => {
+                        return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
+                      });
+                      return updated;
+                    });
+                  }}
+                />
+              )
+            ))}
+
           </Box>
         </Grid>
 

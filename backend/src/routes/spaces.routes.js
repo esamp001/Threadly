@@ -62,8 +62,9 @@ router.get('/:id', checkAuth, async (req, res) => {
       success = false;
     }
 
-    // Check if user is a member
+    // Check if user is a member and get their role
     const member = await knex('space_members')
+      .select('role')
       .where({ space_id: id, user_id: req.user?.userId || null })
       .first();
 
@@ -85,6 +86,7 @@ router.get('/:id', checkAuth, async (req, res) => {
         avatarUrl: space.creator_avatar_url
       } : null,
       isMember: !!member,
+      userRole: member?.role || null,
       memberCount: space.space_member_count || 0
     };
 
@@ -302,6 +304,7 @@ router.post('/:id/join', checkAuth, async (req, res) => {
     // Add user to space and increment member count
     await knex('space_members').insert({
       space_id: spaceId,
+      role: 'member',
       user_id: userId,
       joined_at: knex.fn.now()
     });

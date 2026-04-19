@@ -132,7 +132,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           borderColor: 'divider',
           bgcolor: 'background.default',
           overflowY: 'auto',
-          borderRadius: { xs: 0, md: 2 }, // No radius on mobile, radius on desktop
+          borderRadius: { xs: 0, md: 1 }, // No radius on mobile, radius on desktop
           position: { xs: 'relative', md: 'static' } // Relative on mobile for full screen
         }}
       >

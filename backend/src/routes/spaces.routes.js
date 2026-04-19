@@ -61,6 +61,17 @@ router.get('/:id', checkAuth, async (req, res) => {
       success = false;
     }
 
+    // Check if user is a member
+    const member = await knex('space_members')
+      .where({ space_id: id, user_id: req.user?.userId || null })
+      .first();
+
+    // Get member count
+    const memberCountResult = await knex('space_members')
+      .where('space_id', id)
+      .count('* as count')
+      .first();
+
     // Format response to match expectations
     space = {
       id: space.id,
@@ -78,7 +89,9 @@ router.get('/:id', checkAuth, async (req, res) => {
         username: space.username,
         displayName: space.displayName,
         avatarUrl: space.creatorAvatarUrl
-      } : null
+      } : null,
+      isMember: !!member,
+      memberCount: parseInt(memberCountResult?.count) || 0
     };
 
   } catch (error) {
@@ -264,6 +277,134 @@ router.post('/cover_photo_remove', checkAuth, async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: error.message
+    });
+  }
+});
+
+// POST /api/spaces/:id/join - Join a space
+router.post('/:id/join', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+
+  try {
+    // Check if space exists
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    // Check if user is already a member
+    const existingMember = await knex('space_members')
+      .where({ space_id: spaceId, user_id: userId })
+      .first();
+
+    if (existingMember) {
+      status = 409;
+      error_message = 'User is already a member of this space';
+      success = false;
+      throw new Error('Already a member');
+    }
+
+    // Add user to space
+    await knex('space_members').insert({
+      space_id: spaceId,
+      user_id: userId,
+      joined_at: knex.fn.now()
+    });
+
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      message: success ? 'Joined space successfully' : undefined
+    });
+  }
+});
+
+// DELETE /api/spaces/:id/leave - Leave a space
+router.delete('/:id/leave', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+
+  try {
+    // Check if user is a member
+    const member = await knex('space_members')
+      .where({ space_id: spaceId, user_id: userId })
+      .first();
+
+    if (!member) {
+      status = 404;
+      error_message = 'User is not a member of this space';
+      success = false;
+      throw new Error('Not a member');
+    }
+
+    // Remove user from space
+    await knex('space_members')
+      .where({ space_id: spaceId, user_id: userId })
+      .del();
+
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      message: success ? 'Left space successfully' : undefined
+    });
+  }
+});
+
+// GET /api/spaces/:id/membership - Check if user is a member of a space
+router.get('/:id/membership', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+  let isMember = false;
+
+  try {
+    const member = await knex('space_members')
+      .where({ space_id: spaceId, user_id: userId })
+      .first();
+
+    isMember = !!member;
+
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      data: { isMember }
     });
   }
 });

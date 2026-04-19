@@ -5,6 +5,7 @@ import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import { Avatar, Box, Button, Grid, Paper, Skeleton, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import StyledButton from '../components/Global/StyledButton';
 import ThreadContent from '../components/Global/ThreadContent';
 import CommentPanel from '../components/HomeComponents/CommentPanel';
 import CustomButton from '../components/HomeComponents/CustomButton';
@@ -17,7 +18,7 @@ import { useSnackbar } from '../context/SnackbarContext';
 import { uploadImagesToCloudinary } from '../utils/cloudinary';
 
 // Reusable About Space Card component
-const AboutSpaceCard = ({ space }) => {
+const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining }) => {
   return (
     <Paper sx={{ backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 }}>
       {/* Title */}
@@ -43,7 +44,7 @@ const AboutSpaceCard = ({ space }) => {
           mb: 3,
         }}
       >
-        {space?.description || 'A sanctuary for those who value precise information over noise. Official Space is the core of our platform\'s governance and design evolution.'}
+        {space?.description || 'No description available'}
       </Typography>
 
       {/* Stats */}
@@ -56,10 +57,10 @@ const AboutSpaceCard = ({ space }) => {
       >
         <Box>
           <Typography sx={{ fontSize: 22, fontWeight: 700 }}>
-            244k
+            {memberCount || 0}
           </Typography>
           <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            SCHOLARS
+            MEMBERS
           </Typography>
         </Box>
 
@@ -71,10 +72,10 @@ const AboutSpaceCard = ({ space }) => {
               color: '#22c55e',
             }}
           >
-            1.8k
+            —
           </Typography>
           <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            RESEARCHING
+            ONLINE
           </Typography>
         </Box>
       </Box>
@@ -91,22 +92,34 @@ const AboutSpaceCard = ({ space }) => {
       >
         <CalendarTodayIcon sx={{ fontSize: 16 }} />
         <Typography sx={{ fontSize: 12 }}>
-          Created June 12, 2021
+          Created {space?.createdAt || 'Unknown date'}
         </Typography>
       </Box>
 
       {/* Button */}
-      <CustomButton
-        sx={{
-          width: '100%',
-          textTransform: 'none',
-          fontWeight: 600,
-          borderRadius: 2,
-          py: 1.2
-        }}
-      >
-        Join Space
-      </CustomButton>
+      {isMember ? (
+        <StyledButton
+          onClick={onLeave}
+          disabled={joining}
+          variant="danger"
+          sx={{
+            width: '100%',
+          }}
+        >
+          {joining ? 'Processing...' : 'Leave Space'}
+        </StyledButton>
+      ) : (
+        <CustomButton
+          onClick={onJoin}
+          disabled={joining}
+          fetchOnclick={onJoin}
+          sx={{
+            width: '100%',
+          }}
+        >
+          {joining ? 'Processing...' : 'Join Space'}
+        </CustomButton>
+      )}
     </Paper>
   );
 };
@@ -119,6 +132,11 @@ const Space = () => {
   const [error, setError] = useState(null);
   const { showSnackbar } = useSnackbar();
   const componentName = useRef('Space');
+
+  // Membership state
+  const [isMember, setIsMember] = useState(false);
+  const [memberCount, setMemberCount] = useState(0);
+  const [joining, setJoining] = useState(false);
 
   // Thread creation state
   const [formData, setFormData] = useState({
@@ -254,6 +272,96 @@ const Space = () => {
   };
 
   /**
+   * Handles joining a space
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Passing this function as a prop to child components
+   * - Using it inside useEffect dependencies
+   *
+   * Behavior:
+   * - Sends POST request to join space API
+   * - Updates membership state on success
+   * - Increments member count on success
+   * - Shows snackbar notification
+   *
+   * Dependencies:
+   * - spaceId: Current space ID
+   * - showSnackbar: Snackbar notification function
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const handleJoinSpace = useCallback(async () => {
+    try {
+      setJoining(true);
+      const response = await apiRequest(`/api/spaces/${spaceId}/join`, {
+        method: 'POST'
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setIsMember(true);
+        setMemberCount(prev => prev + 1);
+        showSnackbar('Joined space successfully', 'success');
+      } else {
+        showSnackbar(result.error_message || 'Failed to join space', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Failed to join space', 'error');
+    } finally {
+      setJoining(false);
+    }
+  }, [spaceId, showSnackbar]);
+
+  /**
+   * Handles leaving a space
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Passing this function as a prop to child components
+   * - Using it inside useEffect dependencies
+   *
+   * Behavior:
+   * - Sends DELETE request to leave space API
+   * - Updates membership state on success
+   * - Decrements member count on success
+   * - Shows snackbar notification
+   *
+   * Dependencies:
+   * - spaceId: Current space ID
+   * - showSnackbar: Snackbar notification function
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const handleLeaveSpace = useCallback(async () => {
+    try {
+      setJoining(true);
+      const response = await apiRequest(`/api/spaces/${spaceId}/leave`, {
+        method: 'DELETE'
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        setIsMember(false);
+        setMemberCount(prev => prev - 1);
+        showSnackbar('Left space successfully', 'success');
+      } else {
+        showSnackbar(result.error_message || 'Failed to leave space', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Failed to leave space', 'error');
+    } finally {
+      setJoining(false);
+    }
+  }, [spaceId, showSnackbar]);
+
+  /**
    * Fetches space data from API
    *
    * Wrapped in useCallback to memoize the function,
@@ -268,6 +376,7 @@ const Space = () => {
    * - Fetches space data from API for the current spaceId
    * - Handles response parsing and error state management
    * - Updates space state with response data
+   * - Updates membership status and member count from response
    * - API returns { success: true, data: { space: {...} } } format per spec
    *
    * Dependencies:
@@ -285,7 +394,10 @@ const Space = () => {
       // Check response status and update state accordingly
       // API returns { success: true, data: { space: {...} } } format per spec
       if (response.ok) {
-        setSpace(result.data?.space || result.space);
+        const spaceData = result.data?.space || result.space;
+        setSpace(spaceData);
+        setIsMember(spaceData?.isMember || false);
+        setMemberCount(spaceData?.memberCount || 0);
       } else {
         setError(result.message || 'Failed to load space');
       }
@@ -509,30 +621,19 @@ const Space = () => {
           />
 
           {space?.cover_photo_url ? (
-            <CustomButton
+            <StyledButton
               onClick={handleRemoveCoverPhoto}
               startIcon={<NoPhotographyRoundedIcon />}
+              variant="danger"
               sx={{
-                cursor: 'pointer',
                 zIndex: 30,
                 position: 'absolute',
                 top: 16,
                 right: 16,
-                backgroundColor: '#ffebee',
-                color: '#d32f2f',
-                borderColor: '#ef9a9a',
-                boxShadow: theme => `0 4px 0 0 ${theme.palette.error.main}`,
-                '&:hover': {
-                  backgroundColor: '#ffcdd2',
-                  borderColor: '#e57373'
-                },
-                '& .MuiTypography-root': {
-                  color: '#d32f2f'
-                }
               }}
             >
               Remove Photo
-            </CustomButton>
+            </StyledButton>
           ) : (
             <CustomButton
               onClick={() => coverPhotoInputRef.current?.click()}
@@ -761,7 +862,14 @@ const Space = () => {
 
         {/* About Space Card */}
         <Grid size={3} sx={{ display: { xs: 'none', md: 'block' } }}>
-          <AboutSpaceCard space={space} />
+          <AboutSpaceCard
+            space={space}
+            isMember={isMember}
+            memberCount={memberCount}
+            onJoin={handleJoinSpace}
+            onLeave={handleLeaveSpace}
+            joining={joining}
+          />
         </Grid>
       </Grid>
     </Grid>

@@ -71,10 +71,11 @@ router.put('/', checkAuth, async (req, res) => {
       await trx('space_topics').insert(spaceTopics);
     }
 
-    // Auto-join the creator
+    // Auto-join the creator as owner
     await trx('space_members').insert({
       space_id: spaceId.id,
       user_id: req.user.userId,
+      role: 'owner',
       joined_at: knex.fn.now()
     });
 
@@ -103,5 +104,27 @@ router.put('/', checkAuth, async (req, res) => {
 });
 
 
+
+// GET popular spaces for search dropdown
+router.get('/popular-spaces', async (_, res) => {
+  let spaces = [];
+  let error_message = '';
+  let status = 200;
+  let success = true;
+
+  try {
+    spaces = await knex('spaces')
+      .select('id', 'space_name', 'avatar_url', 'member_count')
+      .where('is_active', true)
+      .orderBy('member_count', 'desc')
+      .limit(10);
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({ success, status, error_message, spaces });
+  }
+});
 
 module.exports = router;

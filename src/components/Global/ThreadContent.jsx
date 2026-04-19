@@ -105,7 +105,7 @@ const ThreadContent = ({
   };
 
   return (
-    <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>
+    <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mb: 2 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Avatar
@@ -130,7 +130,7 @@ const ThreadContent = ({
                   fontSize: '0.9rem'
                 }}
               >
-                {user?.username}
+                {postedBy}
               </Typography>
             ) : (
               <Link

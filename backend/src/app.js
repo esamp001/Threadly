@@ -24,6 +24,7 @@ const comments = require('./routes/comments.routes');
 const auth = require('./routes/auth.routes');
 const onboarding = require('./routes/onboarding.routes');
 const space = require('./routes/spaces.routes');
+const search = require('./routes/search.routes');
 // const login = require('./routes/login.routes');
 
 app.use('/api/cloudinary', cloudinary);
@@ -33,6 +34,7 @@ app.use('/api/comments', comments);
 app.use('/api/auth', auth);
 app.use('/api/onboarding', onboarding);
 app.use('/api/spaces', space);
+app.use('/api/search', search);
 // app.use('/api/login', login);
 
 module.exports = app;

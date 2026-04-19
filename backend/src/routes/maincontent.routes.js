@@ -4,6 +4,76 @@ const knex = require('../db/knex');
 const moment = require('moment');
 const { checkAuth } = require('../middleware/checkAuth');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+const { calculateTrendingScore } = require('../utils/trendingHelpers');
+
+// GET /api/maincontent/hot_spaces - Get hot spaces from last 24 hours
+router.get('/hot_spaces', async (req, res) => {
+  try {
+    const twentyFourHoursAgo = moment().subtract(24, 'hours').format('YYYY-MM-DD HH:mm:ss');
+
+    const hotSpaces = await knex('threads')
+      .select(
+        'spaces.id',
+        'spaces.space_name',
+        'spaces.avatar_url',
+        knex.raw('COUNT(threads.id) as thread_count'),
+        knex.raw('COALESCE(SUM(threads.comments * 2 + threads.net_score), 0) as activity_score')
+      )
+      .innerJoin('spaces', 'threads.space_id', 'spaces.id')
+      .where('threads.is_active', true)
+      .where('threads.created_at', '>=', twentyFourHoursAgo)
+      .groupBy('spaces.id', 'spaces.space_name', 'spaces.avatar_url')
+      .orderByRaw('activity_score DESC')
+      .limit(5);
+
+    res.json({
+      success: true,
+      spaces: hotSpaces
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// GET /api/maincontent/hot_threads - Get hot threads from last 24 hours
+router.get('/hot_threads', async (req, res) => {
+  try {
+    const twentyFourHoursAgo = moment().subtract(24, 'hours').format('YYYY-MM-DD HH:mm:ss');
+
+    const hotThreads = await knex('threads')
+      .select(
+        'threads.id',
+        'threads.title',
+        'threads.space_id',
+        'threads.created_by',
+        'threads.comments',
+        'threads.net_score',
+        'threads.created_at',
+        'spaces.space_name',
+        'spaces.avatar_url',
+        'users.username as author_username'
+      )
+      .leftJoin('spaces', 'threads.space_id', 'spaces.id')
+      .leftJoin('users', 'threads.created_by', 'users.id')
+      .where('threads.is_active', true)
+      .where('threads.created_at', '>=', twentyFourHoursAgo)
+      .orderByRaw('(comments * 2) + net_score DESC')
+      .limit(5);
+
+    res.json({
+      success: true,
+      threads: hotThreads
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
 
 // GET - List all spaces with pagination
 router.get('/all_spaces', async (req, res) => {
@@ -208,6 +278,21 @@ router.post('/create_thread', checkAuth, async (req, res) => {
         created_by: userId
       })
       .returning('*');
+
+    // Update space trending score after thread creation
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (space) {
+      const threadCountResult = await knex('threads')
+        .where('space_id', spaceId)
+        .count('* as count')
+        .first();
+      const threadCount = parseInt(threadCountResult.count) || 0;
+      const newTrendingScore = calculateTrendingScore(space.member_count || 0, threadCount);
+
+      await knex('spaces')
+        .where('id', spaceId)
+        .update({ trending_score: newTrendingScore });
+    }
 
     // Return Thread with spaces and user data
     threadWithSpace = await knex('threads')

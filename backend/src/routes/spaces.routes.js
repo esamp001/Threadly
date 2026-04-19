@@ -3,6 +3,7 @@ const router = express.Router();
 const knex = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+const { calculateTrendingScore } = require('../utils/trendingHelpers');
 const multer = require('multer');
 const cloudinary = require('../cloudinary/setupcloud');
 
@@ -12,6 +13,27 @@ const upload = multer({
   storage,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+// GET /api/spaces/trending - Get trending spaces (must be before /:id route)
+router.get('/trending', async (req, res) => {
+  try {
+    const trendingSpaces = await knex('spaces')
+      .select('id', 'space_name', 'avatar_url', 'member_count', 'trending_score')
+      .where('is_active', true)
+      .orderBy('trending_score', 'desc')
+      .limit(10);
+
+    res.json({
+      success: true,
+      spaces: trendingSpaces
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
@@ -62,8 +84,9 @@ router.get('/:id', checkAuth, async (req, res) => {
       success = false;
     }
 
-    // Check if user is a member
+    // Check if user is a member and get their role
     const member = await knex('space_members')
+      .select('role')
       .where({ space_id: id, user_id: req.user?.userId || null })
       .first();
 
@@ -85,6 +108,7 @@ router.get('/:id', checkAuth, async (req, res) => {
         avatarUrl: space.creator_avatar_url
       } : null,
       isMember: !!member,
+      userRole: member?.role || null,
       memberCount: space.space_member_count || 0
     };
 
@@ -302,13 +326,29 @@ router.post('/:id/join', checkAuth, async (req, res) => {
     // Add user to space and increment member count
     await knex('space_members').insert({
       space_id: spaceId,
+      role: 'member',
       user_id: userId,
       joined_at: knex.fn.now()
     });
 
+    // Get thread count for trending score calculation
+    const threadCountResult = await knex('threads')
+      .where('space_id', spaceId)
+      .count('* as count')
+      .first();
+    const threadCount = parseInt(threadCountResult.count) || 0;
+
+    // Calculate new trending score
+    const newMemberCount = (space.member_count || 0) + 1;
+    const newTrendingScore = calculateTrendingScore(newMemberCount, threadCount);
+
+    // Update member count and trending score
     await knex('spaces')
       .where('id', spaceId)
-      .increment('member_count', 1);
+      .update({
+        member_count: newMemberCount,
+        trending_score: newTrendingScore
+      });
 
   } catch (error) {
     if (!error_message) {
@@ -348,14 +388,32 @@ router.delete('/:id/leave', checkAuth, async (req, res) => {
       throw new Error('Not a member');
     }
 
+    // Get space data for trending score calculation
+    const space = await knex('spaces').where('id', spaceId).first();
+
     // Remove user from space and decrement member count
     await knex('space_members')
       .where({ space_id: spaceId, user_id: userId })
       .del();
 
+    // Get thread count for trending score calculation
+    const threadCountResult = await knex('threads')
+      .where('space_id', spaceId)
+      .count('* as count')
+      .first();
+    const threadCount = parseInt(threadCountResult.count) || 0;
+
+    // Calculate new trending score
+    const newMemberCount = Math.max(0, (space.member_count || 0) - 1);
+    const newTrendingScore = calculateTrendingScore(newMemberCount, threadCount);
+
+    // Update member count and trending score
     await knex('spaces')
       .where('id', spaceId)
-      .decrement('member_count', 1);
+      .update({
+        member_count: newMemberCount,
+        trending_score: newTrendingScore
+      });
 
   } catch (error) {
     if (!error_message) {

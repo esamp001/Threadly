@@ -3,6 +3,17 @@ const router = express.Router();
 const knex = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+const multer = require('multer');
+const cloudinary = require('../cloudinary/setupcloud');
+
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // GET space details by ID
 router.get('/:id', checkAuth, async (req, res) => {
@@ -56,7 +67,7 @@ router.get('/:id', checkAuth, async (req, res) => {
       name: space.name,
       description: space.description,
       avatar_url: space.avatar_url,
-      coverImageUrl: space.coverImageUrl,
+      cover_photo_url: space.coverImageUrl,
       creatorId: space.creatorId,
       communityType: space.communityType,
       isMature: space.isMature,
@@ -183,6 +194,49 @@ router.get('/:spaceId/threads', checkAuth, async (req, res) => {
       status,
       error_message,
       threads
+    });
+  }
+});
+
+// Upload route for space cover photos
+router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (req, res) => {
+
+  try {
+    if (!req.file) {
+      console.log("No file uploaded");
+      return res.status(400).json({
+        status: 'error',
+        message: 'No file uploaded'
+      });
+    }
+
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
+      public_id: `space-cover-${Date.now()}`,
+      folder: 'threadly/cover_photos'
+    });
+
+    // Update the space's cover_image_url in the database
+    await knex('spaces')
+      .where('id', req.body.spaceId)
+      .update({
+        cover_image_url: uploadResult.secure_url
+      });
+
+    console.log(uploadResult, "uploadResult");
+
+    res.json({
+      status: 'success',
+      message: 'Cover photo uploaded successfully',
+      url: uploadResult.secure_url,
+      publicId: uploadResult.public_id
+    });
+  } catch (error) {
+    console.log(error, "error")
+    res.status(500).json({
+      status: 'error',
+      message: error.message
     });
   }
 });

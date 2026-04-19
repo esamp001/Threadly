@@ -147,7 +147,6 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           py: 1,
           borderBottom: '1px solid',
           borderColor: 'divider',
-          backgroundColor: 'background.paper'
         }}>
           <Button
             onClick={isCloseHandler}

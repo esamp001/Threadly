@@ -16,4 +16,5 @@ const apiRequest = async (endpoint, options = {}) => {
   return response;
 };
 
+export { API_URL };
 export default apiRequest;

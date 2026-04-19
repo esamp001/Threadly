@@ -125,6 +125,26 @@ useEffect(() => {
 - Be specific about dependencies and conditions
 - Keep comments concise but informative
 
+## FormData Uploads
+
+When uploading files using FormData, use raw `fetch` instead of the `apiRequest` utility:
+
+```javascript
+const response = await fetch(`${API_URL}/api/cloudinary/upload`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  },
+  body: formData,
+});
+```
+
+**Important:**
+- Do NOT set `Content-Type` header - the browser automatically sets it to `multipart/form-data` with the correct boundary
+- Use raw `fetch` with full URL
+- Manually set Authorization header from localStorage
+- The `apiRequest` utility sets `Content-Type: application/json` by default, which breaks FormData uploads
+
 ## Key Principles
 
 1. **Reusability First**: Always consider if a function can be reused before duplicating code

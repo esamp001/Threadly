@@ -1,6 +1,6 @@
 import { Button, Typography } from '@mui/material'
 
-const CustomButton = ({ children, fetchOnclick, startIcon, onClick, disabled }) => (
+const CustomButton = ({ children, fetchOnclick, startIcon, onClick, disabled, sx }) => (
   <Button
     onClick={onClick || fetchOnclick}
     startIcon={startIcon}
@@ -14,6 +14,7 @@ const CustomButton = ({ children, fetchOnclick, startIcon, onClick, disabled }) 
       letterSpacing: '0.05rem',
       textTransform: 'none',
       boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
+      ...sx,
     }}
     variant='contained'
   >

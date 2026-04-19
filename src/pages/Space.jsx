@@ -1,5 +1,6 @@
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import InfoIcon from '@mui/icons-material/Info';
+import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import { Avatar, Box, Button, Grid, Paper, Skeleton, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -137,6 +138,93 @@ const Space = () => {
   const [editorKey, setEditorKey] = useState(0);
   const [selectedThreadData, setSelectedThreadData] = useState(null);
   const [openCommentThreads, setOpenCommentThreads] = useState(false);
+  const [coverPhotoLoading, setCoverPhotoLoading] = useState(false);
+  const coverPhotoInputRef = useRef(null);
+  const [coverPhotoBlur, setCoverPhotoBlur] = useState(false);
+
+  // Get API URL from environment variables
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  /**
+   * Handles cover photo upload to Cloudinary
+   *
+   * This function uploads the selected cover photo to Cloudinary
+   * and updates the space state with the new cover photo URL.
+   *
+   * Behavior:
+   * - Validates file type (images only)
+   * - Validates file size (max 5MB)
+   * - Uploads to Cloudinary via API
+   * - Updates space state with new cover photo URL
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const handleCoverPhotoUpload = useCallback(async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type (images only)
+    if (!file.type.startsWith('image/')) {
+      showSnackbar('Please select an image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    // Show immediate preview using local URL
+    const previewUrl = URL.createObjectURL(file);
+    setSpace(prev => ({
+      ...prev,
+      cover_photo_url: previewUrl
+    }));
+
+    try {
+      setCoverPhotoLoading(true);
+      setCoverPhotoBlur(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('spaceId', spaceId);
+
+      const response = await fetch(`${API_URL}/api/spaces/cover_photo_upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showSnackbar('Cover photo updated successfully', 'success');
+        setSpace(prev => ({
+          ...prev,
+          cover_photo_url: result.url
+        }));
+      } else {
+        showSnackbar(result.message || 'Failed to upload cover photo', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading cover photo:', error);
+      showSnackbar('Failed to upload cover photo', 'error');
+    } finally {
+      setCoverPhotoLoading(false);
+      setCoverPhotoBlur(false);
+      // Reset file input
+      if (coverPhotoInputRef.current) {
+        coverPhotoInputRef.current.value = '';
+      }
+    }
+  }, [spaceId, showSnackbar]);
+
+
 
   /**
    * Fetches space data from API
@@ -372,15 +460,35 @@ const Space = () => {
       <Grid size={12}>
         <Box
           sx={{
-            height: 450,
+            height: { xs: 250, md: 420 },
             backgroundColor: 'background.paper',
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             pb: 30,
+            '&:hover': {
+              opacity: 0.8
+            }
           }}
         >
+
+          <input
+            type="file"
+            ref={coverPhotoInputRef}
+            onChange={handleCoverPhotoUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
+          <CustomButton
+            onClick={() => coverPhotoInputRef.current?.click()}
+            startIcon={<PhotoCameraRoundedIcon />}
+            sx={{ cursor: 'pointer', zIndex: 30, position: 'absolute', top: 16, right: 16 }}
+          >
+            Upload Cover Photo
+          </CustomButton>
+
           {/* Cover Photo Placeholder */}
           <Box
             sx={{
@@ -390,10 +498,17 @@ const Space = () => {
               right: 0,
               bottom: 5,
               display: 'flex',
+              flexDirection: 'column',
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
+              backgroundImage: space?.cover_photo_url ? `url(${space.cover_photo_url})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: coverPhotoLoading ? 0.5 : 1,
+              filter: coverPhotoBlur ? 'blur(4px)' : 'none'
             }}
           >
+
             {/* Space Information Section */}
             <Box
               sx={{
@@ -435,12 +550,12 @@ const Space = () => {
       </Grid>
 
       {/* Thread List and About Space Card */}
-      <Grid sx={{ width: '100%', justifyContent: 'center', p: 2, mt: 10 }} container spacing={2}>
+      <Grid sx={{ width: '100%', justifyContent: 'center', mt: 10 }} container spacing={2}>
         {/* Thread List */}
-        <Grid size={9}>
-          <Box sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase' }}>
+        <Grid size={{ xs: 12, md: 9 }}>
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '1rem', md: '1.25rem' } }}>
                 Threads Discussions
               </Typography>
 
@@ -453,141 +568,145 @@ const Space = () => {
               )}
             </Box>
 
-            {/* Thread Creation Form */}
-            {showThreadForm && (
-              <Box sx={{ mb: 3, mt: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Avatar
-                    src={user?.avatar_url}
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      backgroundColor: 'primary.main',
-                      fontSize: 20,
-                      mr: 1
+            {/* Scrollable Thread List */}
+            <Box sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', pr: 1 }}>
+              {/* Thread Creation Form */}
+              {showThreadForm && (
+                <Box sx={{ mb: 3, mt: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <Avatar
+                      src={user?.avatar_url}
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        backgroundColor: 'primary.main',
+                        fontSize: 20,
+                        mr: 1
+                      }}
+                    >
+                      {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                    </Avatar>
+                    <TextFieldThreadly
+                      label="Thread Title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      maxLength={300}
+                      showCharCount
+                    />
+                  </Box>
+                  <QuillEditor
+                    key={editorKey}
+                    isExpanded={showThreadForm}
+                    value={formData.content}
+                    onChange={(htmlContent) => {
+                      setFormData(prev => ({ ...prev, content: htmlContent }));
                     }}
-                  >
-                    {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                  </Avatar>
-                  <TextFieldThreadly
-                    label="Thread Title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    maxLength={300}
-                    showCharCount
+                    placeholder="Share your thoughts..."
+                    height="150px"
                   />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="contained"
+                      onClick={handleCreateThread}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      {creatingThread ? 'Creating...' : 'Create Thread'}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setShowThreadForm(false);
+                        setFormData({ title: '', content: '' });
+                      }}
+                      disabled={creatingThread}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
                 </Box>
-                <QuillEditor
-                  key={editorKey}
-                  isExpanded={showThreadForm}
-                  value={formData.content}
-                  onChange={(htmlContent) => {
-                    setFormData(prev => ({ ...prev, content: htmlContent }));
+              )}
+
+              {/* Thread List */}
+              {threadsLoading ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Skeleton variant="rectangular" height={150} />
+                  <Skeleton variant="rectangular" height={150} />
+                </Box>
+              ) : threads.length === 0 ? (
+                <Box
+                  sx={{
+                    p: 4,
+                    borderRadius: 2,
+                    minHeight: 200,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center'
                   }}
-                  placeholder="Share your thoughts..."
-                  height="150px"
-                />
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleCreateThread}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    {creatingThread ? 'Creating...' : 'Create Thread'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      setShowThreadForm(false);
-                      setFormData({ title: '', content: '' });
-                    }}
-                    disabled={creatingThread}
-                    sx={{ textTransform: 'none' }}
-                  >
-                    Cancel
-                  </Button>
+                >
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    No posts have been made yet for this space
+                  </Typography>
                 </Box>
-              </Box>
-            )}
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  {threads.map((thread) => (
+                    <ThreadContent
+                      componentRendered={componentName}
+                      key={thread.id}
+                      net_score={thread.net_score}
+                      spaceAvatar={thread.avatar_url}
+                      postedBy={thread.username}
+                      timeAgo={thread.timeAgo}
+                      title={thread.title}
+                      content={thread.content}
+                      comments={thread.comment_count || 0}
+                      shares={0}
+                      spaceName={thread.space_name}
+                      spaceId={spaceId}
+                      threadId={thread.id}
+                      userVote={thread.userVote}
+                      userAvatar={thread.user_avatar_url}
+                      onCommentOpen={() => handleCommentOpen(thread)}
+                      onVoteUpdate={(updatedThread) => {
+                        setThreads(prev =>
+                          prev.map(t =>
+                            t.id === updatedThread.id ? { ...t, ...updatedThread } : t
+                          )
+                        );
+                      }}
+                    />
+                  ))}
+                </Box>
+              )}
 
-            {/* Thread List */}
-            {threadsLoading ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Skeleton variant="rectangular" height={150} />
-                <Skeleton variant="rectangular" height={150} />
-              </Box>
-            ) : threads.length === 0 ? (
-              <Box
-                sx={{
-                  p: 4,
-                  borderRadius: 2,
-                  minHeight: 200,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
-              >
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  No posts have been made yet for this space
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                {threads.map((thread) => (
-                  <ThreadContent
-                    componentRendered={componentName}
-                    key={thread.id}
-                    net_score={thread.net_score}
-                    spaceAvatar={thread.avatar_url}
-                    postedBy={thread.username}
-                    timeAgo={thread.timeAgo}
-                    title={thread.title}
-                    content={thread.content}
-                    comments={thread.comment_count || 0}
-                    shares={0}
-                    spaceName={thread.space_name}
-                    spaceId={spaceId}
-                    threadId={thread.id}
-                    userVote={thread.userVote}
-                    userAvatar={thread.user_avatar_url}
-                    onCommentOpen={() => handleCommentOpen(thread)}
-                    onVoteUpdate={(updatedThread) => {
-                      setThreads(prev =>
-                        prev.map(t =>
-                          t.id === updatedThread.id ? { ...t, ...updatedThread } : t
-                        )
-                      );
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-
-            {/* Comment Panels */}
-            {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
-              isOpen && (
-                <CommentPanel
-                  key={threadId}
-                  isClose={() => handleCommentClose(threadId)}
-                  isOpen={isOpen}
-                  threadId={threadId}
-                  threadData={selectedThreadData}
-                  onCommentCountUpdate={(newCount) => {
-                    setThreads(prev => {
-                      const updated = prev.map(thread => {
-                        return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
+              {/* Comment Panels */}
+              {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
+                isOpen && (
+                  <CommentPanel
+                    key={threadId}
+                    isClose={() => handleCommentClose(threadId)}
+                    isOpen={isOpen}
+                    threadId={threadId}
+                    threadData={selectedThreadData}
+                    onCommentCountUpdate={(newCount) => {
+                      setThreads(prev => {
+                        const updated = prev.map(thread => {
+                          return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
+                        });
+                        return updated;
                       });
-                      return updated;
-                    });
-                  }}
-                />
-              )
-            ))}
+                    }}
+                  />
+                )
+              ))}
+
+            </Box>
           </Box>
         </Grid>
 
         {/* About Space Card */}
-        <Grid size={3}>
+        <Grid size={3} sx={{ display: { xs: 'none', md: 'block' } }}>
           <AboutSpaceCard space={space} />
         </Grid>
       </Grid>

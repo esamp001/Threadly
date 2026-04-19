@@ -241,4 +241,31 @@ router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (re
   }
 });
 
+// Remove route for space cover photos
+router.post('/cover_photo_remove', checkAuth, async (req, res) => {
+  const { spaceId } = req.body;
+
+  console.log(spaceId, "spaceId")
+
+  try {
+    // Update the space's cover_image_url to NULL in the database
+    await knex('spaces')
+      .where('id', spaceId)
+      .update({
+        cover_image_url: null
+      });
+
+    res.json({
+      status: 'success',
+      message: 'Cover photo removed successfully'
+    });
+  } catch (error) {
+    console.log(error, "error")
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;

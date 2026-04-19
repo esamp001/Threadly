@@ -1,5 +1,6 @@
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import InfoIcon from '@mui/icons-material/Info';
+import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import { Avatar, Box, Button, Grid, Paper, Skeleton, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -95,23 +96,17 @@ const AboutSpaceCard = ({ space }) => {
       </Box>
 
       {/* Button */}
-      <Button
-        fullWidth
-        variant="contained"
+      <CustomButton
         sx={{
+          width: '100%',
           textTransform: 'none',
           fontWeight: 600,
           borderRadius: 2,
-          py: 1.2,
-          backgroundColor: '#2a2b31',
-          color: '#e5e7eb',
-          '&:hover': {
-            backgroundColor: '#3a3b42',
-          },
+          py: 1.2
         }}
       >
-        Joined
-      </Button>
+        Join Space
+      </CustomButton>
     </Paper>
   );
 };
@@ -224,7 +219,39 @@ const Space = () => {
     }
   }, [spaceId, showSnackbar]);
 
+  /**
+   * Removes the cover photo from the current space
+   * This is used to delete the cover photo by calling the backend API and updating the local state
+   *
+   * @returns {Promise<void>}
+   */
+  const handleRemoveCoverPhoto = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/spaces/cover_photo_remove`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ spaceId }),
+      });
 
+      const result = await response.json();
+
+      if (response.ok) {
+        showSnackbar('Cover photo removed successfully', 'success');
+        setSpace(prev => ({
+          ...prev,
+          cover_photo_url: null
+        }));
+      } else {
+        showSnackbar(result.message || 'Failed to remove cover photo', 'error');
+      }
+    } catch (error) {
+      console.error('Error removing cover photo:', error);
+      showSnackbar('Failed to remove cover photo', 'error');
+    }
+  };
 
   /**
    * Fetches space data from API
@@ -481,13 +508,40 @@ const Space = () => {
             style={{ display: 'none' }}
           />
 
-          <CustomButton
-            onClick={() => coverPhotoInputRef.current?.click()}
-            startIcon={<PhotoCameraRoundedIcon />}
-            sx={{ cursor: 'pointer', zIndex: 30, position: 'absolute', top: 16, right: 16 }}
-          >
-            Upload Cover Photo
-          </CustomButton>
+          {space?.cover_photo_url ? (
+            <CustomButton
+              onClick={handleRemoveCoverPhoto}
+              startIcon={<NoPhotographyRoundedIcon />}
+              sx={{
+                cursor: 'pointer',
+                zIndex: 30,
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                backgroundColor: '#ffebee',
+                color: '#d32f2f',
+                borderColor: '#ef9a9a',
+                boxShadow: theme => `0 4px 0 0 ${theme.palette.error.main}`,
+                '&:hover': {
+                  backgroundColor: '#ffcdd2',
+                  borderColor: '#e57373'
+                },
+                '& .MuiTypography-root': {
+                  color: '#d32f2f'
+                }
+              }}
+            >
+              Remove Photo
+            </CustomButton>
+          ) : (
+            <CustomButton
+              onClick={() => coverPhotoInputRef.current?.click()}
+              startIcon={<PhotoCameraRoundedIcon />}
+              sx={{ cursor: 'pointer', zIndex: 30, position: 'absolute', top: 16, right: 16 }}
+            >
+              Upload Cover Photo
+            </CustomButton>
+          )}
 
           {/* Cover Photo Placeholder */}
           <Box
@@ -569,7 +623,7 @@ const Space = () => {
             </Box>
 
             {/* Scrollable Thread List */}
-            <Box sx={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', pr: 1 }}>
+            <Box>
               {/* Thread Creation Form */}
               {showThreadForm && (
                 <Box sx={{ mb: 3, mt: 2 }}>

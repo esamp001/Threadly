@@ -56,8 +56,9 @@ router.put('/', checkAuth, async (req, res) => {
       avatar_public_id: avatarPublicId,
       community_type: communityType,
       is_mature: isMature,
-      created_by: 1, // TODO: Get from authenticated user
-      is_active: true
+      created_by: req.user.userId,
+      is_active: true,
+      member_count: 1 // Creator auto-joins, so start with 1
     }).returning('id');
 
     // Insert space-topic relationships

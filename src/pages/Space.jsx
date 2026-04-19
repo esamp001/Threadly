@@ -133,6 +133,9 @@ const Space = () => {
   const { showSnackbar } = useSnackbar();
   const componentName = useRef('Space');
 
+  // Drawer state
+  const [openDrawer, setOpenDrawer] = useState(false);
+
   // Membership state
   const [isMember, setIsMember] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
@@ -154,6 +157,15 @@ const Space = () => {
   const [coverPhotoLoading, setCoverPhotoLoading] = useState(false);
   const coverPhotoInputRef = useRef(null);
   const [coverPhotoBlur, setCoverPhotoBlur] = useState(false);
+
+  /**
+   * Adds a new space to the state
+   * This is used when a space is created from the header
+   */
+  const addNewSpace = () => {
+    // Space page doesn't need to track spaces list, but function exists for Header compatibility
+    return
+  };
 
   // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
@@ -574,7 +586,11 @@ const Space = () => {
     return (
       <Grid container>
         <Grid size={12}>
-          <Header />
+          <Header
+            openDrawer={openDrawer}
+            setOpenDrawer={setOpenDrawer}
+            onSpaceCreated={addNewSpace}
+          />
         </Grid>
         <Grid size={12}>
           <Skeleton variant="rectangular" height={200} sx={{ mt: 2 }} />
@@ -592,7 +608,11 @@ const Space = () => {
     <Grid container>
       {/* Header */}
       <Grid size={12}>
-        <Header />
+        <Header
+          openDrawer={openDrawer}
+          setOpenDrawer={setOpenDrawer}
+          onSpaceCreated={addNewSpace}
+        />
       </Grid>
 
       {/* Cover Photo Section */}
@@ -630,17 +650,29 @@ const Space = () => {
                 position: 'absolute',
                 top: 16,
                 right: 16,
+                '& .MuiButton-startIcon': {
+                  mr: { xs: 0, sm: 1 }
+                }
               }}
             >
-              Remove Photo
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Remove Photo</Box>
             </StyledButton>
           ) : (
             <CustomButton
               onClick={() => coverPhotoInputRef.current?.click()}
               startIcon={<PhotoCameraRoundedIcon />}
-              sx={{ cursor: 'pointer', zIndex: 30, position: 'absolute', top: 16, right: 16 }}
+              sx={{
+                cursor: 'pointer',
+                zIndex: 30,
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                '& .MuiButton-startIcon': {
+                  mr: { xs: 0, sm: 1 }
+                }
+              }}
             >
-              Upload Cover Photo
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Upload Cover Photo</Box>
             </CustomButton>
           )}
 
@@ -724,7 +756,7 @@ const Space = () => {
             </Box>
 
             {/* Scrollable Thread List */}
-            <Box>
+            <Box sx={{ p: 2 }}>
               {/* Thread Creation Form */}
               {showThreadForm && (
                 <Box sx={{ mb: 3, mt: 2 }}>

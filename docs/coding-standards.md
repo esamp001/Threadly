@@ -152,6 +152,26 @@ const response = await fetch(`${API_URL}/api/cloudinary/upload`, {
 3. **Simple Language**: Use plain, simple language in descriptions - avoid jargon
 4. **Purpose-Driven**: Documentation should explain WHY something exists, not just WHAT it does
 
+## Object Manipulation
+
+**Always use spread operators for objects** when creating new objects or updating state:
+
+```javascript
+// ✅ Good - Use spread operator
+const newObj = { ...existingObj, newProp: value };
+setState(prev => ({ ...prev, updatedField: newValue }));
+
+// ❌ Bad - Avoid manual object copying
+const newObj = Object.assign({}, existingObj, { newProp: value });
+const newObj = { id: existingObj.id, name: existingObj.name, newProp: value };
+```
+
+**Benefits:**
+- Cleaner, more readable code
+- Immutable updates
+- Prevents reference issues
+- Consistent with modern JavaScript patterns
+
 ## File Organization
 
 ```

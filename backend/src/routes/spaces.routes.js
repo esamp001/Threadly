@@ -38,18 +38,19 @@ router.get('/:id', checkAuth, async (req, res) => {
     space = await knex('spaces')
       .select(
         'spaces.id',
-        'spaces.space_name as name',
-        'spaces.space_description as description',
-        'spaces.avatar_url',
-        'spaces.cover_image_url as coverImageUrl',
-        'spaces.created_by as creatorId',
-        'spaces.community_type as communityType',
-        'spaces.is_mature as isMature',
-        'spaces.is_active as isActive',
-        'spaces.created_at as createdAt',
+        'spaces.space_name as space_name',
+        'spaces.space_description as space_description',
+        'spaces.avatar_url as space_avatar_url',
+        'spaces.cover_image_url as cover_image_url',
+        'spaces.created_by as creator_id',
+        'spaces.community_type as community_type',
+        'spaces.is_mature as is_mature',
+        'spaces.is_active as is_active',
+        'spaces.created_at as created_at',
+        'spaces.member_count as space_member_count',
         'users.id as user_id',
         'users.username',
-        'users.avatar_url as creatorAvatarUrl'
+        'users.avatar_url as creator_avatar_url'
       )
       .leftJoin('users', 'spaces.created_by', 'users.id')
       .where('spaces.id', id)
@@ -66,32 +67,25 @@ router.get('/:id', checkAuth, async (req, res) => {
       .where({ space_id: id, user_id: req.user?.userId || null })
       .first();
 
-    // Get member count
-    const memberCountResult = await knex('space_members')
-      .where('space_id', id)
-      .count('* as count')
-      .first();
-
     // Format response to match expectations
     space = {
       id: space.id,
-      name: space.name,
-      description: space.description,
-      avatar_url: space.avatar_url,
-      cover_photo_url: space.coverImageUrl,
-      creatorId: space.creatorId,
-      communityType: space.communityType,
-      isMature: space.isMature,
-      isActive: space.isActive,
-      createdAt: formatRelativeTime(space.createdAt),
+      name: space.space_name,
+      description: space.space_description,
+      avatar_url: space.space_avatar_url,
+      cover_photo_url: space.cover_image_url,
+      creatorId: space.creator_id,
+      communityType: space.community_type,
+      isMature: space.is_mature,
+      isActive: space.is_active,
+      createdAt: formatRelativeTime(space.created_at),
       creator: space.creator_id ? {
-        id: space.creator_id,
+        id: space.user_id,
         username: space.username,
-        displayName: space.displayName,
-        avatarUrl: space.creatorAvatarUrl
+        avatarUrl: space.creator_avatar_url
       } : null,
       isMember: !!member,
-      memberCount: parseInt(memberCountResult?.count) || 0
+      memberCount: space.space_member_count || 0
     };
 
   } catch (error) {
@@ -216,7 +210,6 @@ router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (re
 
   try {
     if (!req.file) {
-      console.log("No file uploaded");
       return res.status(400).json({
         status: 'error',
         message: 'No file uploaded'
@@ -237,8 +230,6 @@ router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (re
         cover_image_url: uploadResult.secure_url
       });
 
-    console.log(uploadResult, "uploadResult");
-
     res.json({
       status: 'success',
       message: 'Cover photo uploaded successfully',
@@ -246,7 +237,6 @@ router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (re
       publicId: uploadResult.public_id
     });
   } catch (error) {
-    console.log(error, "error")
     res.status(500).json({
       status: 'error',
       message: error.message
@@ -257,8 +247,6 @@ router.post('/cover_photo_upload', checkAuth, upload.single('avatar'), async (re
 // Remove route for space cover photos
 router.post('/cover_photo_remove', checkAuth, async (req, res) => {
   const { spaceId } = req.body;
-
-  console.log(spaceId, "spaceId")
 
   try {
     // Update the space's cover_image_url to NULL in the database
@@ -273,7 +261,6 @@ router.post('/cover_photo_remove', checkAuth, async (req, res) => {
       message: 'Cover photo removed successfully'
     });
   } catch (error) {
-    console.log(error, "error")
     res.status(500).json({
       status: 'error',
       message: error.message
@@ -312,12 +299,16 @@ router.post('/:id/join', checkAuth, async (req, res) => {
       throw new Error('Already a member');
     }
 
-    // Add user to space
+    // Add user to space and increment member count
     await knex('space_members').insert({
       space_id: spaceId,
       user_id: userId,
       joined_at: knex.fn.now()
     });
+
+    await knex('spaces')
+      .where('id', spaceId)
+      .increment('member_count', 1);
 
   } catch (error) {
     if (!error_message) {
@@ -357,10 +348,14 @@ router.delete('/:id/leave', checkAuth, async (req, res) => {
       throw new Error('Not a member');
     }
 
-    // Remove user from space
+    // Remove user from space and decrement member count
     await knex('space_members')
       .where({ space_id: spaceId, user_id: userId })
       .del();
+
+    await knex('spaces')
+      .where('id', spaceId)
+      .decrement('member_count', 1);
 
   } catch (error) {
     if (!error_message) {

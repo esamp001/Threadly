@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, InputAdornment, MenuItem, Radio, RadioGroup, Select, Skeleton, Switch, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, IconButton, InputAdornment, MenuItem, Radio, RadioGroup, Select, Skeleton, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import Menu from '@mui/material/Menu';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
@@ -329,6 +329,20 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
    */
   const handleSearchKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
+      addRecentSearch(searchQuery.trim());
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchDropdownOpen(false);
+      setSearchQuery('');
+    }
+  }, [searchQuery, navigate]);
+
+  /**
+   * Handles search blur event
+   * This is used to navigate to search page when user taps Done on mobile keyboard
+   * @param {Event} e - The blur event
+   */
+  const handleSearchBlur = useCallback((e) => {
+    if (searchQuery.trim()) {
       addRecentSearch(searchQuery.trim());
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchDropdownOpen(false);
@@ -906,6 +920,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           onChange={handleSearchInputChange}
           onClick={handleSearchClick}
           onKeyDown={handleSearchKeyDown}
+          onBlur={handleSearchBlur}
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 21,
@@ -920,11 +935,25 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           size='small'
           placeholder="Search..."
           InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
+
+            endAdornment: searchQuery.trim() ? (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    if (searchQuery.trim()) {
+                      addRecentSearch(searchQuery.trim());
+                      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                      setSearchDropdownOpen(false);
+                      setSearchQuery('');
+                    }
+                  }}
+                  sx={{ p: 0.5 }}
+                >
+                  <SearchIcon size={18} />
+                </IconButton>
               </InputAdornment>
-            ),
+            ) : null,
           }}
         />
         <SearchDropdown
@@ -1080,7 +1109,6 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           </Box>
         </Box>
       </Grid>
-      {/* </Box > */}
     </Grid >
   )
 }

@@ -7,7 +7,7 @@ import { Avatar, Box, Button, Grid, MobileStepper, Paper, Skeleton, Typography }
 import { Flame } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import SwipeableViews from 'react-swipeable-views';
+import { useSwipeable } from 'react-swipeable';
 import StyledButton from '../components/Global/StyledButton';
 import ThreadContent from '../components/Global/ThreadContent';
 import BottomNav from '../components/HomeComponents/BottomNav';
@@ -288,6 +288,13 @@ const Space = () => {
 
   // Swipeable view state for mobile
   const [activeStep, setActiveStep] = useState(0);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => setActiveStep((prev) => prev < 1 ? prev + 1 : prev),
+    onSwipedRight: () => setActiveStep((prev) => prev > 0 ? prev - 1 : prev),
+    preventDefaultTouchmoveEvent: true,
+    trackMouse: true
+  });
 
   /**
    * Adds a new space to the state
@@ -1007,157 +1014,154 @@ const Space = () => {
               }
             }}
           />
-          <SwipeableViews
-            index={activeStep}
-            onChangeIndex={(step) => setActiveStep(step)}
-            enableMouseEvents
-          >
-            {/* Slide 1: Thread List */}
-            <Box sx={{ p: 2 }}>
-              {/* Thread Creation Form */}
-              {showThreadForm && (
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Avatar
-                      src={user?.avatar_url}
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: 'primary.main',
-                        fontSize: 20,
-                        mr: 1
+          <Box {...swipeHandlers} sx={{ p: 2 }}>
+            {activeStep === 0 && (
+              <Box>
+                {/* Thread Creation Form */}
+                {showThreadForm && (
+                  <Box sx={{ mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                      <Avatar
+                        src={user?.avatar_url}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          backgroundColor: 'primary.main',
+                          fontSize: 20,
+                          mr: 1
+                        }}
+                      >
+                        {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                      </Avatar>
+                      <TextFieldThreadly
+                        label="Thread Title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        maxLength={300}
+                        showCharCount
+                      />
+                    </Box>
+                    <QuillEditor
+                      key={editorKey}
+                      isExpanded={showThreadForm}
+                      value={formData.content}
+                      onChange={(htmlContent) => {
+                        setFormData(prev => ({ ...prev, content: htmlContent }));
                       }}
-                    >
-                      {user?.username?.charAt(0)?.toUpperCase() || 'U'}
-                    </Avatar>
-                    <TextFieldThreadly
-                      label="Thread Title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      maxLength={300}
-                      showCharCount
+                      placeholder="Share your thoughts..."
+                      height="150px"
                     />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleCreateThread}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        {creatingThread ? 'Creating...' : 'Create Thread'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setShowThreadForm(false);
+                          setFormData({ title: '', content: '' });
+                        }}
+                        disabled={creatingThread}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
                   </Box>
-                  <QuillEditor
-                    key={editorKey}
-                    isExpanded={showThreadForm}
-                    value={formData.content}
-                    onChange={(htmlContent) => {
-                      setFormData(prev => ({ ...prev, content: htmlContent }));
+                )}
+
+                {/* Thread List */}
+                {threadsLoading ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Skeleton variant="rectangular" height={150} />
+                    <Skeleton variant="rectangular" height={150} />
+                  </Box>
+                ) : threads.length === 0 ? (
+                  <Box
+                    sx={{
+                      p: 4,
+                      borderRadius: 2,
+                      minHeight: 200,
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
                     }}
-                    placeholder="Share your thoughts..."
-                    height="150px"
-                  />
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleCreateThread}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {creatingThread ? 'Creating...' : 'Create Thread'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      onClick={() => {
-                        setShowThreadForm(false);
-                        setFormData({ title: '', content: '' });
-                      }}
-                      disabled={creatingThread}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      Cancel
-                    </Button>
+                  >
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      No posts have been made yet for this space
+                    </Typography>
                   </Box>
-                </Box>
-              )}
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {threads.map((thread) => (
+                      <ThreadContent
+                        componentRendered={componentName}
+                        key={thread.id}
+                        net_score={thread.net_score}
+                        spaceAvatar={thread.avatar_url}
+                        postedBy={thread.username}
+                        timeAgo={thread.timeAgo}
+                        title={thread.title}
+                        content={thread.content}
+                        comments={thread.comment_count || 0}
+                        shares={0}
+                        spaceName={thread.space_name}
+                        spaceId={spaceId}
+                        threadId={thread.id}
+                        userVote={thread.userVote}
+                        userAvatar={thread.user_avatar_url}
+                        onCommentOpen={() => handleCommentOpen(thread)}
+                        onVoteUpdate={(updatedThread) => {
+                          setThreads(prev =>
+                            prev.map(t =>
+                              t.id === updatedThread.id ? { ...t, ...updatedThread } : t
+                            )
+                          );
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )}
 
-              {/* Thread List */}
-              {threadsLoading ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Skeleton variant="rectangular" height={150} />
-                  <Skeleton variant="rectangular" height={150} />
-                </Box>
-              ) : threads.length === 0 ? (
-                <Box
-                  sx={{
-                    p: 4,
-                    borderRadius: 2,
-                    minHeight: 200,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    No posts have been made yet for this space
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {threads.map((thread) => (
-                    <ThreadContent
-                      componentRendered={componentName}
-                      key={thread.id}
-                      net_score={thread.net_score}
-                      spaceAvatar={thread.avatar_url}
-                      postedBy={thread.username}
-                      timeAgo={thread.timeAgo}
-                      title={thread.title}
-                      content={thread.content}
-                      comments={thread.comment_count || 0}
-                      shares={0}
-                      spaceName={thread.space_name}
-                      spaceId={spaceId}
-                      threadId={thread.id}
-                      userVote={thread.userVote}
-                      userAvatar={thread.user_avatar_url}
-                      onCommentOpen={() => handleCommentOpen(thread)}
-                      onVoteUpdate={(updatedThread) => {
-                        setThreads(prev =>
-                          prev.map(t =>
-                            t.id === updatedThread.id ? { ...t, ...updatedThread } : t
-                          )
-                        );
-                      }}
-                    />
-                  ))}
-                </Box>
-              )}
-
-              {/* Comment Panels */}
-              {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
-                isOpen && (
-                  <CommentPanel
-                    key={threadId}
-                    isClose={() => handleCommentClose(threadId)}
-                    isOpen={isOpen}
-                    threadId={threadId}
-                    threadData={selectedThreadData}
-                    onCommentCountUpdate={(newCount) => {
-                      setThreads(prev => {
-                        const updated = prev.map(thread => {
-                          return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
+                {/* Comment Panels */}
+                {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (
+                  isOpen && (
+                    <CommentPanel
+                      key={threadId}
+                      isClose={() => handleCommentClose(threadId)}
+                      isOpen={isOpen}
+                      threadId={threadId}
+                      threadData={selectedThreadData}
+                      onCommentCountUpdate={(newCount) => {
+                        setThreads(prev => {
+                          const updated = prev.map(thread => {
+                            return thread.id === parseInt(threadId) ? { ...thread, comment_count: newCount } : thread;
+                          });
+                          return updated;
                         });
-                        return updated;
-                      });
-                    }}
-                  />
-                )
-              ))}
-            </Box>
-
-            {/* Slide 2: About Space Card */}
-            <Box sx={{ p: 2 }}>
-              <AboutSpaceCard
-                space={space}
-                isMember={isMember}
-                memberCount={memberCount}
-                onJoin={handleJoinSpace}
-                onLeave={handleLeaveSpace}
-                joining={joining}
-              />
-            </Box>
-          </SwipeableViews>
+                      }}
+                    />
+                  )
+                ))}
+              </Box>
+            )}
+            {activeStep === 1 && (
+              <Box sx={{ p: 2 }}>
+                <AboutSpaceCard
+                  space={space}
+                  isMember={isMember}
+                  memberCount={memberCount}
+                  onJoin={handleJoinSpace}
+                  onLeave={handleLeaveSpace}
+                  joining={joining}
+                />
+              </Box>
+            )}
+          </Box>
         </Box>
 
         {/* Desktop: Regular Layout */}

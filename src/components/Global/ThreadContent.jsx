@@ -179,7 +179,7 @@ const ThreadContent = ({
               </Typography>
             )}
           </Box>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'nowrap' }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}>
             {timeAgo}
           </Typography>
         </Box>

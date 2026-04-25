@@ -185,7 +185,7 @@ const MainContent = ({ spaces, setSpaces }) => {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <Accordion expanded={isExpanded}>
+      <Accordion expanded={isExpanded} sx={{ mb: 2 }}>
         <AccordionSummary
           onClick={(e) => e.stopPropagation()}
           sx={{ p: 2, backgroundColor: 'paper.backgroundColor' }}

@@ -422,6 +422,31 @@ if (actionType === 'upvote') {
 </Grid>
 ```
 
+**LeftContent Features**:
+- **Hot Right Now**: Displays top 5 hot spaces based on activity score
+  - Activity score formula: `(comments * 2) + net_score` aggregated across all threads
+  - Shows space avatar, name, and flame icon
+  - Clickable items navigate to space page
+  - Skeleton loaders during data fetch
+  - Fetches from `/api/maincontent/hot_spaces` endpoint
+
+- **Trending Spaces**: Displays trending spaces with card layout
+  - Shows space avatar, name, and member count
+  - Grid layout with responsive wrapping
+  - Clickable cards navigate to space page
+  - Skeleton loaders during data fetch
+  - Fetches from `/api/spaces/trending` endpoint
+
+**State Management**:
+- `trendingSpaces`: Array of trending spaces
+- `hotSpaces`: Array of hot spaces
+- `loading`: Loading state for trending spaces
+- `hotThreadsLoading`: Loading state for hot spaces
+
+**API Endpoints**:
+- `GET /api/maincontent/hot_spaces`: Returns top 5 spaces by activity score
+- `GET /api/spaces/trending`: Returns trending spaces
+
 ### BottomNav
 **Location**: `src/components/HomeComponents/BottomNav.jsx`
 

@@ -3,6 +3,7 @@ import ProtectedRoute from "../src/components/Global/ProtectedRoute"
 import { AuthProvider } from './context/AuthContext/AuthContext'
 import Home from "./pages/Home"
 import Onboarding from "./pages/Onboarding"
+import Search from "./pages/Search"
 import Space from "./pages/Space"
 import ThreadlyLogin from "./pages/SpaceLogin"
 
@@ -23,6 +24,7 @@ function App() {
         {ProtectedRoutes("/home", <Home />)}
         {OnboardingRoute("/onboarding", <Onboarding />)}
         {ProtectedRoutes("/spaces/:spaceId", <Space />)}
+        {ProtectedRoutes("/search", <Search />)}
       </Routes>
     </AuthProvider>
   )

@@ -1,8 +1,11 @@
 import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material'
 import { DiamondPlus, Home, LayoutTemplate, TrendingUp } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const BottomNav = ({ openDrawer, setOpenDrawer }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [value, setValue] = useState(0)
   const [visible, setVisible] = useState(true)
   const [prevScrollPos, setPrevScrollPos] = useState(0)
@@ -45,7 +48,17 @@ const BottomNav = ({ openDrawer, setOpenDrawer }) => {
         onChange={(event, newValue) => setValue(newValue)}
         sx={{ height: 60, backgroundColor: 'transparent' }}
       >
-        <BottomNavigationAction icon={<Home size={24} />} sx={{ minWidth: 'auto' }} />
+        <BottomNavigationAction
+          icon={<Home size={24} />}
+          sx={{ minWidth: 'auto' }}
+          onClick={() => {
+            if (location.pathname === '/home') {
+              window.location.reload();
+            } else {
+              navigate('/home');
+            }
+          }}
+        />
         <BottomNavigationAction icon={<TrendingUp size={24} />} sx={{ minWidth: 'auto' }} />
         <BottomNavigationAction icon={<LayoutTemplate size={24} />} sx={{ minWidth: 'auto' }} />
         <BottomNavigationAction

@@ -131,9 +131,11 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           border: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.default',
-          overflowY: 'auto',
+          overflow: 'hidden', // Changed from auto to hidden to handle scroll internally
           borderRadius: { xs: 0, md: 1 }, // No radius on mobile, radius on desktop
-          position: { xs: 'relative', md: 'static' } // Relative on mobile for full screen
+          position: { xs: 'relative', md: 'static' }, // Relative on mobile for full screen
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
 
@@ -325,8 +327,10 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            maxHeight: 400,
+            flex: 1, // Take up remaining space
+            overflowY: 'auto', // Enable scrolling
             pr: 1,
+            maxHeight: { xs: 'none', md: 400 }, // No max height on mobile, 400 on desktop
             '&::-webkit-scrollbar': {
               width: '6px',
             },

@@ -4,12 +4,14 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Stepper from '@mui/material/Stepper';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { addRecentSearch } from '../../utils/searchHelpers';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
+import SearchDropdown from './SearchDropdown';
 import TextFieldThreadly from './TextFieldThreadly';
 
 const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
@@ -45,6 +47,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     communityType: 'public',
     isMature: false,
   });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [searchAnchorEl, setSearchAnchorEl] = useState(null);
 
   // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
@@ -305,6 +311,48 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   // Function that handles the menu close
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  /**
+   * Handles search input change
+   * This is used to update the search query state when user types
+   * @param {Event} e - The input change event
+   */
+  const handleSearchInputChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  /**
+   * Handles search key down event
+   * This is used to navigate to search page when user presses Enter
+   * @param {Event} e - The key down event
+   */
+  const handleSearchKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      addRecentSearch(searchQuery.trim());
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchDropdownOpen(false);
+      setSearchQuery('');
+    }
+  }, [searchQuery, navigate]);
+
+  /**
+   * Handles search input click
+   * This is used to open the search dropdown
+   * @param {Event} e - The click event
+   */
+  const handleSearchClick = (e) => {
+    setSearchAnchorEl(e.currentTarget);
+    setSearchDropdownOpen(true);
+  };
+
+  /**
+   * Handles search dropdown close
+   * This is used to close the search dropdown
+   */
+  const handleSearchDropdownClose = () => {
+    setSearchDropdownOpen(false);
+    setSearchAnchorEl(null);
   };
 
   return (
@@ -854,6 +902,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       <Grid item size="grow">
         <TextField
           fullWidth
+          value={searchQuery}
+          onChange={handleSearchInputChange}
+          onClick={handleSearchClick}
+          onKeyDown={handleSearchKeyDown}
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 21,
@@ -875,8 +927,13 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
             ),
           }}
         />
+        <SearchDropdown
+          anchorEl={searchAnchorEl}
+          open={searchDropdownOpen}
+          onClose={handleSearchDropdownClose}
+          searchQuery={searchQuery}
+        />
       </Grid>
-
 
       {/* User Avatar */}
       <Grid item size="auto">

@@ -107,9 +107,9 @@ const ThreadContent = ({
   return (
     <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mb: 2 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
         <Avatar
-          sx={{ height: 40, width: 40, mr: 1 }}
+          sx={{ height: 40, width: 40, mr: 1, flexShrink: 0 }}
           src={componentRendered?.current === 'Space' ? userAvatar : spaceAvatar}
           alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
         >
@@ -118,8 +118,8 @@ const ThreadContent = ({
             : (spaceName ? spaceName.charAt(0).toUpperCase() : 'S')
           }
         </Avatar>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden', maxWidth: '70%' }}>
             {/* Primary: Space Name (The Subject) */}
             {componentRendered?.current === 'Space' ? (
               <Typography
@@ -127,7 +127,10 @@ const ThreadContent = ({
                 sx={{
                   color: 'primary.main',
                   fontWeight: 600,
-                  fontSize: '0.9rem'
+                  fontSize: '0.9rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {postedBy}
@@ -146,6 +149,9 @@ const ThreadContent = ({
                     color: 'primary.main',
                     fontWeight: 600,
                     fontSize: '0.9rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                     '&:hover': {
                       textDecoration: 'underline'
                     }
@@ -163,21 +169,24 @@ const ThreadContent = ({
                 sx={{
                   color: 'text.secondary',
                   display: 'flex',
-                  gap: 0.5
+                  gap: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 Posted by {postedBy}
               </Typography>
             )}
           </Box>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}>
             {timeAgo}
           </Typography>
         </Box>
       </Box>
 
       {/* Title */}
-      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mt: 1 }}>
+      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mt: 1, overflow: 'hidden' }}>
         {title}
       </Typography>
 

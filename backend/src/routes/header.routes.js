@@ -43,9 +43,17 @@ router.put('/', checkAuth, async (req, res) => {
   let status = 201;
   let success = true;
 
+  let trx;
   try {
+
+    // Validations
+    if (spaceName && spaceName.length > 255) throw new Error('Space name is too long (max 255 characters)');
+    if (spaceDescription && spaceDescription.length > 255) throw new Error('Space description is too long (max 255 characters)');
+    if (spaceSlug && spaceSlug.length > 255) throw new Error('Space slug is too long (max 255 characters)');
+    if (avatarUrl && avatarUrl.length > 255) throw new Error('Avatar URL is too long (max 255 characters)');
+    if (avatarPublicId && avatarPublicId.length > 255) throw new Error('Avatar public ID is too long (max 255 characters)');
     // Start transaction
-    const trx = await knex.transaction();
+    trx = await knex.transaction();
 
     // Insert space
     const [spaceId] = await trx('spaces').insert({
@@ -92,7 +100,7 @@ router.put('/', checkAuth, async (req, res) => {
     status = 500;
     error_message = error.message;
     success = false;
-    await trx.rollback();
+    if (trx) await trx.rollback();
   }
 
   res.status(status).json({

@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, FormControl, MenuItem, Select, Skeleton, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, CircularProgress, FormControl, MenuItem, Select, Skeleton, Typography } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import apiRequest from '../../config/api';
@@ -28,6 +28,7 @@ const MainContent = ({ spaces, setSpaces }) => {
   const [threads, setThreads] = useState([]);
   const [page, setPage] = useState(1);
   const limit = 10;
+  const observerRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -172,6 +173,25 @@ const MainContent = ({ spaces, setSpaces }) => {
   }, []);
 
 
+  // Intersection Observer for infinite scroll on threads
+  const lastElementRef = useCallback((node) => {
+    if (loading) return;
+
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && threadsHasMore) {
+        fetchThreads(true);
+      }
+    });
+
+    if (node) {
+      observerRef.current.observe(node);
+    }
+  }, [loading, threadsHasMore, fetchThreads]);
+
   // UseEffect
   useEffect(() => {
     listSpaces();
@@ -262,9 +282,11 @@ const MainContent = ({ spaces, setSpaces }) => {
                       {formData.spaceName?.charAt(0).toUpperCase()}
                     </Avatar>
                     {/* 2. Consistency: Use variant="body2" and same weight as MenuItems */}
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {formData.spaceName}
-                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {formData.spaceName}
+                      </Typography>
+                    </Box>
                   </Box>
                 );
               }}
@@ -280,9 +302,11 @@ const MainContent = ({ spaces, setSpaces }) => {
                       {space.space_name?.charAt(0).toUpperCase()}
                     </Avatar>
                     {/* 3. Consistency: Match the weight and variant from renderValue */}
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {space.space_name}
-                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {space.space_name}
+                      </Typography>
+                    </Box>
                   </Box>
                 </MenuItem>
               ))}
@@ -380,29 +404,36 @@ const MainContent = ({ spaces, setSpaces }) => {
           </Typography>
         </Box>
       ) : (
-        threads.map(thread => (
-          <ThreadContent
-            key={thread.id}
-            net_score={thread.net_score}
-            userVote={thread.userVote}
-            avatar={thread.avatar_url}
-            spaceAvatar={thread.space_avatar_url}
-            spaceName={thread.space_name || 'Unknown Space'}
-            spaceId={thread.space_id}
-            postedBy={thread.username}
-            timeAgo={thread.timeAgo}
-            title={thread.title}
-            content={thread.content}
-            upvotes={thread.upvotes || 0}
-            comments={thread.comments || 0}
-            shares={thread.shares || 0}
-            username={thread.username}
-            componentRendered={componentName}
-            threadId={thread.id}
-            onCommentOpen={() => handleCommentOpen(thread)}
-            onVoteUpdate={handleVoteUpdate}
-          />
+        threads.map((thread, index) => (
+          <div key={thread.id} ref={index === threads.length - 1 && threadsHasMore ? lastElementRef : null}>
+            <ThreadContent
+              net_score={thread.net_score}
+              userVote={thread.userVote}
+              avatar={thread.avatar_url}
+              spaceAvatar={thread.space_avatar_url}
+              spaceName={thread.space_name || 'Unknown Space'}
+              spaceId={thread.space_id}
+              postedBy={thread.username}
+              timeAgo={thread.timeAgo}
+              title={thread.title}
+              content={thread.content}
+              upvotes={thread.upvotes || 0}
+              comments={thread.comments || 0}
+              shares={thread.shares || 0}
+              username={thread.username}
+              componentRendered={componentName}
+              threadId={thread.id}
+              onCommentOpen={() => handleCommentOpen(thread)}
+              onVoteUpdate={handleVoteUpdate}
+            />
+          </div>
         ))
+      )}
+
+      {loading && threadsHasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress />
+        </Box>
       )}
 
       {Object.entries(openCommentThreads).map(([threadId, isOpen]) => (

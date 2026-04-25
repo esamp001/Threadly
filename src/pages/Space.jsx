@@ -3,7 +3,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import InfoIcon from '@mui/icons-material/Info';
 import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
-import { Avatar, Box, Button, Grid, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
+import { Avatar, Box, Button, Grid, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
 import { Flame } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -40,16 +40,21 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       </Box>
 
       {/* Description */}
-      <Typography
-        sx={{
-          fontSize: 14,
-          lineHeight: 1.6,
-          color: '#d1d5db',
-          mb: 3,
-        }}
-      >
-        {space?.description || 'No description available'}
-      </Typography>
+      <Box sx={{ overflow: 'hidden' }}>
+        <Typography
+          sx={{
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: '#d1d5db',
+            mb: 3,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {space?.description || 'No description available'}
+        </Typography>
+      </Box>
 
       {/* Stats */}
       <Box
@@ -286,6 +291,12 @@ const Space = () => {
   const coverPhotoInputRef = useRef(null);
   const [coverPhotoBlur, setCoverPhotoBlur] = useState(false);
 
+  // Avatar menu state
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [avatarMenuAnchor, setAvatarMenuAnchor] = useState(null);
+  const avatarInputRef = useRef(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
   // Swipeable view state for mobile
   const [activeStep, setActiveStep] = useState(0);
 
@@ -418,6 +429,129 @@ const Space = () => {
     } catch (error) {
       console.error('Error removing cover photo:', error);
       showSnackbar('Failed to remove cover photo', 'error');
+    }
+  };
+
+  /**
+   * Handles space avatar upload to Cloudinary
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Passing this function as a prop to child components
+   * - Using it inside useEffect dependencies
+   *
+   * Behavior:
+   * - Validates file type (images only)
+   * - Validates file size (max 5MB)
+   * - Shows immediate preview using local URL
+   * - Uploads to Cloudinary via API
+   * - Updates space state with new avatar URL
+   *
+   * Dependencies:
+   * - spaceId: Current space ID
+   * - showSnackbar: Snackbar notification function
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const handleAvatarUpload = useCallback(async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type (images only)
+    if (!file.type.startsWith('image/')) {
+      showSnackbar('Please select an image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar('File size must be less than 5MB', 'error');
+      return;
+    }
+
+    // Show immediate preview using local URL
+    const previewUrl = URL.createObjectURL(file);
+    setSpace(prev => ({
+      ...prev,
+      avatar_url: previewUrl
+    }));
+
+    try {
+      setAvatarLoading(true);
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('spaceId', spaceId);
+
+      const response = await fetch(`${API_URL}/api/spaces/avatar_upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showSnackbar('Avatar updated successfully', 'success');
+        setSpace(prev => ({
+          ...prev,
+          avatar_url: result.url
+        }));
+      } else {
+        showSnackbar(result.message || 'Failed to upload avatar', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      showSnackbar('Failed to upload avatar', 'error');
+    } finally {
+      setAvatarLoading(false);
+      setAvatarMenuOpen(false);
+      // Reset file input
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  }, [spaceId, showSnackbar]);
+
+  /**
+   * Removes the avatar from the current space
+   * This is used to delete the avatar by calling the backend API and updating the local state
+   *
+   * @returns {Promise<void>}
+   */
+  const handleAvatarRemove = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/spaces/avatar_remove`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ spaceId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showSnackbar('Avatar removed successfully', 'success');
+        setSpace(prev => ({
+          ...prev,
+          avatar_url: null
+        }));
+      } else {
+        showSnackbar(result.message || 'Failed to remove avatar', 'error');
+      }
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      showSnackbar('Failed to remove avatar', 'error');
+    } finally {
+      setAvatarMenuOpen(false);
     }
   };
 
@@ -812,10 +946,7 @@ const Space = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            pb: 30,
-            '&:hover': {
-              opacity: 0.8
-            }
+            pb: 30
           }}
         >
 
@@ -823,6 +954,14 @@ const Space = () => {
             type="file"
             ref={coverPhotoInputRef}
             onChange={handleCoverPhotoUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
+          <input
+            type="file"
+            ref={avatarInputRef}
+            onChange={handleAvatarUpload}
             accept="image/*"
             style={{ display: 'none' }}
           />
@@ -894,14 +1033,28 @@ const Space = () => {
               sx={{
                 position: 'relative',
                 zIndex: 20,
+                p: 3,
                 textAlign: 'center',
-                p: 3
+                mt: -2
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexDirection: 'column' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase' }}>
-                  {space?.name || 'Space Name'}
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexDirection: 'column', width: '100%' }}>
+                <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      textTransform: 'uppercase',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'block'
+                    }}
+                  >
+                    {space?.name || 'Space Name'}
+                  </Typography>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {trendingRank && (
                     <Box
@@ -941,31 +1094,88 @@ const Space = () => {
                   )}
                 </Box>
               </Box>
-              <Typography variant="body1" sx={{ color: 'text.primary', mt: 1 }}>
-                {space?.description || 'Space description goes here'}
-              </Typography>
+              <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: 'text.primary',
+                    mt: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'block'
+                  }}
+                >
+                  {space?.description || 'Space description goes here'}
+                </Typography>
+              </Box>
             </Box>
           </Box>
 
           {/* Space Avatar - Centered */}
-          <Avatar
-            src={space?.avatar_url}
+          <Box
+            onClick={(e) => {
+              if (space?.userRole === 'owner') {
+                setAvatarMenuAnchor(e.currentTarget);
+                setAvatarMenuOpen(true);
+              }
+            }}
             sx={{
-              width: 120,
-              height: 120,
-              backgroundColor: 'primary.main',
-              fontSize: 48,
-              zIndex: 10,
-              border: '4px solid',
-              borderColor: 'background.default',
               position: 'absolute',
-              bottom: -60,
+              bottom: { xs: -40, sm: -50, md: -60 },
               left: '50%',
-              transform: 'translateX(-50%)'
+              transform: 'translateX(-50%)',
+              zIndex: 10,
+              cursor: space?.userRole === 'owner' ? 'pointer' : 'default'
             }}
           >
-            {space?.name?.charAt(0)?.toUpperCase() || 'S'}
-          </Avatar>
+            <Avatar
+              src={space?.avatar_url}
+              sx={{
+                width: { xs: 80, sm: 100, md: 120 },
+                height: { xs: 80, sm: 100, md: 120 },
+                backgroundColor: 'primary.main',
+                fontSize: { xs: 32, sm: 40, md: 48 },
+                border: '4px solid',
+                borderColor: 'background.default',
+                opacity: avatarLoading ? 0.5 : 1,
+                transition: 'opacity 0.3s'
+              }}
+            >
+              {space?.name?.charAt(0)?.toUpperCase() || 'S'}
+            </Avatar>
+          </Box>
+
+          {/* Avatar Menu */}
+          <Menu
+            anchorEl={avatarMenuAnchor}
+            open={avatarMenuOpen}
+            onClose={() => setAvatarMenuOpen(false)}
+            anchorOrigin={{
+              vertical: 'center',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'center',
+              horizontal: 'left',
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                setAvatarMenuOpen(false);
+                avatarInputRef.current?.click();
+              }}
+            >
+              <PhotoCameraRoundedIcon sx={{ mr: 1 }} />
+              Change Photo
+            </MenuItem>
+            {space?.avatar_url && (
+              <MenuItem onClick={handleAvatarRemove}>
+                <NoPhotographyRoundedIcon sx={{ mr: 1 }} />
+                Remove Photo
+              </MenuItem>
+            )}
+          </Menu>
         </Box>
       </Grid>
 
@@ -1322,7 +1532,7 @@ const Space = () => {
         {/* Bottom Navigation */}
         <BottomNav openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} />
       </Grid>
-    </Grid>
+    </Grid >
   );
 };
 

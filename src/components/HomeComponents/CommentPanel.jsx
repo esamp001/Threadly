@@ -117,25 +117,27 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
         display: 'flex',
         alignItems: { xs: 'flex-start', md: 'center' }, // Top align on mobile, center on desktop
         justifyContent: 'center',
-        pt: { xs: 0, md: 0 } // No top padding on mobile
+        pt: { xs: 0, md: 0 }, // No top padding on mobile
+        overflow: { xs: 'auto', md: 'hidden' }, // Allow scroll on mobile
+        height: { xs: '100vh', md: 'auto' } // Full viewport height on mobile
       }}
     >
       <Paper
         sx={{
           width: { xs: '100%', md: '60%' },
           maxWidth: { xs: '100%', md: 800 },
-          height: { xs: '100vh', md: 'auto' },
+          height: { xs: '100vh', md: '90vh' },
           maxHeight: { xs: '100vh', md: '90vh' },
           m: { xs: 0, md: 2 }, // No margin on mobile, margin on desktop
           p: { xs: 2, md: 3 }, // Less padding on mobile
-          border: '1px solid',
+          border: '1px solid red',
           borderColor: 'divider',
           bgcolor: 'background.default',
-          overflow: 'hidden', // Changed from auto to hidden to handle scroll internally
+          overflow: 'hidden', // Handle scroll internally
           borderRadius: { xs: 0, md: 1 }, // No radius on mobile, radius on desktop
           position: { xs: 'relative', md: 'static' }, // Relative on mobile for full screen
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
         }}
       >
 
@@ -149,6 +151,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           py: 1,
           borderBottom: '1px solid',
           borderColor: 'divider',
+          flexShrink: 0,
         }}>
           <Button
             onClick={isCloseHandler}
@@ -182,226 +185,230 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           <Box sx={{ width: 60 }} /> {/* Spacer to balance the layout */}
         </Box>
 
+        {/* Scrollable content wrapper */}
+        <Box sx={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
+          '&::-webkit-scrollbar': {
+            width: '6px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'divider',
+            borderRadius: '3px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: 'text.secondary',
+          }
+        }}>
 
-        {/* ACTUAL THREAD CONTENT */}
-        {threadData && (
-          <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Avatar
-                src={threadData.user_avatar_url}
-                sx={{ width: 37, height: 37 }}
-              >
-                {threadData.username?.[0]?.toUpperCase()}
-              </Avatar>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{ fontWeight: 500, color: 'text.primary', lineHeight: 1.2 }}
-                  >
-                    {threadData.username}
-                  </Typography>
+          {/* ACTUAL THREAD CONTENT */}
+          {threadData && (
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Avatar
+                  src={threadData.user_avatar_url}
+                  sx={{ width: 37, height: 37 }}
+                >
+                  {threadData.username?.[0]?.toUpperCase()}
+                </Avatar>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 500, color: 'text.primary', lineHeight: 1.2 }}
+                    >
+                      {threadData.username}
+                    </Typography>
 
-                  <Typography
-                    variant="caption"
-                    sx={{ color: 'text.secondary', fontSize: '0.72rem' }}
-                  >
-                    Posted in {threadData.space_name}
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'text.secondary', fontSize: '0.72rem' }}
+                    >
+                      Posted in {threadData.space_name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {threadData.timeAgo}
                   </Typography>
                 </Box>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {threadData.timeAgo}
-                </Typography>
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                {threadData.title}
+              </Typography>
+              <Box
+                sx={{
+                  color: 'text.primary',
+                  mb: 2,
+                  '& img': {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block',
+                    margin: '1rem auto',
+                    borderRadius: '8px'
+                  }
+                }}
+              >
+                <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(threadData.content) }} />
               </Box>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-              {threadData.title}
-            </Typography>
-            <Box
+          )}
+
+          {/* TITLE */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="subtitle2"
               sx={{
-                color: 'text.primary',
-                mb: 2,
-                '& img': {
-                  maxWidth: '100%',
-                  height: 'auto',
-                  display: 'block',
-                  margin: '1rem auto',
-                  borderRadius: '8px'
-                }
+                fontWeight: 600,
+                color: 'primary.main',
+                letterSpacing: 0.3
               }}
             >
-              <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(threadData.content) }} />
+              Discussions
+            </Typography>
+          </Box>
+
+          {/* COMMENT INPUT */}
+          <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <Avatar
+              src={threadData?.current_user_avatar_url}
+              sx={{ width: 30, height: 30 }}
+            >
+              {threadData?.current_user_avatar_url?.[0]?.toUpperCase()}
+            </Avatar>
+
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                value={newCommentText}
+                onChange={(e) => setNewCommentText(e.target.value)}
+                placeholder="Write a reply..."
+                multiline
+                maxRows={4}
+                variant="standard"
+                disabled={isPostingComment}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePostComment(threadId);
+                  }
+                }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    fontSize: 14,
+                  },
+                  '& .MuiInputBase-input': {
+                    py: 0.5,
+                  },
+                  '& .MuiInput-underline:before': {
+                    borderBottomColor: 'divider',
+                  },
+                  '& .MuiInput-underline:hover:before': {
+                    borderBottomColor: 'text.secondary',
+                  },
+                  '& .MuiInput-underline:after': {
+                    borderBottomColor: 'primary.main',
+                  }
+                }}
+              />
+
+              {/* Action row (only appears when typing) */}
+              {newCommentText.trim() && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    mt: 0.5
+                  }}
+                >
+                  <Button
+                    size="small"
+                    disabled={isPostingComment}
+                    onClick={() => handlePostComment(threadId)}
+                    sx={{
+                      textTransform: 'none',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      minWidth: 'auto',
+                      px: 1.5
+                    }}
+                  >
+                    {isPostingComment ? 'Posting...' : 'Reply'}
+                  </Button>
+                </Box>
+              )}
+
             </Box>
           </Box>
-        )}
 
-        {/* TITLE */}
-        <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="subtitle2"
+          {/* COMMENTS DISPLAY */}
+          <Box
             sx={{
-              fontWeight: 600,
-              color: 'primary.main',
-              letterSpacing: 0.3
+              display: 'flex',
+              flexDirection: 'column',
+              pr: 1,
             }}
           >
-            Discussions
-          </Typography>
-        </Box>
-
-        {/* COMMENT INPUT */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <Avatar
-            src={threadData?.current_user_avatar_url}
-            sx={{ width: 30, height: 30 }}
-          >
-            {threadData?.current_user_avatar_url?.[0]?.toUpperCase()}
-          </Avatar>
-
-          <Box sx={{ flex: 1 }}>
-            <TextField
-              fullWidth
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              placeholder="Write a reply..."
-              multiline
-              maxRows={4}
-              variant="standard"
-              disabled={isPostingComment}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handlePostComment(threadId);
-                }
-              }}
-              sx={{
-                '& .MuiInputBase-root': {
-                  fontSize: 14,
-                },
-                '& .MuiInputBase-input': {
-                  py: 0.5,
-                },
-                '& .MuiInput-underline:before': {
-                  borderBottomColor: 'divider',
-                },
-                '& .MuiInput-underline:hover:before': {
-                  borderBottomColor: 'text.secondary',
-                },
-                '& .MuiInput-underline:after': {
-                  borderBottomColor: 'primary.main',
-                }
-              }}
-            />
-
-            {/* Action row (only appears when typing) */}
-            {newCommentText.trim() && (
+            {/* Conditional rendering for loading state - shows skeleton loaders */}
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    animation: `fadeIn 0.3s ease-in-out ${index * 0.1}s both`,
+                    animationFillMode: 'both'
+                  }}
+                >
+                  <CommentSkeleton key={index} />
+                </Box>
+              ))
+            ) : comments.length === 0 ? (
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
-                  mt: 0.5
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  py: 8,
+                  color: 'text.secondary'
                 }}
               >
-                <Button
-                  size="small"
-                  disabled={isPostingComment}
-                  onClick={() => handlePostComment(threadId)}
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  No discussions yet
+                </Typography>
+                <Typography variant="caption">
+                  Be the first to share your thoughts!
+                </Typography>
+              </Box>
+            ) : (
+              // Conditional rendering for comments - shows actual comments
+              comments.map((comment) => (
+                <Box
+                  key={comment.id}
                   sx={{
-                    textTransform: 'none',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    minWidth: 'auto',
-                    px: 1.5
+                    py: 1.5,
                   }}
                 >
-                  {isPostingComment ? 'Posting...' : 'Reply'}
-                </Button>
-              </Box>
+                  {/* Shows actual each comment item */}
+                  <CommentItem
+                    comment={comment}
+                    depth={0}
+                    expandedReplies={expandedReplies}
+                    newCommentId={newCommentId}
+                    replyTexts={replyTexts}
+                    replyingTo={replyingTo}
+                    comments={comments}
+                    setComments={setComments}
+                    onReplyingTo={setReplyingTo}
+                    onReplyTextsChange={setReplyTexts}
+                  />
+                </Box>
+              ))
             )}
-
           </Box>
-        </Box>
-
-        {/* COMMENTS DISPLAY */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1, // Take up remaining space
-            overflowY: 'auto', // Enable scrolling
-            pr: 1,
-            maxHeight: { xs: 'none', md: 400 }, // No max height on mobile, 400 on desktop
-            '&::-webkit-scrollbar': {
-              width: '6px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'divider',
-              borderRadius: '3px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              backgroundColor: 'text.secondary',
-            }
-          }}
-        >
-          {/* Conditional rendering for loading state - shows skeleton loaders */}
-          {loading ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <Box
-                key={index}
-                sx={{
-                  animation: `fadeIn 0.3s ease-in-out ${index * 0.1}s both`,
-                  animationFillMode: 'both'
-                }}
-              >
-                <CommentSkeleton key={index} />
-              </Box>
-            ))
-          ) : comments.length === 0 ? (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                py: 8,
-                color: 'text.secondary'
-              }}
-            >
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                No discussions yet
-              </Typography>
-              <Typography variant="caption">
-                Be the first to share your thoughts!
-              </Typography>
-            </Box>
-          ) : (
-            // Conditional rendering for comments - shows actual comments
-            comments.map((comment) => (
-              <Box
-                key={comment.id}
-                sx={{
-                  py: 1.5,
-                }}
-              >
-                {/* Shows actual each comment item */}
-                <CommentItem
-                  comment={comment}
-                  depth={0}
-                  expandedReplies={expandedReplies}
-                  newCommentId={newCommentId}
-                  replyTexts={replyTexts}
-                  replyingTo={replyingTo}
-                  comments={comments}
-                  setComments={setComments}
-                  onReplyingTo={setReplyingTo}
-                  onReplyTextsChange={setReplyTexts}
-                />
-              </Box>
-            ))
-          )}
         </Box>
       </Paper >
     </Modal>

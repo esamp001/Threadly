@@ -1,12 +1,14 @@
-import { Avatar, Box, CircularProgress, Paper, Skeleton, Tab, Tabs, Typography } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Avatar, Box, Button, CircularProgress, Paper, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ThreadContent from '../components/Global/ThreadContent';
 import Header from '../components/HomeComponents/Header';
 import apiRequest from '../config/api';
 import { addRecentSearch } from '../utils/searchHelpers';
 
 const Search = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
 
@@ -143,6 +145,23 @@ const Search = () => {
   return (
     <>
       <Header />
+      {/* Mobile back button */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Button
+          onClick={() => navigate('/home')}
+          startIcon={<ArrowBackIcon />}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+            color: 'primary.main',
+            fontSize: '0.875rem',
+            minWidth: 'auto',
+            p: 1
+          }}
+        >
+          Back
+        </Button>
+      </Box>
       <Box sx={{ p: 3, maxWidth: 'lg', mx: 'auto' }}>
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
           Search results for "{searchQuery}"

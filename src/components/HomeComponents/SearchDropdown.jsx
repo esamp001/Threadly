@@ -200,8 +200,8 @@ const SearchDropdown = ({ anchorEl, open, onClose, searchQuery }) => {
                   >
                     {space.space_name?.charAt(0).toUpperCase()}
                   </Avatar>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {space.space_name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>

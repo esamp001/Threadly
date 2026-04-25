@@ -226,7 +226,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
 
                     <Typography
                       variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '0.72rem' }}
+                      sx={{ color: 'text.secondary', fontSize: '0.72rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
                       Posted in {threadData.space_name}
                     </Typography>

@@ -1,7 +1,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Avatar, Box, Button, CircularProgress, Paper, Skeleton, Tab, Tabs, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import ThreadContent from '../components/Global/ThreadContent';
 import Header from '../components/HomeComponents/Header';
 import apiRequest from '../config/api';
@@ -9,6 +9,7 @@ import { addRecentSearch } from '../utils/searchHelpers';
 
 const Search = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
 
@@ -93,16 +94,25 @@ const Search = () => {
     }
   }, [searchQuery, loading, threadsHasMore, threadsPage, limit]);
 
-  // Fetch initial results when search query or tab changes
+  // Re-fetch when location (URL query parameters) changes
   useEffect(() => {
     if (searchQuery) {
+      // Reset states for new search
+      setSpaces([]);
+      setThreads([]);
+      setSpacesPage(1);
+      setThreadsPage(1);
+      setSpacesHasMore(true);
+      setThreadsHasMore(true);
+
+      // Fetch new results
       if (tabValue === 0) {
         fetchSpaces(false);
       } else {
         fetchThreads(false);
       }
     }
-  }, [searchQuery, tabValue, fetchSpaces, fetchThreads]);
+  }, [location.search, tabValue]);
 
   // Intersection Observer for infinite scroll
   const lastElementRef = useCallback((node) => {
@@ -195,10 +205,10 @@ const Search = () => {
               </Box>
             ) : (
               <>
-                {spaces.map((space) => (
+                {spaces.map((space, index) => (
                   <Paper
                     key={space.id}
-                    ref={spaces.length - 1 === spaces.length - 1 ? lastElementRef : null}
+                    ref={index === spaces.length - 1 && spacesHasMore ? lastElementRef : null}
                     sx={{
                       p: 2,
                       mb: 2,
@@ -215,11 +225,11 @@ const Search = () => {
                       >
                         {space.space_name?.charAt(0).toUpperCase()}
                       </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {space.space_name}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {space.space_description || 'No description'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -268,7 +278,7 @@ const Search = () => {
             ) : (
               <>
                 {threads.map((thread, index) => (
-                  <div key={thread.id} ref={index === threads.length - 1 ? lastElementRef : null}>
+                  <div key={thread.id} ref={index === threads.length - 1 && threadsHasMore ? lastElementRef : null}>
                     <ThreadContent
                       net_score={thread.net_score}
                       userVote={thread.userVote}

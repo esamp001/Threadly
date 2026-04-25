@@ -211,7 +211,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
         return result.space.id;
       } else {
-        showSnackbar(result.message || 'Failed to create space', 'error');
+        showSnackbar(result.error_message || 'Failed to create space', 'error');
       }
     } catch (error) {
       showSnackbar('Failed to create space', 'error');

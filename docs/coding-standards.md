@@ -185,3 +185,23 @@ src/
 └── config/
     └── [configuration files]
 ```
+
+## Backend Validation
+
+Always validate field lengths before database operations to prevent database errors and provide better user feedback:
+
+```javascript
+// Validations - Check varchar(255) constraints before database insert
+if (spaceName && spaceName.length > 255) throw new Error('Space name is too long (max 255 characters)');
+if (spaceDescription && spaceDescription.length > 255) throw new Error('Space description is too long (max 255 characters)');
+if (spaceSlug && spaceSlug.length > 255) throw new Error('Space slug is too long (max 255 characters)');
+if (avatarUrl && avatarUrl.length > 255) throw new Error('Avatar URL is too long (max 255 characters)');
+if (avatarPublicId && avatarPublicId.length > 255) throw new Error('Avatar public ID is too long (max 255 characters)');
+```
+
+**Benefits:**
+- Prevents database constraint violations
+- Provides clear, user-friendly error messages
+- Fails fast before starting database transactions
+- Better user experience than generic database errors
+

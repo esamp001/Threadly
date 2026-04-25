@@ -228,7 +228,7 @@ const LeftContent = () => {
                     py: 0.5
                   }}
                 >
-                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 600, fontSize: '0.75rem' }}>
+                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 600, fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {space.space_name}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>

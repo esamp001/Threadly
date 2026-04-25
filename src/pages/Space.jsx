@@ -40,16 +40,21 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       </Box>
 
       {/* Description */}
-      <Typography
-        sx={{
-          fontSize: 14,
-          lineHeight: 1.6,
-          color: '#d1d5db',
-          mb: 3,
-        }}
-      >
-        {space?.description || 'No description available'}
-      </Typography>
+      <Box sx={{ overflow: 'hidden' }}>
+        <Typography
+          sx={{
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: '#d1d5db',
+            mb: 3,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {space?.description || 'No description available'}
+        </Typography>
+      </Box>
 
       {/* Stats */}
       <Box
@@ -812,10 +817,7 @@ const Space = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            pb: 30,
-            '&:hover': {
-              opacity: 0.8
-            }
+            pb: 30
           }}
         >
 
@@ -894,14 +896,28 @@ const Space = () => {
               sx={{
                 position: 'relative',
                 zIndex: 20,
+                p: 3,
                 textAlign: 'center',
-                p: 3
+                mt: -2
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexDirection: 'column' }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase' }}>
-                  {space?.name || 'Space Name'}
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexDirection: 'column', width: '100%' }}>
+                <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      textTransform: 'uppercase',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'block'
+                    }}
+                  >
+                    {space?.name || 'Space Name'}
+                  </Typography>
+                </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {trendingRank && (
                     <Box
@@ -941,9 +957,21 @@ const Space = () => {
                   )}
                 </Box>
               </Box>
-              <Typography variant="body1" sx={{ color: 'text.primary', mt: 1 }}>
-                {space?.description || 'Space description goes here'}
-              </Typography>
+              <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: 'text.primary',
+                    mt: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'block'
+                  }}
+                >
+                  {space?.description || 'Space description goes here'}
+                </Typography>
+              </Box>
             </Box>
           </Box>
 
@@ -951,15 +979,15 @@ const Space = () => {
           <Avatar
             src={space?.avatar_url}
             sx={{
-              width: 120,
-              height: 120,
+              width: { xs: 80, sm: 100, md: 120 },
+              height: { xs: 80, sm: 100, md: 120 },
               backgroundColor: 'primary.main',
-              fontSize: 48,
+              fontSize: { xs: 32, sm: 40, md: 48 },
               zIndex: 10,
               border: '4px solid',
               borderColor: 'background.default',
               position: 'absolute',
-              bottom: -60,
+              bottom: { xs: -40, sm: -50, md: -60 },
               left: '50%',
               transform: 'translateX(-50%)'
             }}
@@ -1322,7 +1350,7 @@ const Space = () => {
         {/* Bottom Navigation */}
         <BottomNav openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} />
       </Grid>
-    </Grid>
+    </Grid >
   );
 };
 

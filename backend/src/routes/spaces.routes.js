@@ -292,6 +292,102 @@ router.post('/cover_photo_remove', checkAuth, async (req, res) => {
   }
 });
 
+// Upload route for space avatars
+router.post('/avatar_upload', checkAuth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'No file uploaded'
+      });
+    }
+
+    const { spaceId } = req.body;
+
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Space not found'
+      });
+    }
+
+    if (space.created_by !== req.user.userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only space owners can upload avatars'
+      });
+    }
+
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`, {
+      public_id: `space-avatar-${spaceId}-${Date.now()}`,
+      folder: 'threadly/space_avatars'
+    });
+
+    // Update the space's avatar_url in the database
+    await knex('spaces')
+      .where('id', spaceId)
+      .update({
+        avatar_url: uploadResult.secure_url
+      });
+
+    res.json({
+      status: 'success',
+      message: 'Avatar uploaded successfully',
+      url: uploadResult.secure_url,
+      publicId: uploadResult.public_id
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
+// Remove route for space avatars
+router.post('/avatar_remove', checkAuth, async (req, res) => {
+  const { spaceId } = req.body;
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Space not found'
+      });
+    }
+
+    if (space.created_by !== req.user.userId) {
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only space owners can remove avatars'
+      });
+    }
+
+    // Update the space's avatar_url to NULL in the database
+    await knex('spaces')
+      .where('id', spaceId)
+      .update({
+        avatar_url: null
+      });
+
+    res.json({
+      status: 'success',
+      message: 'Avatar removed successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 // POST /api/spaces/:id/join - Join a space
 router.post('/:id/join', checkAuth, async (req, res) => {
   const { id: spaceId } = req.params;
@@ -458,6 +554,406 @@ router.get('/:id/membership', checkAuth, async (req, res) => {
       status,
       error_message,
       data: { isMember }
+    });
+  }
+});
+
+// GET /api/spaces/:id/rules - Fetch all rules for a space
+router.get('/:id/rules', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+  let rules = [];
+
+  try {
+    rules = await knex('space_rules')
+      .where({ space_id: spaceId })
+      .orderBy('order_index', 'asc')
+      .orderBy('created_at', 'asc');
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      rules
+    });
+  }
+});
+
+// POST /api/spaces/:id/rules - Add a new rule (owner only)
+router.post('/:id/rules', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+  const { rule_text } = req.body;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+  let rule = null;
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    if (space.created_by !== userId) {
+      status = 403;
+      error_message = 'Only space owners can add rules';
+      success = false;
+      throw new Error('Not authorized');
+    }
+
+    if (!rule_text || !rule_text.trim()) {
+      status = 400;
+      error_message = 'Rule text is required';
+      success = false;
+      throw new Error('Rule text is required');
+    }
+
+    // Get the highest order_index for this space
+    const maxOrderResult = await knex('space_rules')
+      .where({ space_id: spaceId })
+      .max('order_index as max_order')
+      .first();
+    const nextOrderIndex = (maxOrderResult.max_order || 0) + 1;
+
+    // Insert the new rule
+    [rule] = await knex('space_rules')
+      .insert({
+        space_id: spaceId,
+        rule_text: rule_text.trim(),
+        order_index: nextOrderIndex
+      })
+      .returning('*');
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      rule
+    });
+  }
+});
+
+// PUT /api/spaces/:id/rules/reorder - Bulk reorder rules (owner only)
+router.put('/:id/rules/reorder', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+  const { ruleIds } = req.body;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    if (space.created_by !== userId) {
+      status = 403;
+      error_message = 'Only space owners can reorder rules';
+      success = false;
+      throw new Error('Not authorized');
+    }
+
+    if (!ruleIds || !Array.isArray(ruleIds)) {
+      status = 400;
+      error_message = 'ruleIds array is required';
+      success = false;
+      throw new Error('Invalid ruleIds');
+    }
+
+    // Update order_index for all rules in bulk
+    await knex.transaction(async (trx) => {
+      for (let i = 0; i < ruleIds.length; i++) {
+        await trx('space_rules')
+          .where({ id: ruleIds[i], space_id: spaceId })
+          .update({ order_index: i + 1 });
+      }
+    });
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message
+    });
+  }
+});
+
+// PUT /api/spaces/:id/rules/:ruleId - Update a rule (owner only)
+router.put('/:id/rules/:ruleId', checkAuth, async (req, res) => {
+  const { id: spaceId, ruleId } = req.params;
+  const { rule_text } = req.body;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+  let rule = null;
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    if (space.created_by !== userId) {
+      status = 403;
+      error_message = 'Only space owners can update rules';
+      success = false;
+      throw new Error('Not authorized');
+    }
+
+    if (!rule_text || !rule_text.trim()) {
+      status = 400;
+      error_message = 'Rule text is required';
+      success = false;
+      throw new Error('Rule text is required');
+    }
+
+    // Update the rule
+    [rule] = await knex('space_rules')
+      .where({ id: ruleId, space_id: spaceId })
+      .update({
+        rule_text: rule_text.trim(),
+        updated_at: knex.fn.now()
+      })
+      .returning('*');
+
+    if (!rule) {
+      status = 404;
+      error_message = 'Rule not found';
+      success = false;
+    }
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      rule
+    });
+  }
+});
+
+// DELETE /api/spaces/:id/rules/:ruleId - Delete a rule (owner only)
+router.delete('/:id/rules/:ruleId', checkAuth, async (req, res) => {
+  const { id: spaceId, ruleId } = req.params;
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    if (space.created_by !== userId) {
+      status = 403;
+      error_message = 'Only space owners can delete rules';
+      success = false;
+      throw new Error('Not authorized');
+    }
+
+    // Delete the rule
+    const deletedCount = await knex('space_rules')
+      .where({ id: ruleId, space_id: spaceId })
+      .del();
+
+    if (deletedCount === 0) {
+      status = 404;
+      error_message = 'Rule not found';
+      success = false;
+    }
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message
+    });
+  }
+});
+
+// PUT /api/spaces/:id/rules/:ruleId/reorder - Reorder a rule (owner only)
+router.put('/:id/rules/:ruleId/reorder', checkAuth, async (req, res) => {
+  const { id: spaceId, ruleId } = req.params;
+  const { direction } = req.body; // 'up' or 'down'
+  const userId = req.user.userId;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+
+  try {
+    // Verify user is the space owner
+    const space = await knex('spaces').where('id', spaceId).first();
+    if (!space) {
+      status = 404;
+      error_message = 'Space not found';
+      success = false;
+      throw new Error('Space not found');
+    }
+
+    if (space.created_by !== userId) {
+      status = 403;
+      error_message = 'Only space owners can reorder rules';
+      success = false;
+      throw new Error('Not authorized');
+    }
+
+    if (direction !== 'up' && direction !== 'down') {
+      status = 400;
+      error_message = 'Direction must be "up" or "down"';
+      success = false;
+      throw new Error('Invalid direction');
+    }
+
+    // Get the current rule
+    const currentRule = await knex('space_rules')
+      .where({ id: ruleId, space_id: spaceId })
+      .first();
+
+    if (!currentRule) {
+      status = 404;
+      error_message = 'Rule not found';
+      success = false;
+      throw new Error('Rule not found');
+    }
+
+    // Get all rules for this space ordered by order_index
+    const allRules = await knex('space_rules')
+      .where({ space_id: spaceId })
+      .orderBy('order_index', 'asc');
+
+    const currentIndex = allRules.findIndex(r => r.id === parseInt(ruleId));
+
+    if (direction === 'up' && currentIndex === 0) {
+      status = 400;
+      error_message = 'Rule is already at the top';
+      success = false;
+      throw new Error('Cannot move up');
+    }
+
+    if (direction === 'down' && currentIndex === allRules.length - 1) {
+      status = 400;
+      error_message = 'Rule is already at the bottom';
+      success = false;
+      throw new Error('Cannot move down');
+    }
+
+    // Swap order_index with adjacent rule
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const targetRule = allRules[targetIndex];
+
+    await knex.transaction(async (trx) => {
+      await trx('space_rules')
+        .where({ id: currentRule.id })
+        .update({ order_index: targetRule.order_index });
+
+      await trx('space_rules')
+        .where({ id: targetRule.id })
+        .update({ order_index: currentRule.order_index });
+    });
+  } catch (error) {
+    if (!error_message) {
+      status = 500;
+      error_message = error.message;
+      success = false;
+    }
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message
+    });
+  }
+});
+
+// GET /api/spaces/:id/contributors - Fetch top contributors for a space
+router.get('/:id/contributors', checkAuth, async (req, res) => {
+  const { id: spaceId } = req.params;
+
+  let status = 200;
+  let success = true;
+  let error_message = '';
+  let contributors = [];
+
+  try {
+    contributors = await knex('space_contributor_points')
+      .join('users', 'space_contributor_points.user_id', 'users.id')
+      .select(
+        'space_contributor_points.user_id',
+        'users.username',
+        'users.avatar_url',
+        'space_contributor_points.points',
+        'space_contributor_points.posts_count',
+        'space_contributor_points.comments_count',
+        'space_contributor_points.upvotes_received'
+      )
+      .where('space_contributor_points.space_id', spaceId)
+      .orderBy('space_contributor_points.points', 'desc')
+      .limit(5);
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({
+      success,
+      status,
+      error_message,
+      contributors
     });
   }
 });

@@ -76,6 +76,29 @@ router.post('/', checkAuth, async (req, res) => {
       throw new Error('Invalid comment data structure');
     }
 
+    // Update contributor points for the user in this space
+    // +5 points for creating a comment, +1 comments_count
+    // First get the space_id from the thread
+    const thread = await knex('threads').where('id', thread_id).first();
+    if (thread) {
+      await knex('space_contributor_points')
+        .insert({
+          space_id: thread.space_id,
+          user_id: userId,
+          points: 5,
+          posts_count: 0,
+          comments_count: 1,
+          upvotes_received: 0,
+          updated_at: knex.fn.now()
+        })
+        .onConflict(['space_id', 'user_id'])
+        .merge({
+          points: knex.raw('space_contributor_points.points + 5'),
+          comments_count: knex.raw('space_contributor_points.comments_count + 1'),
+          updated_at: knex.fn.now()
+        });
+    }
+
   } catch (error) {
     status = 500;
     error_message = error.message;

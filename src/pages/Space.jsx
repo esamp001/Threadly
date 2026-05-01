@@ -3,10 +3,11 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import InfoIcon from '@mui/icons-material/Info';
 import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
-import { Avatar, Box, Button, Grid, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { Avatar, Box, Button, Grid, IconButton, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
 import { Flame } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import StyledButton from '../components/Global/StyledButton';
 import ThreadContent from '../components/Global/ThreadContent';
@@ -22,21 +23,31 @@ import { useSnackbar } from '../context/SnackbarContext';
 import { uploadImagesToCloudinary } from '../utils/cloudinary';
 
 // Reusable About Space Card component
-const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining }) => {
+const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining, rules, contributors, isOwner, onSettingsClick }) => {
   return (
     <Paper sx={{ backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 }}>
       {/* Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <InfoIcon sx={{ fontSize: 14, color: '#9ca3af', mr: 1 }} />
-        <Typography
-          sx={{
-            fontSize: 12,
-            letterSpacing: 2,
-            color: '#9ca3af',
-          }}
-        >
-          ABOUT SPACE
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <InfoIcon sx={{ fontSize: 14, color: '#9ca3af', mr: 1 }} />
+          <Typography
+            sx={{
+              fontSize: 12,
+              letterSpacing: 2,
+              color: '#9ca3af',
+            }}
+          >
+            ABOUT SPACE
+          </Typography>
+        </Box>
+        {isOwner && (
+          <IconButton
+            onClick={onSettingsClick}
+            sx={{ color: '#9ca3af', '&:hover': { color: '#d1d5db' } }}
+          >
+            <SettingsIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+        )}
       </Box>
 
       {/* Description */}
@@ -144,33 +155,31 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Typography
-            sx={{
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: '#d1d5db',
-            }}
-          >
-            01. Be respectful and maintain academic rigor.
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: '#d1d5db',
-            }}
-          >
-            02. No self-promotion or low-effort link drops.
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: '#d1d5db',
-            }}
-          >
-            03. Protect user privacy in shared case studies.
-          </Typography>
+          {rules && rules.length > 0 ? (
+            rules.map((rule, index) => (
+              <Typography
+                key={rule.id}
+                sx={{
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: '#d1d5db',
+                }}
+              >
+                {String(index + 1).padStart(2, '0')}. {rule.rule_text}
+              </Typography>
+            ))
+          ) : (
+            <Typography
+              sx={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: '#9ca3af',
+                fontStyle: 'italic',
+              }}
+            >
+              No rules set yet.
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -189,66 +198,41 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar
+          {contributors && contributors.length > 0 ? (
+            contributors.map((contributor) => (
+              <Box key={contributor.user_id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Avatar
+                  src={contributor.avatar_url}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    backgroundColor: '#6366f1',
+                    fontSize: 14,
+                  }}
+                >
+                  {contributor.username?.substring(0, 2).toUpperCase() || 'U'}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                    {contributor.username}
+                  </Typography>
+                  <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+                    {contributor.points} pts
+                  </Typography>
+                </Box>
+              </Box>
+            ))
+          ) : (
+            <Typography
               sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: '#6366f1',
-                fontSize: 14,
+                fontSize: 13,
+                color: '#9ca3af',
+                fontStyle: 'italic',
               }}
             >
-              DT
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
-                Dr. Aris Thorne
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-                2450 pts
-              </Typography>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: '#ec4899',
-                fontSize: 14,
-              }}
-            >
-              LV
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
-                Lila Vance
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-                1920 pts
-              </Typography>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: '#10b981',
-                fontSize: 14,
-              }}
-            >
-              JG
-            </Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
-                Julian Gray
-              </Typography>
-              <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-                1680 pts
-              </Typography>
-            </Box>
-          </Box>
+              No contributors yet.
+            </Typography>
+          )}
         </Box>
       </Box>
     </Paper>
@@ -257,6 +241,7 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
 
 const Space = () => {
   const { spaceId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [space, setSpace] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -273,6 +258,10 @@ const Space = () => {
   const [isMember, setIsMember] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
   const [joining, setJoining] = useState(false);
+
+  // Rules and contributors state
+  const [rules, setRules] = useState([]);
+  const [contributors, setContributors] = useState([]);
 
   // Thread creation state
   const [formData, setFormData] = useState({
@@ -693,6 +682,40 @@ const Space = () => {
   }, [spaceId]);
 
   /**
+   * Fetch rules for the space
+   * This is used to load dynamic space rules
+   */
+  const fetchRules = useCallback(async () => {
+    try {
+      const response = await apiRequest(`/api/spaces/${spaceId}/rules`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setRules(result.rules || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch rules:', error);
+    }
+  }, [spaceId]);
+
+  /**
+   * Fetch top contributors for the space
+   * This is used to load real contributor data with points
+   */
+  const fetchContributors = useCallback(async () => {
+    try {
+      const response = await apiRequest(`/api/spaces/${spaceId}/contributors`);
+      const result = await response.json();
+
+      if (response.ok) {
+        setContributors(result.contributors || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch contributors:', error);
+    }
+  }, [spaceId]);
+
+  /**
    * Checks if current space is in trending spaces
    * This is used to display trending badge on space page
    */
@@ -857,8 +880,18 @@ const Space = () => {
   useEffect(() => {
     if (spaceId) {
       fetchSpace();
+      fetchRules();
+      fetchContributors();
     }
-  }, [spaceId, fetchSpace]);
+  }, [spaceId, fetchSpace, fetchRules, fetchContributors]);
+
+  /**
+   * Navigate to space settings page
+   * This is used when owner clicks settings icon
+   */
+  const handleSettingsClick = useCallback(() => {
+    navigate(`/spaces/${spaceId}/settings`);
+  }, [spaceId, navigate]);
 
   // Check trending rank when space is loaded
   useEffect(() => {
@@ -1368,6 +1401,10 @@ const Space = () => {
                   onJoin={handleJoinSpace}
                   onLeave={handleLeaveSpace}
                   joining={joining}
+                  rules={rules}
+                  contributors={contributors}
+                  isOwner={space?.userRole === 'owner'}
+                  onSettingsClick={handleSettingsClick}
                 />
               </Box>
             )}
@@ -1524,6 +1561,10 @@ const Space = () => {
                 onJoin={handleJoinSpace}
                 onLeave={handleLeaveSpace}
                 joining={joining}
+                rules={rules}
+                contributors={contributors}
+                isOwner={space?.userRole === 'owner'}
+                onSettingsClick={handleSettingsClick}
               />
             </Grid>
           </Grid>

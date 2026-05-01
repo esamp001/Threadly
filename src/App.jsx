@@ -6,6 +6,7 @@ import Onboarding from "./pages/Onboarding"
 import Search from "./pages/Search"
 import Space from "./pages/Space"
 import ThreadlyLogin from "./pages/SpaceLogin"
+import SpaceSettings from "./pages/SpaceSettings"
 
 const ProtectedRoutes = (path, component) => (
   <Route path={path} element={<ProtectedRoute requireOnboarding={true}>{component}</ProtectedRoute>} />
@@ -24,6 +25,7 @@ function App() {
         {ProtectedRoutes("/home", <Home />)}
         {OnboardingRoute("/onboarding", <Onboarding />)}
         {ProtectedRoutes("/spaces/:spaceId", <Space />)}
+        {ProtectedRoutes("/spaces/:spaceId/settings", <SpaceSettings />)}
         {ProtectedRoutes("/search", <Search />)}
       </Routes>
     </AuthProvider>

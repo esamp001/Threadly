@@ -79,8 +79,6 @@ const LeftContent = () => {
                 alignItems: 'center',
                 gap: 1,
                 p: 1,
-                border: '1px solid',
-                borderColor: 'divider',
                 borderRadius: 2
               }}>
                 <Skeleton variant="circular" width={32} height={32} />
@@ -100,8 +98,6 @@ const LeftContent = () => {
                   alignItems: 'center',
                   gap: 1,
                   p: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
                   borderRadius: 2,
                   cursor: 'pointer',
                   '&:hover': {
@@ -119,7 +115,8 @@ const LeftContent = () => {
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {space.space_name}
+                    <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                    <Box component="span" sx={{ color: 'text.primary' }}>{space.space_slug?.replace('spaces/', '') || space.space_name}</Box>
                   </Typography>
                 </Box>
                 <Flame size={16} color="#ff6b35" />
@@ -170,13 +167,12 @@ const LeftContent = () => {
                 key={space.id}
                 onClick={() => handleSpaceClick(space.id)}
                 sx={{
-                  height: 150,
-                  width: 130,
+                  height: { xs: 130, md: 120, lg: 150 },
+                  width: { xs: 110, md: 100, lg: 120 },
                   borderRadius: 1,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
-                  // borderColor: 'divider',
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
@@ -221,17 +217,18 @@ const LeftContent = () => {
                 <Box
                   sx={{
                     position: 'relative',
-                    bgcolor: 'rgba(0, 0, 0, 0.7)',
+                    bgcolor: '#FFFFFF',
                     borderBottomLeftRadius: 12,
                     borderBottomRightRadius: 12,
                     px: 1,
                     py: 0.5
                   }}
                 >
-                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 600, fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {space.space_name}
+                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                    <Box component="span" sx={{ color: 'black' }}>{space.space_slug.replace('spaces/', '')}</Box>
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+                  <Typography variant="caption" sx={{ color: '#666666', fontSize: '0.7rem', fontWeight: 500 }}>
                     {space.member_count || 0} members
                   </Typography>
                 </Box>

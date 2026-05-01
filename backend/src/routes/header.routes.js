@@ -59,7 +59,7 @@ router.put('/', checkAuth, async (req, res) => {
     const [spaceId] = await trx('spaces').insert({
       space_name: spaceName,
       space_description: spaceDescription,
-      space_slug: spaceSlug,
+      space_slug: `spaces/${spaceSlug}`,
       avatar_url: avatarUrl,
       avatar_public_id: avatarPublicId,
       community_type: communityType,
@@ -92,7 +92,7 @@ router.put('/', checkAuth, async (req, res) => {
 
     // Fetch created space with the SAME format as MainContent expects
     space = await knex('spaces')
-      .select('id', 'space_name', 'avatar_url') // Same fields as maincontent.routes.js
+      .select('id', 'space_name', 'space_slug', 'avatar_url') // Same fields as maincontent.routes.js
       .where('id', spaceId.id)
       .first();
 

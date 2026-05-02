@@ -1,21 +1,23 @@
 // import React from 'react'
-import FacebookIcon from '@mui/icons-material/Facebook';
+import EmailIcon from '@mui/icons-material/Email';
 import GoogleIcon from '@mui/icons-material/Google';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import Modal from '@mui/material/Modal';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Space from "../assets/space-astro.svg";
 import CustomButton from '../components/HomeComponents/CustomButton';
+import EmailAuth from '../components/Login/EmailAuth';
 import LoginTextField from '../components/Login/LoginTextField';
 import apiRequest from '../config/api';
 import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
-import { auth, facebookProvider, googleProvider } from '../firebase';
+import { auth, googleProvider } from '../firebase';
 
 const SpaceLogin = () => {
   const { login } = useAuth();
@@ -24,6 +26,7 @@ const SpaceLogin = () => {
 
   // States
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailAuth, setShowEmailAuth] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -74,39 +77,13 @@ const SpaceLogin = () => {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, facebookProvider);
-      const user = result.user;
+  const handleEmailAuthSuccess = (data) => {
+    showSnackbar(data.message, 'success');
+    setShowEmailAuth(false);
+  };
 
-      const response = await apiRequest(`/api/auth/facebook`, {
-        method: 'POST',
-        body: JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const { token, userData, isNewUser } = await response.json();
-
-      login(userData, token);
-
-      // Conditional redirect based on whether it's a first-time user
-      if (isNewUser) {
-        navigate('/onboarding');
-      } else {
-        navigate('/home');
-      }
-    } catch (error) {
-      console.error('Facebook login error:', error);
-      // Handle error (show message to user)
-    }
+  const handleEmailAuthError = (error) => {
+    showSnackbar(error, 'error');
   };
 
   const handleSpaceLogin = async () => {
@@ -361,9 +338,9 @@ const SpaceLogin = () => {
               >
                 Google
               </Button>
-              {/* Facebook */}
+              {/* Email */}
               <Button
-                onClick={handleFacebookLogin}
+                onClick={() => setShowEmailAuth(true)}
                 variant="outlined"
                 sx={{
                   flex: 1, // This makes the button take up equal space
@@ -377,12 +354,51 @@ const SpaceLogin = () => {
                     bgcolor: 'background.paper'
                   }
                 }}
-                startIcon={<FacebookIcon />}
+                startIcon={<EmailIcon />}
               >
-                Facebook
+                Email
               </Button>
             </Box>
           </Box>
+
+          {/* Email Authentication Modal */}
+          <Modal
+            open={showEmailAuth}
+            onClose={() => setShowEmailAuth(false)}
+            aria-labelledby="email-auth-modal"
+            aria-describedby="email-authentication-form"
+          >
+            <Box sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              bgcolor: 'background.default',
+              p: 4,
+              borderRadius: 2,
+              maxWidth: 400,
+              width: '90%',
+              boxShadow: 24
+            }}>
+              <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
+                Email Authentication
+              </Typography>
+
+              <EmailAuth
+                onEmailAuthSuccess={handleEmailAuthSuccess}
+                onError={handleEmailAuthError}
+              />
+
+              <Button
+                fullWidth
+                variant="text"
+                onClick={() => setShowEmailAuth(false)}
+                sx={{ mt: 2 }}
+              >
+                Cancel
+              </Button>
+            </Box>
+          </Modal>
         </Box>
       </Grid>
     </Grid >

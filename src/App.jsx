@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom"
 import ProtectedRoute from "../src/components/Global/ProtectedRoute"
 import { AuthProvider } from './context/AuthContext/AuthContext'
 import Home from "./pages/Home"
+import MagicLinkAuth from "./pages/MagicLinkAuth"
 import Onboarding from "./pages/Onboarding"
 import Search from "./pages/Search"
 import Space from "./pages/Space"
@@ -22,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<ThreadlyLogin />} />
+        <Route path="/auth/magic-link" element={<MagicLinkAuth />} />
         {ProtectedRoutes("/home", <Home />)}
         {OnboardingRoute("/onboarding", <Onboarding />)}
         {ProtectedRoutes("/spaces/:spaceId", <Space />)}

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { FacebookAuthProvider, getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, RecaptchaVerifier } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,4 +13,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export const facebookProvider = new FacebookAuthProvider();
+
+/**
+ * Helper function to set up RecaptchaVerifier for phone authentication
+ * This is used to verify that the user is not a bot before sending SMS
+ * @param {string} containerId - ID of the container element for reCAPTCHA
+ * @param {Function} callback - Callback function for verification success
+ * @param {Function} errorCallback - Callback function for verification error
+ * @returns {RecaptchaVerifier} - Firebase RecaptchaVerifier instance
+ */
+export const setupRecaptcha = (containerId, callback, errorCallback) => {
+  return new RecaptchaVerifier(auth, containerId, {
+    'size': 'invisible',
+    'callback': callback,
+    'expired-callback': errorCallback
+  });
+};

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
 const { awardDailyLogin } = require('../utils/expService');
+const { sendMagicLinkEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -95,6 +96,112 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     console.error('Authentication failed:', error);
     res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
+router.post('/magic-link', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Validate email
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email is required' });
+    }
+
+    // Check if user exists
+    let user = await db('users').where({ email }).first();
+    let isNewUser = false;
+
+    if (!user) {
+      // Create new user for magic link authentication
+      isNewUser = true;
+      [user] = await db('users').insert({
+        email,
+        username: email.split('@')[0], // Use part before @ as username
+        created_at: new Date()
+      }).returning('*');
+    }
+
+    // Generate a unique token for magic link
+    const magicToken = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        type: 'magic-link'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' } // Link expires in 15 minutes
+    );
+
+    // Create magic link URL
+    const frontendUrl = process.env.NODE_ENV === 'production'
+      ? 'https://threadly-xfzn.onrender.com'
+      : 'http://localhost:5173';
+    const magicLink = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
+
+    // Send magic link email
+    await sendMagicLinkEmail(email, magicLink, user.username);
+
+    res.json({
+      message: 'Email sent successfully',
+      // For development: return the link for testing
+      ...(process.env.NODE_ENV === 'development' && { magicLink })
+    });
+
+  } catch (error) {
+    console.error('Email generation failed:', error);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
+
+router.post('/magic-link/verify', async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // Verify the magic link token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.type !== 'magic-link') {
+      return res.status(400).json({ error: 'Invalid token type' });
+    }
+
+    // Get user from database
+    const user = await db('users').where({ id: decoded.userId }).first();
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate JWT token for session
+    const sessionToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+
+    // Award daily login EXP for returning users
+    const isNewUser = !user.last_login;
+    if (!isNewUser) {
+      try {
+        const expResult = await awardDailyLogin(user.id);
+        if (!expResult.success) {
+          console.warn('Failed to award daily login EXP:', expResult.error);
+        }
+      } catch (error) {
+        console.warn('Error awarding daily login EXP:', error.message);
+      }
+    }
+
+    // Update last login
+    await db('users')
+      .where('id', user.id)
+      .update({ last_login: new Date() });
+
+    res.json({
+      token: sessionToken,
+      userData: { ...user, password: null },
+      isNewUser: !user.is_onboarded
+    });
+
+  } catch (error) {
+    console.error('Magic link verification failed:', error);
+    res.status(400).json({ error: 'Invalid or expired magic link' });
   }
 });
 

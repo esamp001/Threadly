@@ -70,6 +70,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     isMature: false,
   });
 
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [searchAnchorEl, setSearchAnchorEl] = useState(null);
@@ -791,6 +792,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                       }}
                       sx={{
                         p: 2,
+                        border: 2,
                         borderColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'divider',
                         borderRadius: 1,
                         cursor: 'pointer',

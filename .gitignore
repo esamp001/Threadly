@@ -33,3 +33,9 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
+src/assets/Astronaut helmet-bro.png
+src/assets/FINALSPACE.png
+src/assets/FINALSPACEPNG.png
+src/assets/FINALSVG.svg
+src/assets/New Project.svg
+src/assets/SVGSPACE.svg

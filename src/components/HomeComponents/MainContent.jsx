@@ -65,7 +65,6 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
   }, [page, loading, hasMore]);
 
   const fetchThreads = useCallback(async (loadMore = false) => {
-    if (loading) return;
 
     const currentPage = loadMore ? threadsPage + 1 : 1;
     try {

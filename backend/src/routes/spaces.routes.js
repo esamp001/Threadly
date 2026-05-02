@@ -19,9 +19,22 @@ const upload = multer({
 // GET /api/spaces/trending - Get trending spaces (must be before /:id route)
 router.get('/trending', async (req, res) => {
   try {
-    const trendingSpaces = await knex('spaces')
+    const { timePeriod } = req.query;
+    let query = knex('spaces')
       .select('id', 'space_name', 'avatar_url', 'member_count', 'trending_score')
-      .where('is_active', true)
+      .where('is_active', true);
+
+    // Apply time-based filtering based on space creation date
+    if (timePeriod === 'today') {
+      query = query.where('created_at', '>=', knex.raw("NOW() - INTERVAL '1 day'"));
+    } else if (timePeriod === 'week') {
+      query = query.where('created_at', '>=', knex.raw("NOW() - INTERVAL '7 days'"));
+    } else if (timePeriod === 'month') {
+      query = query.where('created_at', '>=', knex.raw("NOW() - INTERVAL '30 days'"));
+    }
+    // 'all' or no timePeriod: no date filter (current behavior)
+
+    const trendingSpaces = await query
       .orderBy('trending_score', 'desc')
       .limit(10);
 

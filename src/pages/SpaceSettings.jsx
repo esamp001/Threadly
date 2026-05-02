@@ -217,158 +217,159 @@ const SpaceSettings = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <>
       <Header
         openDrawer={openDrawer}
         setOpenDrawer={setOpenDrawer}
         onSpaceCreated={() => { }}
       />
+      <Container maxWidth="lg">
+        <Box sx={{ mt: 4, mb: 4 }}>
 
-      <Box sx={{ mt: 4, mb: 4 }}>
-
-        {/* Page Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
-          <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography variant="h4" sx={{ mb: 1 }}>
-              Cosmic Lounge
-            </Typography>
-            <Typography variant="body1" sx={{ color: '#9ca3af' }}>
-              {space?.name || 'Space'}
-            </Typography>
-          </Box>
-          <CustomButton
-            onClick={() => setShowAddRule(!showAddRule)}
-            sx={{ minWidth: { xs: '100%', sm: 120 } }}
-            startIcon={<GavelIcon />}
-          >
-            {showAddRule ? 'Cancel' : 'Add Rule'}
-          </CustomButton>
-        </Box>
-
-        {/* Rules Section */}
-        <Paper sx={{ backgroundColor: 'paper.backgroundColor', p: 3, mb: 4 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', mb: 3 }}>
-            <Typography variant="h6">
-              Existing Rules
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#9ca3af' }}>
-              Manage and reorder guidelines for this space.
-            </Typography>
-          </Box>
-
-          {/* Add New Rule Form */}
-          {showAddRule && (
-            <Box sx={{ display: 'flex', gap: 2, mb: 4, animation: 'fadeIn 0.3s ease-in-out' }}>
-              <TextField
-                fullWidth
-                placeholder="Enter a new rule..."
-                value={newRuleText}
-                onChange={(e) => setNewRuleText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddRule();
-                  }
-                }}
-                autoFocus
-                variant="standard"
-                sx={{
-                  '& .MuiInputBase-input': {
-                    color: '#d1d5db',
-                  },
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleAddRule}
-                disabled={!newRuleText.trim() || isAddingRule}
-                sx={{
-                  backgroundColor: '#22c55e',
-                  '&:hover': {
-                    backgroundColor: '#16a34a',
-                  },
-                }}
-              >
-                {isAddingRule ? 'Saving...' : 'Save'}
-              </Button>
+          {/* Page Title */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 0 } }}>
+            <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+              <Typography variant="h4" sx={{ mb: 1 }}>
+                Cosmic Lounge
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#9ca3af' }}>
+                {space?.name || 'Space'}
+              </Typography>
             </Box>
-          )}
+            <CustomButton
+              onClick={() => setShowAddRule(!showAddRule)}
+              sx={{ minWidth: { xs: '100%', sm: 120 } }}
+              startIcon={<GavelIcon />}
+            >
+              {showAddRule ? 'Cancel' : 'Add Rule'}
+            </CustomButton>
+          </Box>
 
-          {/* Rules List */}
-          {rules.length === 0 ? (
-            <Typography sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
-              No rules set yet. Click "Add Rule" to create your first rule.
-            </Typography>
-          ) : (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="rules">
-                {(provided) => (
-                  <Box
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
-                  >
-                    {rules.map((rule, index) => (
-                      <Draggable key={rule.id} draggableId={String(rule.id)} index={index}>
-                        {(provided, snapshot) => (
-                          <Box
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            sx={{
-                              backgroundColor: snapshot.isDragging ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-                              borderRadius: 1,
-                              padding: 1,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 2,
-                            }}
-                          >
-                            <Box {...provided.dragHandleProps} sx={{ cursor: 'grab', '&:active': { cursor: 'grabbing' } }}>
-                              <DragIndicatorIcon sx={{ color: '#9ca3af' }} />
-                            </Box>
+          {/* Rules Section */}
+          <Paper sx={{ backgroundColor: 'paper.backgroundColor', p: 3, mb: 4 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', mb: 3 }}>
+              <Typography variant="h6">
+                Existing Rules
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#9ca3af' }}>
+                Manage and reorder guidelines for this space.
+              </Typography>
+            </Box>
 
-                            <Box sx={{ flex: 1 }}>
-                              {rule.rule_text}
-                            </Box>
-                            <Typography
+            {/* Add New Rule Form */}
+            {showAddRule && (
+              <Box sx={{ display: 'flex', gap: 2, mb: 4, animation: 'fadeIn 0.3s ease-in-out' }}>
+                <TextField
+                  fullWidth
+                  placeholder="Enter a new rule..."
+                  value={newRuleText}
+                  onChange={(e) => setNewRuleText(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddRule();
+                    }
+                  }}
+                  autoFocus
+                  variant="standard"
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      color: '#d1d5db',
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAddRule}
+                  disabled={!newRuleText.trim() || isAddingRule}
+                  sx={{
+                    backgroundColor: '#22c55e',
+                    '&:hover': {
+                      backgroundColor: '#16a34a',
+                    },
+                  }}
+                >
+                  {isAddingRule ? 'Saving...' : 'Save'}
+                </Button>
+              </Box>
+            )}
+
+            {/* Rules List */}
+            {rules.length === 0 ? (
+              <Typography sx={{ color: '#9ca3af', textAlign: 'center', py: 4 }}>
+                No rules set yet. Click "Add Rule" to create your first rule.
+              </Typography>
+            ) : (
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="rules">
+                  {(provided) => (
+                    <Box
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+                    >
+                      {rules.map((rule, index) => (
+                        <Draggable key={rule.id} draggableId={String(rule.id)} index={index}>
+                          {(provided, snapshot) => (
+                            <Box
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
                               sx={{
-                                minWidth: 40,
-                                fontSize: 14,
-                                fontWeight: 600,
-                                color: 'primary.main',
+                                backgroundColor: snapshot.isDragging ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                                borderRadius: 1,
+                                padding: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
                               }}
                             >
-                              {String(index + 1).padStart(2, '0')}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </Box>
-                )}
-              </Droppable>
-            </DragDropContext>
-          )}
-        </Paper>
-      </Box>
+                              <Box {...provided.dragHandleProps} sx={{ cursor: 'grab', '&:active': { cursor: 'grabbing' } }}>
+                                <DragIndicatorIcon sx={{ color: '#9ca3af' }} />
+                              </Box>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setRuleToDelete(null);
-        }}
-        onConfirm={handleDeleteRule}
-        title="Delete Rule"
-        subMessage="This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-      />
+                              <Box sx={{ flex: 1 }}>
+                                {rule.rule_text}
+                              </Box>
+                              <Typography
+                                sx={{
+                                  minWidth: 40,
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: 'primary.main',
+                                }}
+                              >
+                                {String(index + 1).padStart(2, '0')}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </Box>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            )}
+          </Paper>
+        </Box>
 
-      {/* Bottom Navigation */}
-      <BottomNav openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} />
-    </Container>
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          open={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setRuleToDelete(null);
+          }}
+          onConfirm={handleDeleteRule}
+          title="Delete Rule"
+          subMessage="This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
+
+        {/* Bottom Navigation */}
+        <BottomNav openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} />
+      </Container>
+    </>
   );
 };
 

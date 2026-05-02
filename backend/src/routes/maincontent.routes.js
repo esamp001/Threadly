@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
-const moment = require('moment');
 const { checkAuth } = require('../middleware/checkAuth');
+const moment = require('moment');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+const { awardThreadCreated, awardExp } = require('../utils/expService');
 const { calculateTrendingScore } = require('../utils/trendingHelpers');
+const cache = require('../utils/cacheHelper');
 
 // GET /api/maincontent/hot_spaces - Get hot spaces from last 24 hours
 router.get('/hot_spaces', async (req, res) => {
@@ -117,24 +119,51 @@ router.get('/all_spaces', async (req, res) => {
 });
 
 router.get('/all_threads', checkAuth, async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, filter } = req.query;
   const offset = (page - 1) * limit;
   const userId = req.user?.userId;
+
+  // Generate cache key
+  const cacheKey = cache.generateKey(filter || 'latest', page, limit, userId);
+
+  // Try to get from cache first
+  const cachedResult = cache.get(cacheKey);
+  if (cachedResult) {
+    return res.json(cachedResult);
+  }
 
   let threads = []
 
   try {
+    // Determine sorting order based on filter parameter
+    let orderByClause = 'threads.created_at DESC'; // default to latest
+
+    if (filter === 'hot') {
+      orderByClause = '(comments * 2) + threads.net_score DESC';
+    } else if (filter === 'top') {
+      orderByClause = 'threads.net_score DESC';
+    } else if (filter === 'latest') {
+      orderByClause = 'threads.created_at DESC';
+    }
+
     // Get the threads for current page with user votes and comment count
-    const threadsData = await knex('threads')
+    let baseQuery = knex('threads')
       .join('spaces', 'threads.space_id', 'spaces.id')
-      .leftJoin('users', 'threads.created_by', 'users.id')
-      .leftJoin('scores', function () {
-        this.on('threads.id', '=', 'scores.thread_id')
-          .andOn('scores.user_id', '=', knex.raw('?', [userId]))
-      })
-      .leftJoin('comments', 'threads.id', 'comments.thread_id')
-      .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]))  // Join current user
-      .select('threads.id',
+      .leftJoin('users', 'threads.created_by', 'users.id');
+
+    // Add user-specific joins only if userId exists
+    if (userId) {
+      baseQuery = baseQuery
+        .leftJoin('scores', function () {
+          this.on('threads.id', '=', 'scores.thread_id')
+            .andOn('scores.user_id', '=', knex.raw('?', [userId]))
+        })
+        .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]));
+    }
+
+    const threadsData = await baseQuery
+      .select(
+        'threads.id',
         'threads.title',
         'threads.content',
         'threads.space_id',
@@ -146,32 +175,14 @@ router.get('/all_threads', checkAuth, async (req, res) => {
         'threads.upvotes',
         'threads.shares',
         'threads.net_score',
+        'threads.comments', // Use cached comment count instead of counting
         'spaces.space_name',
         'spaces.avatar_url',
-        'spaces.space_name',
-        'scores.vote_type as userVote',
-        'current_user.avatar_url as current_user_avatar_url')  // Add current user avatar
-      .count('comments.id as comment_count')
-      .groupBy(
-        'threads.id',
-        'threads.title',
-        'threads.content',
-        'threads.space_id',
-        'threads.created_by',
-        'users.username',
-        'users.avatar_url',
-        'threads.created_at',
-        'threads.updated_at',
-        'threads.upvotes',
-        'threads.shares',
-        'threads.net_score',
-        'spaces.space_name',
-        'spaces.avatar_url',
-        'spaces.space_name',
-        'scores.vote_type',
-        'current_user.avatar_url'
+        userId ? 'scores.vote_type as userVote' : knex.raw('NULL as userVote'),
+        userId ? 'current_user.avatar_url as current_user_avatar_url' : knex.raw('NULL as current_user_avatar_url')
       )
-      .orderBy('threads.created_at', 'desc')
+      .where('threads.is_active', true)
+      .orderByRaw(orderByClause)
       .limit(limit)
       .offset(offset);
 
@@ -188,12 +199,12 @@ router.get('/all_threads', checkAuth, async (req, res) => {
     const threadsWithTimeAgo = threads.map(thread => ({
       ...thread,
       timeAgo: formatRelativeTime(thread.created_at),
-      comments: parseInt(thread.comment_count) || 0  // Use actual comment count
+      comments: parseInt(thread.comments) || 0  // Use cached comment count
     }));
 
     const hasMore = (offset + threads.length) < totalCount.count;
 
-    res.json({
+    const result = {
       success: true,
       threads: threadsWithTimeAgo,
       pagination: {
@@ -203,55 +214,13 @@ router.get('/all_threads', checkAuth, async (req, res) => {
         hasMore,
         totalPages: Math.ceil(totalCount.count / limit)
       }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Get thread by ID
-router.get('/thread/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const thread = await knex('threads AS ts')
-      .leftJoin('users AS u', 'u.id', 'ts.created_by')
-      .leftJoin('spaces AS spc', 'spc.id', 'ts.space_id')
-      .select(
-        'u.id AS user_id',
-        'u.avatar_url',
-        'u.username',
-        'ts.id AS thread_id',
-        'ts.title',
-        'ts.content',
-        'ts.upvotes',
-        'ts.downvotes',
-        'ts.created_at',
-        'spc.space_name',
-        'spc.avatar_url AS space_avatar_url'
-      )
-      .where('ts.id', id)
-      .first();
-
-    if (!thread) {
-      return res.status(404).json({
-        success: false,
-        message: 'Thread not found'
-      });
-    }
-
-    const threadWithTimeAgo = {
-      ...thread,
-      timeAgo: formatRelativeTime(thread.created_at)
     };
 
-    res.json({
-      success: true,
-      thread: threadWithTimeAgo
-    });
+    // Cache the result (shorter TTL for hot filter, longer for others)
+    const ttl = filter === 'hot' ? 2 * 60 * 1000 : 5 * 60 * 1000; // 2 min for hot, 5 min for others
+    cache.set(cacheKey, result, ttl);
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -270,64 +239,77 @@ router.post('/create_thread', checkAuth, async (req, res) => {
   let threadWithSpace = []
 
   try {
-    const thread = await knex('threads')
-      .insert({
-        title,
-        content,
-        space_id: spaceId,
-        created_by: userId
-      })
-      .returning('*');
+    await knex.transaction(async (trx) => {
+      const thread = await trx('threads')
+        .insert({
+          title,
+          content,
+          space_id: spaceId,
+          created_by: userId
+        })
+        .returning('*');
 
-    // Update space trending score after thread creation
-    const space = await knex('spaces').where('id', spaceId).first();
-    if (space) {
-      const threadCountResult = await knex('threads')
-        .where('space_id', spaceId)
-        .count('* as count')
+      // Validate thread creation was successful before awarding EXP
+      if (!thread || !thread[0] || !thread[0].id) {
+        throw new Error('Failed to create thread - no valid thread data returned');
+      }
+
+      // Award EXP for thread creation (only if thread was successfully created)
+      const expResult = await awardThreadCreated(userId, thread[0].id, trx);
+      if (!expResult.success) {
+        console.warn('Failed to award EXP for thread creation:', expResult.error);
+      }
+
+      // Update space trending score after thread creation
+      const space = await trx('spaces').where('id', spaceId).first();
+      if (space) {
+        const threadCountResult = await trx('threads')
+          .where('space_id', spaceId)
+          .count('* as count')
+          .first();
+        const threadCount = parseInt(threadCountResult.count) || 0;
+        const newTrendingScore = calculateTrendingScore(space.member_count || 0, threadCount);
+
+        await trx('spaces')
+          .where('id', spaceId)
+          .update({ trending_score: newTrendingScore });
+      }
+
+      // Update contributor points for the user in this space
+      // +10 points for creating a post, +1 posts_count
+      await trx('space_contributor_points')
+        .insert({
+          space_id: spaceId,
+          user_id: userId,
+          points: 10,
+          posts_count: 1,
+          comments_count: 0,
+          upvotes_received: 0,
+          updated_at: knex.fn.now()
+        })
+        .onConflict(['space_id', 'user_id'])
+        .merge({
+          points: knex.raw('space_contributor_points.points + 10'),
+          posts_count: knex.raw('space_contributor_points.posts_count + 1'),
+          updated_at: knex.fn.now()
+        });
+
+      // Return Thread with spaces and user data
+      threadWithSpace = await trx('threads')
+        .join('spaces', 'threads.space_id', 'spaces.id')
+        .leftJoin('users', 'threads.created_by', 'users.id')
+        .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]))
+        .select(
+          'threads.*',
+          'spaces.space_name',
+          'spaces.avatar_url as space_avatar_url',
+          'users.username',
+          'users.avatar_url as user_avatar_url',
+          'current_user.avatar_url as current_user_avatar_url'
+        )
+        .where('threads.id', thread[0].id)
         .first();
-      const threadCount = parseInt(threadCountResult.count) || 0;
-      const newTrendingScore = calculateTrendingScore(space.member_count || 0, threadCount);
-
-      await knex('spaces')
-        .where('id', spaceId)
-        .update({ trending_score: newTrendingScore });
-    }
-
-    // Update contributor points for the user in this space
-    // +10 points for creating a post, +1 posts_count
-    await knex('space_contributor_points')
-      .insert({
-        space_id: spaceId,
-        user_id: userId,
-        points: 10,
-        posts_count: 1,
-        comments_count: 0,
-        upvotes_received: 0,
-        updated_at: knex.fn.now()
-      })
-      .onConflict(['space_id', 'user_id'])
-      .merge({
-        points: knex.raw('space_contributor_points.points + 10'),
-        posts_count: knex.raw('space_contributor_points.posts_count + 1'),
-        updated_at: knex.fn.now()
-      });
-
-    // Return Thread with spaces and user data
-    threadWithSpace = await knex('threads')
-      .join('spaces', 'threads.space_id', 'spaces.id')
-      .leftJoin('users', 'threads.created_by', 'users.id')
-      .leftJoin('users as current_user', 'current_user.id', '=', knex.raw('?', [userId]))
-      .select(
-        'threads.*',
-        'spaces.space_name',
-        'spaces.avatar_url as space_avatar_url',
-        'users.username',
-        'users.avatar_url as user_avatar_url',
-        'current_user.avatar_url as current_user_avatar_url'
-      )
-      .where('threads.id', thread[0].id)
-      .first();
+    });
 
   } catch (error) {
     console.error('Error creating thread:', error);
@@ -374,6 +356,14 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
           .where({ id: threadId })
           .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
           .increment('net_score', numericVote);
+
+        // Award EXP to thread author for receiving upvote
+        if (numericVote === 1 && thread.created_by !== userId) {
+          const expResult = await awardExp(thread.created_by, 'thread_upvote', threadId, trx);
+          if (!expResult.success) {
+            console.warn('Failed to award EXP for thread upvote:', expResult.error);
+          }
+        }
 
         // Update contributor points for thread author if upvote
         // +2 points for receiving an upvote, +1 upvotes_received

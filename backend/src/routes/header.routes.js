@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
+const { awardSpaceCreated } = require('../utils/expService');
 
 // GET all topics
 router.get('/', async (_, res) => {
@@ -77,6 +78,12 @@ router.put('/', checkAuth, async (req, res) => {
       }));
 
       await trx('space_topics').insert(spaceTopics);
+    }
+
+    // Award EXP for space creation
+    const expResult = await awardSpaceCreated(req.user.userId, spaceId.id, trx);
+    if (!expResult.success) {
+      console.warn('Failed to award EXP for space creation:', expResult.error);
     }
 
     // Auto-join the creator as owner

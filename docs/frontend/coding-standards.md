@@ -132,6 +132,56 @@ useEffect(() => {
 3. **Simple Language**: Use plain, simple language in descriptions - avoid jargon
 4. **Purpose-Driven**: Documentation should explain WHY something exists, not just WHAT it does
 
+## Theme Usage with sx Props
+
+Always use theme values in `sx` props instead of hardcoded colors for consistency across the application.
+
+### Available Theme Properties
+
+#### Colors (palette)
+- `primary.main` - #1DB954 (Spotify green)
+- `background.default` - #121212 (main background)
+- `background.paper` - #1818185e (paper/surface background)
+- `text.primary` - #FFFFFF (main text)
+- `text.secondary` - #B3B3B3 (secondary text)
+- `shape.borderRadius` - 12px (default border radius)
+
+### Common Usage Patterns
+
+```jsx
+// Text styling
+<Typography sx={{ color: 'text.primary' }}>
+  Primary text
+</Typography>
+
+// Background styling
+<Box sx={{ bgcolor: 'background.default' }}>
+  Main content area
+</Box>
+
+// Interactive elements
+<Box
+  sx={{
+    color: 'text.primary',
+    bgcolor: 'background.paper',
+    borderRadius: 'shape.borderRadius',
+    '&:hover': {
+      bgcolor: 'primary.main',
+      color: 'text.black',
+    },
+  }}
+>
+  Interactive element
+</Box>
+```
+
+### Best Practices
+1. **Always use theme values** instead of hardcoded colors
+2. **Use semantic color names** (primary, text, background)
+3. **Leverage shape.borderRadius** for consistent border radius
+4. **Use hover states** with `&:hover` pseudo-selector
+5. **Add transitions** for smooth interactions
+
 ## File Organization
 
 ```

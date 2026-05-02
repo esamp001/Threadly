@@ -1,11 +1,11 @@
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import InfoIcon from '@mui/icons-material/Info';
 import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
+import PeopleIcon from '@mui/icons-material/People';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Avatar, Box, Button, Grid, IconButton, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
-import { Flame } from 'lucide-react';
+import { Circle, Flame } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
@@ -22,14 +22,18 @@ import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { uploadImagesToCloudinary } from '../utils/cloudinary';
 
+
 // Reusable About Space Card component
-const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining, rules, contributors, isOwner, onSettingsClick }) => {
+const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining, rules, contributors, isOwner, onSettingsClick, isMobile = false }) => {
+  const cardStyles = isMobile
+    ? { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 0 }
+    : { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 };
+
   return (
-    <Paper sx={{ backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 }}>
+    <Paper sx={cardStyles}>
       {/* Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <InfoIcon sx={{ fontSize: 14, color: '#9ca3af', mr: 1 }} />
           <Typography
             sx={{
               fontSize: 12,
@@ -51,70 +55,105 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       </Box>
 
       {/* Description */}
-      <Box sx={{ overflow: 'hidden' }}>
+      <Box
+        sx={{
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 1,
+        }}
+      >
         <Typography
           sx={{
             fontSize: 14,
             lineHeight: 1.6,
             color: '#d1d5db',
-            mb: 3,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            flex: 1,
           }}
         >
           {space?.description || 'No description available'}
         </Typography>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+          <Circle
+            size={8}
+            fill="#22c55e"
+            color="#22c55e"
+            style={{ marginRight: '4px' }}
+          />
+          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+            1 ONLINE
+          </Typography>
+        </Box>
       </Box>
 
       {/* Stats */}
       <Box
         sx={{
           display: 'flex',
-          gap: 6,
-          mb: 2,
+          gap: 3,
+          mb: 3,
+          px: 1
         }}
       >
-        <Box>
-          <Typography sx={{ fontSize: 22, fontWeight: 700 }}>
-            {memberCount || 0}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            MEMBERS
-          </Typography>
-        </Box>
-
-        <Box>
-          <Typography
+        {/* MEMBERS */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
             sx={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#22c55e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(107, 114, 128, 0.1)'
             }}
           >
-            —
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            ONLINE
-          </Typography>
+            <PeopleIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Members
+            </Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
+              {memberCount || 0}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* CREATED DATE */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(107, 114, 128, 0.1)'
+            }}
+          >
+            <AccessTimeIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Created
+            </Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
+              {space?.createdAt
+                ? space.createdAt
+                : 'Unknown'}
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
-      {/* Created Date */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          mb: 3,
-          color: '#9ca3af',
-        }}
-      >
-        <CalendarTodayIcon sx={{ fontSize: 16 }} />
-        <Typography sx={{ fontSize: 12 }}>
-          Created {space?.createdAt || 'Unknown date'}
-        </Typography>
-      </Box>
+
 
       {/* Button */}
       {isMember ? (
@@ -1257,7 +1296,7 @@ const Space = () => {
               }
             }}
           />
-          <Box {...swipeHandlers} sx={{ p: 2 }}>
+          <Box {...swipeHandlers}>
             {activeStep === 0 && (
               <Box>
                 {/* Thread Creation Form */}
@@ -1393,7 +1432,7 @@ const Space = () => {
               </Box>
             )}
             {activeStep === 1 && (
-              <Box sx={{ p: 2 }}>
+              <Box sx={{ p: 0, width: '100%' }}>
                 <AboutSpaceCard
                   space={space}
                   isMember={isMember}
@@ -1405,6 +1444,7 @@ const Space = () => {
                   contributors={contributors}
                   isOwner={space?.userRole === 'owner'}
                   onSettingsClick={handleSettingsClick}
+                  isMobile={true}
                 />
               </Box>
             )}

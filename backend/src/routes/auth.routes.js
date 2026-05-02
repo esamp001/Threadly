@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const db = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
+const { awardDailyLogin } = require('../utils/expService');
 
 const router = express.Router();
 
@@ -31,7 +32,7 @@ router.get('/context', authenticateToken, async (req, res) => {
 
   try {
     user = await db('users')
-      .select('id', 'email', 'username', 'bio', 'avatar_url', 'avatar_seed', 'avatar_options', 'is_active', 'created_at', 'is_onboarded')
+      .select('id', 'email', 'username', 'bio', 'avatar_url', 'avatar_seed', 'avatar_options', 'is_active', 'created_at', 'is_onboarded', 'exp_points', 'level')
       .where('id', req.user.userId)
       .first();
 
@@ -73,6 +74,18 @@ router.post('/google', async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+
+    // Award daily login EXP for returning users
+    if (!isNewUser) {
+      try {
+        const expResult = await awardDailyLogin(user.id);
+        if (!expResult.success) {
+          console.warn('Failed to award daily login EXP:', expResult.error);
+        }
+      } catch (error) {
+        console.warn('Error awarding daily login EXP:', error.message);
+      }
+    }
 
     res.json({
       token,

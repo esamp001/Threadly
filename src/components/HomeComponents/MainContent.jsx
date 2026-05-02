@@ -12,7 +12,7 @@ import QuillEditor from './QuillEditor';
 import SearchButton from './SearchButton';
 
 
-const MainContent = ({ spaces, setSpaces }) => {
+const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
   const { user } = useAuth();
   const { showSnackbar } = useSnackbar();
   const componentName = useRef('MainContent');
@@ -70,7 +70,9 @@ const MainContent = ({ spaces, setSpaces }) => {
     const currentPage = loadMore ? threadsPage + 1 : 1;
     try {
       setLoading(true);
-      const response = await apiRequest(`/api/maincontent/all_threads?page=${currentPage}&limit=10`);
+      const url = `/api/maincontent/all_threads?page=${currentPage}&limit=10&filter=${threadFilter}`;
+
+      const response = await apiRequest(url);
       const result = await response.json();
 
       if (result.success) {
@@ -88,7 +90,12 @@ const MainContent = ({ spaces, setSpaces }) => {
     } finally {
       setLoading(false);
     }
-  }, [loading, threadsHasMore, threadsPage]);
+  }, [loading, threadsHasMore, threadsPage, threadFilter]);
+
+  // Refetch threads when filter changes
+  useEffect(() => {
+    fetchThreads(false);
+  }, [threadFilter]);
 
   const handleCreateThread = async () => {
     // Validate required fields
@@ -352,7 +359,7 @@ const MainContent = ({ spaces, setSpaces }) => {
       </Accordion>
 
 
-      {loading && (!threads || threads.length === 0) ? (
+      {loading ? (
         // Show skeleton during initial load matching ThreadContent structure
         Array.from({ length: 3 }).map((_, index) => (
           <Paper key={index} sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mt: 3 }}>

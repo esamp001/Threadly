@@ -385,7 +385,7 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
               </Box>
             ) : (
               // Conditional rendering for comments - shows actual comments
-              comments.map((comment) => (
+              comments.filter(comment => comment !== null).map((comment) => (
                 <Box
                   key={comment.id}
                   sx={{

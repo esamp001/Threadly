@@ -3,6 +3,7 @@ const router = express.Router();
 const knex = require('../db/knex');
 const { checkAuth } = require('../middleware/checkAuth');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+const { awardCommentCreated, awardExp } = require('../utils/expService');
 
 // POST - Create new comment
 router.post('/', checkAuth, async (req, res) => {
@@ -20,84 +21,94 @@ router.post('/', checkAuth, async (req, res) => {
       throw new Error('Missing required fields: content, thread_id, or user ID');
     }
 
-    const commentIdResult = await knex('comments').insert({
-      content,
-      thread_id,
-      parent_id,
-      created_by: userId
-    }).returning('id');
+    await knex.transaction(async (trx) => {
+      const commentIdResult = await trx('comments').insert({
+        content,
+        thread_id,
+        parent_id,
+        created_by: userId
+      }).returning('id');
 
-    const commentId = commentIdResult[0]?.id;
+      const commentId = commentIdResult[0]?.id;
 
-    if (!commentId) {
-      throw new Error('Failed to create comment - no ID returned');
-    }
+      // Validate comment creation was successful before awarding EXP
+      comment = await trx('comments').where('id', commentId).first();
+      if (!comment) {
+        throw new Error('Failed to create comment - comment not found after insertion');
+      }
 
-    // Get the comment count for this thread
-    const countResult = await knex('comments')
-      .where('thread_id', thread_id)
-      .count('* as count')
-      .first();
+      // Award EXP for comment creation (only if comment was successfully created)
+      const expResult = await awardCommentCreated(userId, commentId, parent_id, trx);
+      if (!expResult.success) {
+        console.warn('Failed to award EXP for comment creation:', expResult.error);
+      }
 
-    comment_count = parseInt(countResult.count) || 0;
+      // Get the comment count for this thread
+      const countResult = await trx('comments')
+        .where('thread_id', thread_id)
+        .count('* as count')
+        .first();
 
-    comment = await knex('comments AS c')
-      .leftJoin('users AS u', 'u.id', 'c.created_by')
-      .where('c.id', commentId)
-      .select(
-        'c.id',
-        'c.content',
-        'c.thread_id',
-        'c.parent_id',
-        'c.created_by',
-        'c.created_at',
-        'c.updated_at',
-        'u.username',
-        'u.avatar_url AS user_avatar_url'
-      )
-      .first();
+      comment_count = parseInt(countResult.count) || 0;
 
-    if (!comment) {
-      throw new Error('Failed to retrieve created comment');
-    }
+      comment = await trx('comments AS c')
+        .leftJoin('users AS u', 'u.id', 'c.created_by')
+        .where('c.id', commentId)
+        .select(
+          'c.id',
+          'c.content',
+          'c.thread_id',
+          'c.parent_id',
+          'c.created_by',
+          'c.created_at',
+          'c.updated_at',
+          'u.username',
+          'u.avatar_url AS user_avatar_url'
+        )
+        .first();
 
-    comment = {
-      ...comment,
-      author: comment.username || 'Anonymous',
-      avatar: comment.avatar_url || comment.username?.[0]?.toUpperCase() || 'A',
-      timestamp: formatRelativeTime(comment.created_at),
-      net_score: 0,
-      userVote: 0,
-      replies: [],
-      comments: comment_count
-    };
+      if (!comment) {
+        throw new Error('Failed to retrieve created comment');
+      }
 
-    if (!comment.id || !comment.content) {
-      throw new Error('Invalid comment data structure');
-    }
+      comment = {
+        ...comment,
+        author: comment.username || 'Anonymous',
+        avatar: comment.avatar_url || comment.username?.[0]?.toUpperCase() || 'A',
+        timestamp: formatRelativeTime(comment.created_at),
+        net_score: 0,
+        userVote: 0,
+        replies: [],
+        comments: comment_count
+      };
 
-    // Update contributor points for the user in this space
-    // +5 points for creating a comment, +1 comments_count
-    // First get the space_id from the thread
-    const thread = await knex('threads').where('id', thread_id).first();
-    if (thread) {
-      await knex('space_contributor_points')
-        .insert({
-          space_id: thread.space_id,
-          user_id: userId,
-          points: 5,
-          posts_count: 0,
-          comments_count: 1,
-          upvotes_received: 0,
-          updated_at: knex.fn.now()
-        })
-        .onConflict(['space_id', 'user_id'])
-        .merge({
-          points: knex.raw('space_contributor_points.points + 5'),
-          comments_count: knex.raw('space_contributor_points.comments_count + 1'),
-          updated_at: knex.fn.now()
-        });
-    }
+      if (!comment.id || !comment.content) {
+        throw new Error('Invalid comment data structure');
+      }
+
+      // Update contributor points for the user in this space
+      // +5 points for creating a comment, +1 comments_count
+      // First get the space_id from the thread
+      const thread = await trx('threads').where('id', thread_id).first();
+      if (thread) {
+        await trx('space_contributor_points')
+          .insert({
+            space_id: thread.space_id,
+            user_id: userId,
+            points: 5,
+            posts_count: 0,
+            comments_count: 1,
+            upvotes_received: 0,
+            updated_at: trx.fn.now()
+          })
+          .onConflict(['space_id', 'user_id'])
+          .merge({
+            points: trx.raw('space_contributor_points.points + 5'),
+            comments_count: trx.raw('space_contributor_points.comments_count + 1'),
+            updated_at: trx.fn.now()
+          });
+      }
+    });
 
   } catch (error) {
     status = 500;
@@ -232,6 +243,12 @@ router.post('/vote', checkAuth, async (req, res) => {
 
   try {
     await knex.transaction(async (trx) => {
+      // Get comment info for EXP awarding
+      const comment = await trx('comments').where('id', commentId).first();
+      if (!comment) {
+        throw new Error('Comment not found');
+      }
+
       const existingVote = await trx('comment_votes')
         .where({ user_id: userId, comment_id: commentId })
         .first();
@@ -248,6 +265,14 @@ router.post('/vote', checkAuth, async (req, res) => {
           .where({ id: commentId })
           .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
           .increment('net_score', numericVote);
+
+        // Award EXP to comment author for receiving upvote
+        if (numericVote === 1 && comment.created_by !== userId) {
+          const expResult = await awardExp(comment.created_by, 'reply_upvote', commentId, trx);
+          if (!expResult.success) {
+            console.warn('Failed to award EXP for comment upvote:', expResult.error);
+          }
+        }
       }
       // Case 2: Same vote clicked again → remove vote (neutral)
       else if (existingVote.vote_type === numericVote) {
@@ -271,6 +296,14 @@ router.post('/vote', checkAuth, async (req, res) => {
           .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
           .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
           .increment('net_score', numericVote * 2);
+
+        // Award EXP if switching from downvote to upvote
+        if (numericVote === 1 && comment.created_by !== userId) {
+          const expResult = await awardExp(comment.created_by, 'reply_upvote', commentId, trx);
+          if (!expResult.success) {
+            console.warn('Failed to award EXP for comment upvote:', expResult.error);
+          }
+        }
       }
     });
 

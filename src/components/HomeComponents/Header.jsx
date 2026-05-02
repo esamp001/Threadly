@@ -1,16 +1,38 @@
-import { Avatar, Box, Button, CircularProgress, Drawer, FormControl, FormControlLabel, Grid, IconButton, InputAdornment, MenuItem, Radio, RadioGroup, Select, Skeleton, Switch, TextField, Tooltip, Typography } from '@mui/material';
-import Menu from '@mui/material/Menu';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
-import Stepper from '@mui/material/Stepper';
+import {
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Drawer,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  Menu,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  Select,
+  Skeleton,
+  Step,
+  StepLabel,
+  Stepper,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography
+} from '@mui/material';
 import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { getTitle } from '../../utils/rankingHelpers';
 import { addRecentSearch } from '../../utils/searchHelpers';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
+import ExpBar from './ExpBar';
 import SearchDropdown from './SearchDropdown';
 import TextFieldThreadly from './TextFieldThreadly';
 
@@ -769,7 +791,6 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                       }}
                       sx={{
                         p: 2,
-                        border: '1px solid',
                         borderColor: formData.topics.some(t => t.id === topic.id) ? 'primary.main' : 'divider',
                         borderRadius: 1,
                         cursor: 'pointer',
@@ -966,8 +987,11 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
       {/* User Avatar */}
       <Grid item size="auto">
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-          <Box sx={{ position: 'relative' }}>
+
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+
+          <Box sx={{ position: 'relative', }}>
+            {/* Avatar */}
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Avatar
                 sx={{
@@ -1078,34 +1102,40 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                 fontWeight: 700
               }}
             >
-              Lv 12
+              Lv {user?.level || 1}
             </Box>
           </Box>
 
-          <Box sx={{
-            alignItems: 'flex-start',
-            flexDirection: 'column',
-            gap: 1,
-            display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }
-          }}>
-            <Typography sx={{ fontWeight: 700 }}>
-              {user?.username || 'Guest'}
-            </Typography>
-            <Typography
-              sx={{
-                display: 'inline-block',
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'success.light',
-                bgcolor: 'rgba(76, 175, 80, 0.12)',
-                px: 1,
-                py: 0.2,
-                borderRadius: '6px',
-                letterSpacing: 0.3,
-              }}
-            >
-              {user?.role || 'Head Hunter'}
-            </Typography>
+          <Box>
+            <ExpBar />
+
+            <Box sx={{
+              alignItems: 'flex-start',
+              flexDirection: 'column',
+              gap: .5,
+              display: { xs: 'none', sm: 'none', md: 'none', lg: 'flex' }
+            }}>
+
+              <Typography sx={{ fontWeight: 700 }}>
+                {user?.username || 'Guest'}
+              </Typography>
+
+              <Typography
+                sx={{
+                  display: 'inline-block',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'success.light',
+                  bgcolor: 'rgba(76, 175, 80, 0.12)',
+                  px: 1,
+                  py: 0.2,
+                  borderRadius: '6px',
+                  letterSpacing: 0.3,
+                }}
+              >
+                {getTitle(user?.level || 1)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
       </Grid>

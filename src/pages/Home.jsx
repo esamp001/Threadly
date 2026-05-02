@@ -1,5 +1,5 @@
 import { Box, Grid } from '@mui/material'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 // Importing
 import BottomNav from '../components/HomeComponents/BottomNav'
@@ -12,10 +12,20 @@ import RightContent from '../components/HomeComponents/RightContent'
 const Home = () => {
   const [openDrawer, setOpenDrawer] = useState(false)
   const [spaces, setSpaces] = useState([])
+  const [threadFilter, setThreadFilter] = useState('latest')
 
   const addNewSpace = (newSpace) => {
     setSpaces(prev => [newSpace, ...prev])
   }
+
+  /**
+   * Changes the thread filter
+   * This is used to filter threads by hot, latest, or top
+   * @param {string} newFilter - The filter value to apply ('hot', 'latest', 'top')
+   */
+  const handleFilterChange = useCallback((newFilter) => {
+    setThreadFilter(newFilter)
+  }, [])
 
   return (
     <>
@@ -34,10 +44,10 @@ const Home = () => {
               <LeftContent />
             </Grid>
             <Grid item size={{ xs: 12, sm: 12, md: 9, lg: 7.4, xl: 6 }}>
-              <MainContent spaces={spaces} setSpaces={setSpaces} />
+              <MainContent spaces={spaces} setSpaces={setSpaces} threadFilter={threadFilter} />
             </Grid>
             <Grid item size={{ xs: 0, sm: 0, md: 3, lg: 2.1, xl: 3.1 }} sx={{ display: { xs: 'none', sm: 'none', md: 'block' } }}>
-              <RightContent />
+              <RightContent filter={threadFilter} onFilterChange={handleFilterChange} />
             </Grid>
           </Grid>
         </Grid>

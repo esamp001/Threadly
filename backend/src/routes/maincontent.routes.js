@@ -19,7 +19,7 @@ router.get('/hot_spaces', async (req, res) => {
         'spaces.space_name',
         'spaces.avatar_url',
         knex.raw('COUNT(threads.id) as thread_count'),
-        knex.raw('COALESCE(SUM(threads.comments * 2 + threads.net_score), 0) as activity_score')
+        knex.raw('COALESCE(SUM((SELECT COUNT(*) FROM comments WHERE comments.thread_id = threads.id AND comments.is_active = true) * 2 + threads.net_score), 0) as activity_score')
       )
       .innerJoin('spaces', 'threads.space_id', 'spaces.id')
       .where('threads.is_active', true)
@@ -51,18 +51,18 @@ router.get('/hot_threads', async (req, res) => {
         'threads.title',
         'threads.space_id',
         'threads.created_by',
-        'threads.comments',
         'threads.net_score',
         'threads.created_at',
         'spaces.space_name',
         'spaces.avatar_url',
-        'users.username as author_username'
+        'users.username as author_username',
+        knex.raw('(SELECT COUNT(*) FROM comments WHERE comments.thread_id = threads.id AND comments.is_active = true) as comment_count')
       )
       .leftJoin('spaces', 'threads.space_id', 'spaces.id')
       .leftJoin('users', 'threads.created_by', 'users.id')
       .where('threads.is_active', true)
       .where('threads.created_at', '>=', twentyFourHoursAgo)
-      .orderByRaw('(comments * 2) + net_score DESC')
+      .orderByRaw('(comment_count * 2) + net_score DESC')
       .limit(5);
 
     res.json({
@@ -139,7 +139,7 @@ router.get('/all_threads', checkAuth, async (req, res) => {
     let orderByClause = 'threads.created_at DESC'; // default to latest
 
     if (filter === 'hot') {
-      orderByClause = '(comments * 2) + threads.net_score DESC';
+      orderByClause = '(comment_count * 2) + threads.net_score DESC';
     } else if (filter === 'top') {
       orderByClause = 'threads.net_score DESC';
     } else if (filter === 'latest') {
@@ -175,7 +175,7 @@ router.get('/all_threads', checkAuth, async (req, res) => {
         'threads.upvotes',
         'threads.shares',
         'threads.net_score',
-        'threads.comments', // Use cached comment count instead of counting
+        knex.raw('(SELECT COUNT(*) FROM comments WHERE comments.thread_id = threads.id AND comments.is_active = true) as comment_count'),
         'spaces.space_name',
         'spaces.avatar_url',
         userId ? 'scores.vote_type as userVote' : knex.raw('NULL as userVote'),
@@ -199,7 +199,7 @@ router.get('/all_threads', checkAuth, async (req, res) => {
     const threadsWithTimeAgo = threads.map(thread => ({
       ...thread,
       timeAgo: formatRelativeTime(thread.created_at),
-      comments: parseInt(thread.comments) || 0  // Use cached comment count
+      comments: thread.comment_count || 0
     }));
 
     const hasMore = (offset + threads.length) < totalCount.count;

@@ -1,7 +1,10 @@
 // src/config/api.js
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+console.log(API_URL, "API_URL")
+
 const apiRequest = async (endpoint, options = {}) => {
+  console.log("HIT HERE INSIDE API REQUEST")
   const token = localStorage.getItem('token');
 
   const config = {

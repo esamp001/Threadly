@@ -22,22 +22,37 @@ let cachedTransporter = null;
  * @returns {Object} - Nodemailer transporter instance
  */
 const createTransporter = () => {
-  // Load environment variables from .env.development if needed
-  require('dotenv').config({ path: '.env.development' });
+  // Load environment variables from .env.development only in development
+  if (process.env.NODE_ENV === 'development') {
+    require('dotenv').config({ path: '.env.development' });
+  }
 
   // Development mode - log to console
   if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_HOST) {
+    console.log('📧 Email service: Development mode (no EMAIL_HOST set)');
     return {
       sendMail: async (options) => {
+        console.log('📧 Dev mode: Would send email to', options.to);
         return { messageId: 'dev-mode-' + Date.now() };
       }
     };
+  }
+
+  // Check if email configuration is properly set
+  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('📧 Email service: Missing configuration');
+    console.error('📧 EMAIL_HOST:', process.env.EMAIL_HOST ? '✓' : '✗');
+    console.error('📧 EMAIL_USER:', process.env.EMAIL_USER ? '✓' : '✗');
+    console.error('📧 EMAIL_PASS:', process.env.EMAIL_PASS ? '✓' : '✗');
+    throw new Error('Email service not configured properly');
   }
 
   // Reuse cached transporter in production
   if (cachedTransporter) {
     return cachedTransporter;
   }
+
+  console.log('📧 Email service: Creating SMTP transporter for', process.env.EMAIL_HOST);
 
   // Production mode - use real SMTP with connection pooling
   cachedTransporter = nodemailer.createTransport({

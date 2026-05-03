@@ -141,32 +141,13 @@ router.post('/magic-link', async (req, res) => {
     const magicLink = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
 
     // Send magic link email with timeout handling
-    try {
-      await sendMagicLinkEmail(email, magicLink, user.username);
+    await sendMagicLinkEmail(email, magicLink, user.username);
 
-      res.json({
-        message: 'Email sent successfully',
-        // For development: return the link for testing
-        ...(process.env.NODE_ENV === 'development' && { magicLink })
-      });
-    } catch (emailError) {
-      console.error('Email sending failed:', emailError);
-
-      // In production, still return success but with a warning
-      // This prevents the user from knowing about internal email issues
-      if (process.env.NODE_ENV === 'production') {
-        res.json({
-          message: 'Email sent successfully',
-          warning: 'Email delivery may be delayed'
-        });
-      } else {
-        // In development, show the error and return the magic link for testing
-        res.status(500).json({
-          error: 'Failed to send email',
-          magicLink: magicLink // Return link for manual testing in dev
-        });
-      }
-    }
+    res.json({
+      message: 'Email sent successfully',
+      // For development: return the link for testing
+      ...(process.env.NODE_ENV === 'development' && { magicLink })
+    });
 
   } catch (error) {
     console.error('Email generation failed:', error);

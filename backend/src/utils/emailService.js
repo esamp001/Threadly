@@ -1,82 +1,42 @@
-const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
-/**
- * Email Service Utility
- * Handles sending emails using Nodemailer with SMTP configuration
- * 
- * Supports:
- * - Gmail SMTP
- * - Custom SMTP providers
- * - SendGrid (via SMTP)
- * - Development mode (console logging)
- */
-
-// Cache transporter to reuse connections
-let cachedTransporter = null;
-
-/**
- * Create email transporter based on environment configuration
- * This is used to establish connection with email service provider
- * @returns {Object} - Nodemailer transporter instance
- */
-const createTransporter = () => {
-  // Load environment variables from .env.development only in development
-  if (process.env.NODE_ENV === 'development') {
-    require('dotenv').config({ path: '.env.development' });
+// SendGrid API option for Render free tier
+const sendViaSendGridAPI = async (to, subject, htmlContent) => {
+  if (!process.env.SENDGRID_API_KEY) {
+    throw new Error('SendGrid API key not configured');
   }
 
-  // Development mode - log to console
-  if (process.env.NODE_ENV === 'development' && !process.env.EMAIL_HOST) {
-    console.log('📧 Email service: Development mode (no EMAIL_HOST set)');
-    return {
-      sendMail: async (options) => {
-        console.log('📧 Dev mode: Would send email to', options.to);
-        return { messageId: 'dev-mode-' + Date.now() };
-      }
-    };
+  const sgMail = require('@sendgrid/mail');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+  const fromEmail = process.env.EMAIL_FROM
+
+  console.log('📧 SendGrid API Details:');
+  console.log('  To:', to);
+  console.log('  From:', fromEmail);
+  console.log('  Subject:', subject);
+
+  const msg = {
+    to,
+    from: `"Space" <${fromEmail}>`,
+    subject,
+    html: htmlContent,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('📧 SendGrid: Email sent successfully');
+  } catch (error) {
+    console.error('📧 SendGrid Error Details:', error.response?.body || error.message);
+    throw error;
   }
-
-  // Check if email configuration is properly set
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('📧 Email service: Missing configuration');
-    console.error('📧 EMAIL_HOST:', process.env.EMAIL_HOST ? '✓' : '✗');
-    console.error('📧 EMAIL_USER:', process.env.EMAIL_USER ? '✓' : '✗');
-    console.error('📧 EMAIL_PASS:', process.env.EMAIL_PASS ? '✓' : '✗');
-    throw new Error('Email service not configured properly');
-  }
-
-  // Reuse cached transporter in production
-  if (cachedTransporter) {
-    return cachedTransporter;
-  }
-
-  console.log('📧 Email service: Creating SMTP transporter for', process.env.EMAIL_HOST);
-
-  // Production mode - use real SMTP with connection pooling
-  cachedTransporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT || 587,
-    secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    pool: true, // Use connection pooling
-    maxConnections: 5,
-    maxMessages: 100,
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 5000, // 5 seconds
-    socketTimeout: 10000, // 10 seconds
-  });
-
-  return cachedTransporter;
 };
 
 /**
  * Send magic link email to user
  * This is used to send passwordless authentication links with minimalist Space branding
+ * Works on both Render free tier (via SendGrid API) and paid tiers (via SMTP)
  * @param {string} to - Recipient email address
  * @param {string} magicLink - Magic link URL for authentication
  * @param {string} userName - User's name (optional)
@@ -84,13 +44,9 @@ const createTransporter = () => {
  */
 const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
   try {
-    const transporter = createTransporter();
-
     const displayName = userName || to.split('@')[0];
 
-
     const htmlContent = `
-      <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
@@ -160,69 +116,16 @@ const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
       </html>
     `;
 
-    const mailOptions = {
-      from: `"Space" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
-      to: to,
-      subject: 'Sign In to Space - One-Time Link',
-      html: htmlContent,
-    };
-
-    // Add timeout to prevent hanging requests
-    const result = await Promise.race([
-      transporter.sendMail(mailOptions),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Email sending timeout')), 15000)
-      )
-    ]);
-
-    return { success: true, messageId: result.messageId };
+    // Use SendGrid API (works on Render free tier and production)
+    console.log('📧 Email service: Using SendGrid API');
+    await sendViaSendGridAPI(to, 'Sign In to Space - One-Time Link', htmlContent);
+    return { success: true, messageId: 'sendgrid-api-' + Date.now() };
 
   } catch (error) {
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
-/**
- * Test email configuration with Ethereal
- * This is used to test email sending with real credentials
- * @returns {Object} - Test result with Ethereal credentials
- */
-const testEmailService = async () => {
-  try {
-    // Create test account with Ethereal
-    const testAccount = await nodemailer.createTestAccount();
-
-    return {
-      success: true,
-      message: 'Ethereal test account created',
-      credentials: testAccount
-    };
-  } catch (error) {
-    return { success: false, message: `Email service error: ${error.message}` };
-  }
-};
-
-/**
- * Create Ethereal transporter for testing
- * This is used when Gmail authentication fails
- * @returns {Object} - Ethereal transporter instance
- */
-const createEtherealTransporter = async () => {
-  const testAccount = await nodemailer.createTestAccount();
-
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
-};
-
 module.exports = {
   sendMagicLinkEmail,
-  testEmailService,
-  createTransporter,
 };

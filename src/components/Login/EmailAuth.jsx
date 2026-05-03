@@ -43,11 +43,8 @@ const EmailAuth = ({ onEmailAuthSuccess, onError }) => {
 
     try {
       // Call backend to send sign-in link
-      const response = await fetch('/api/auth/magic-link', {
+      const response = await apiRequest('/api/auth/magic-link', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email }),
       });
 

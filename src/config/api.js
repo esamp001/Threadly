@@ -1,5 +1,6 @@
 // src/config/api.js
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? 'https://threadly-xfzn.onrender.com' : 'http://localhost:3000');
 
 console.log(API_URL, "API_URL")
 

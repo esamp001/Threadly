@@ -53,6 +53,8 @@ const EmailAuth = ({ onEmailAuthSuccess, onError }) => {
 
       const data = await response.json();
 
+      console.log(data, "data")
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send sign-in link');
       }

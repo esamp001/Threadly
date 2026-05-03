@@ -301,7 +301,7 @@ const SpaceLogin = () => {
           </Box>
 
           {/* Social Login */}
-          <Box sx={{ mt: 4 }}>
+          <Box sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', py: 2 }}>
               <Box sx={{ flex: 1, borderTop: '1px solid rgba(255, 255, 255, 0.3)' }} />
               <Typography
@@ -320,7 +320,7 @@ const SpaceLogin = () => {
               <Box sx={{ flex: 1, borderTop: '1px solid rgba(255, 255, 255, 0.3)' }} />
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 2, sm: 2 }, mt: 2 }}>
               {/* Google */}
               <Button
                 onClick={handleGoogleLogin}
@@ -341,7 +341,7 @@ const SpaceLogin = () => {
               >
                 Google
               </Button>
-              {/* Email */}
+              {/* One Time Link */}
               <Button
                 onClick={() => setShowEmailAuth(true)}
                 variant="outlined"

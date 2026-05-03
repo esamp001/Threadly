@@ -13,6 +13,9 @@ const path = require('path');
  * - Development mode (console logging)
  */
 
+// Cache transporter to reuse connections
+let cachedTransporter = null;
+
 /**
  * Create email transporter based on environment configuration
  * This is used to establish connection with email service provider
@@ -31,8 +34,13 @@ const createTransporter = () => {
     };
   }
 
-  // Production mode - use real SMTP
-  return nodemailer.createTransport({
+  // Reuse cached transporter in production
+  if (cachedTransporter) {
+    return cachedTransporter;
+  }
+
+  // Production mode - use real SMTP with connection pooling
+  cachedTransporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT || 587,
     secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
@@ -40,7 +48,15 @@ const createTransporter = () => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    pool: true, // Use connection pooling
+    maxConnections: 5,
+    maxMessages: 100,
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 5000, // 5 seconds
+    socketTimeout: 10000, // 10 seconds
   });
+
+  return cachedTransporter;
 };
 
 /**
@@ -64,7 +80,7 @@ const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Space - Magic Link Sign In</title>
+        <title>Space - Sign In</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #ffffff; margin: 0; padding: 0; }
           .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; background: #ffffff; }
@@ -132,11 +148,17 @@ const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
     const mailOptions = {
       from: `"Space" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to: to,
-      subject: 'Sign In to Space - Magic Link',
+      subject: 'Sign In to Space - One-Time Link',
       html: htmlContent,
     };
 
-    const result = await transporter.sendMail(mailOptions);
+    // Add timeout to prevent hanging requests
+    const result = await Promise.race([
+      transporter.sendMail(mailOptions),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Email sending timeout')), 15000)
+      )
+    ]);
 
     return { success: true, messageId: result.messageId };
 

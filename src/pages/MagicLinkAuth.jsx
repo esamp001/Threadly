@@ -100,7 +100,7 @@ const MagicLinkAuth = () => {
       }}>
         <CircularProgress size={60} sx={{ mb: 3 }} />
         <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-          Verifying Magic Link...
+          Verifying...
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
           Please wait while we authenticate your account

@@ -1279,7 +1279,7 @@ const Space = () => {
       {/* Thread List and About Space Card */}
       <Grid sx={{ width: '100%', justifyContent: 'center' }} container spacing={2}>
         {/* Mobile: Swipeable View */}
-        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%' }}>
+        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%', pb: 8 }}>
           <MobileStepper
             steps={2}
             position="static"
@@ -1452,7 +1452,7 @@ const Space = () => {
         </Box>
 
         {/* Desktop: Regular Layout */}
-        <Box sx={{ display: { xs: 'none', md: 'block' }, width: '100%' }}>
+        <Box sx={{ display: { xs: 'none', md: 'block' }, width: '100%', pb: 8 }}>
           <Grid container spacing={2}>
             {/* Thread List */}
             <Grid size={9}>

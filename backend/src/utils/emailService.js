@@ -12,11 +12,6 @@ const sendViaSendGridAPI = async (to, subject, htmlContent) => {
 
   const fromEmail = process.env.EMAIL_FROM
 
-  console.log('📧 SendGrid API Details:');
-  console.log('  To:', to);
-  console.log('  From:', fromEmail);
-  console.log('  Subject:', subject);
-
   const msg = {
     to,
     from: `"Space" <${fromEmail}>`,
@@ -26,9 +21,9 @@ const sendViaSendGridAPI = async (to, subject, htmlContent) => {
 
   try {
     await sgMail.send(msg);
-    console.log('📧 SendGrid: Email sent successfully');
+    console.log('SendGrid: Email sent successfully');
   } catch (error) {
-    console.error('📧 SendGrid Error Details:', error.response?.body || error.message);
+    console.error('SendGrid Error Details:', error.response?.body || error.message);
     throw error;
   }
 };
@@ -117,7 +112,6 @@ const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
     `;
 
     // Use SendGrid API (works on Render free tier and production)
-    console.log('📧 Email service: Using SendGrid API');
     await sendViaSendGridAPI(to, 'Sign In to Space - One-Time Link', htmlContent);
     return { success: true, messageId: 'sendgrid-api-' + Date.now() };
 

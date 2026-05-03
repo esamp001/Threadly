@@ -1,6 +1,6 @@
 // import React from 'react'
-import EmailIcon from '@mui/icons-material/Email';
 import GoogleIcon from '@mui/icons-material/Google';
+import LinkIcon from '@mui/icons-material/Link';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Box, Button, Grid, Typography } from '@mui/material';
@@ -354,9 +354,9 @@ const SpaceLogin = () => {
                     bgcolor: 'background.paper'
                   }
                 }}
-                startIcon={<EmailIcon />}
+                startIcon={<LinkIcon />}
               >
-                Email
+                One-Time Link
               </Button>
             </Box>
           </Box>

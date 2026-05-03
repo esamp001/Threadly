@@ -35,12 +35,24 @@ const MagicLinkAuth = () => {
 
       try {
         // Call backend to verify the magic link
+        console.log('Sending magic link verification request...');
         const response = await apiRequest('/api/auth/magic-link/verify', {
           method: 'POST',
           body: JSON.stringify({ token })
         });
 
-        const responseData = await response.json();
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+
+        let responseData;
+        try {
+          responseData = await response.json();
+          console.log('Response data parsed successfully:', responseData);
+        } catch (parseError) {
+          console.error('JSON parsing failed:', parseError);
+          console.log('Response text:', await response.text());
+          throw new Error('Failed to parse server response');
+        }
 
         if (!response.ok) {
           throw new Error(responseData.error || 'An error occurred during verification');

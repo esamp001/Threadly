@@ -1,4 +1,5 @@
 // import React from 'react'
+import CloseIcon from '@mui/icons-material/Close';
 import GoogleIcon from '@mui/icons-material/Google';
 import LinkIcon from '@mui/icons-material/Link';
 import Visibility from '@mui/icons-material/Visibility';
@@ -7,6 +8,7 @@ import { Box, Button, Grid, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Modal from '@mui/material/Modal';
+import Paper from '@mui/material/Paper';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +29,7 @@ const SpaceLogin = () => {
   // States
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailAuth, setShowEmailAuth] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -399,6 +402,47 @@ const SpaceLogin = () => {
               </Button>
             </Box>
           </Modal>
+
+          {/* Security Modal */}
+          {showSecurityModal && (
+            <Paper
+              elevation={24}
+              sx={{
+                position: 'fixed',
+                bottom: 20,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'background.default',
+                width: '80%',
+                p: .8,
+                borderRadius: .5,
+                boxShadow: 24,
+                zIndex: 9999,
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography sx={{ color: 'text.primary', textAlign: 'center', fontSize: '0.8rem', flex: 1 }}>
+                  Your data is securely encrypted and is never shared with third parties. We prioritize your privacy and protection at all times.
+                </Typography>
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSecurityModal(false);
+                  }}
+                  sx={{
+                    color: 'error.main',
+                    '&:hover': { color: 'error.dark' },
+                    p: 0.5,
+                    cursor: 'pointer',
+                    zIndex: 10000
+                  }}
+                  size="small"
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Paper>
+          )}
         </Box>
       </Grid>
     </Grid >

@@ -12,8 +12,16 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
-  return response;
+  console.log('API Request:', `${API_URL}${endpoint}`, config);
+
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, config);
+    console.log('API Response:', response.status, response.statusText);
+    return response;
+  } catch (error) {
+    console.error('API Request failed:', error);
+    throw error;
+  }
 };
 
 export { API_URL };

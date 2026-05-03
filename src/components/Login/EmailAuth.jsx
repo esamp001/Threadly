@@ -1,6 +1,7 @@
 import EmailIcon from '@mui/icons-material/Email';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
+import apiRequest from '../../config/api';
 
 /**
  * Email Sign-In Link Authentication Component
@@ -49,8 +50,6 @@ const EmailAuth = ({ onEmailAuthSuccess, onError }) => {
       });
 
       const data = await response.json();
-
-      console.log(data, "data")
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send sign-in link');

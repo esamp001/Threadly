@@ -100,10 +100,7 @@ router.post('/google', async (req, res) => {
 });
 
 router.post('/magic-link', async (req, res) => {
-  console.log("HIT REQUEST")
   const { email } = req.body;
-
-  console.log(email, "email")
 
   try {
     // Validate email
@@ -111,16 +108,11 @@ router.post('/magic-link', async (req, res) => {
       return res.status(400).json({ error: 'Valid email is required' });
     }
 
-    console.log("PASSED VALIDATION REQUEST")
-
     // Check if user exists
     let user = await db('users').where({ email }).first();
     let isNewUser = false;
 
-    console.log(user, "user")
-
     if (!user) {
-      console.log("USER DOES NOT EXIST")
       // Create new user for magic link authentication
       isNewUser = true;
       [user] = await db('users').insert({
@@ -141,23 +133,15 @@ router.post('/magic-link', async (req, res) => {
       { expiresIn: '15m' } // Link expires in 15 minutes
     );
 
-    console.log(magicToken, "magicToken")
-
     // Create magic link URL
     const frontendUrl = process.env.NODE_ENV === 'production'
       ? 'https://threadly-xfzn.onrender.com'
       : 'http://localhost:5173';
 
-    console.log(frontendUrl, "frontendUrl")
-
     const magicLink = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
-
-    console.log(magicLink, "magicLink")
 
     // Send magic link email
     await sendMagicLinkEmail(email, magicLink, user.username);
-
-    console.log("EMAIL SENT")
 
     res.json({
       message: 'Email sent successfully',

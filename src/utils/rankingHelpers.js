@@ -1,3 +1,5 @@
+import apiRequest from '../config/api';
+
 /**
  * Frontend ranking system utility functions
  * This module handles ranking calculations and title determination for the frontend
@@ -95,7 +97,7 @@ import eventEmitter from './eventEmitter';
 const awardExp = async (actionType, referenceId = null) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('/api/exp/award', {
+    const response = await apiRequest('/api/exp/award', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

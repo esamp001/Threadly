@@ -40,12 +40,13 @@ const MagicLinkAuth = () => {
           body: JSON.stringify({ token })
         });
 
+        const responseData = await response.json();
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'An error occurred during verification');
+          throw new Error(responseData.error || 'An error occurred during verification');
         }
 
-        const { token: sessionToken, userData, isNewUser } = await response.json();
+        const { token: sessionToken, userData, isNewUser } = responseData;
 
         // Log the user in
         login(userData, sessionToken);

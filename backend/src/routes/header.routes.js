@@ -142,4 +142,36 @@ router.get('/popular-spaces', async (_, res) => {
   }
 });
 
+// GET user's joined spaces
+router.get('/joined-spaces', checkAuth, async (req, res) => {
+  let spaces = [];
+  let error_message = '';
+  let status = 200;
+  let success = true;
+
+  try {
+    spaces = await knex('space_members')
+      .join('spaces', 'space_members.space_id', 'spaces.id')
+      .select(
+        'spaces.id',
+        'spaces.space_name',
+        'spaces.space_slug',
+        'spaces.avatar_url',
+        'spaces.member_count',
+        'space_members.role',
+        'space_members.joined_at'
+      )
+      .where('space_members.user_id', req.user.userId)
+      .where('spaces.is_active', true)
+      .orderBy('space_members.joined_at', 'desc');
+
+  } catch (error) {
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({ success, status, error_message, spaces });
+  }
+});
+
 module.exports = router;

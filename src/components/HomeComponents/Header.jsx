@@ -1,3 +1,4 @@
+import DragHandleRoundedIcon from '@mui/icons-material/DragHandleRounded';
 import {
   Avatar,
   Box,
@@ -9,6 +10,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  List,
+  ListItem,
+  ListItemText,
   Menu,
   MenuItem,
   Radio,
@@ -18,12 +22,20 @@ import {
   Step,
   StepLabel,
   Stepper,
+  SwipeableDrawer,
   Switch,
   TextField,
   Tooltip,
   Typography
 } from '@mui/material';
-import { DiamondPlus, Home, LayoutTemplate, Search as SearchIcon, TrendingUp } from 'lucide-react';
+import {
+  DiamondPlus,
+  Home,
+  LayoutTemplate,
+  Search as SearchIcon,
+  TrendingUp
+} from 'lucide-react';
+import Rocket from 'lucide-react/dist/esm/icons/rocket';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
@@ -74,6 +86,14 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [searchAnchorEl, setSearchAnchorEl] = useState(null);
+  const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [joinedSpaces, setJoinedSpaces] = useState([]);
+  const [joinedSpacesLoading, setJoinedSpacesLoading] = useState(true);
+  const [hotSpaces, setHotSpaces] = useState([]);
+  const [hotSpacesLoading, setHotSpacesLoading] = useState(true);
+  const [trendingSpaces, setTrendingSpaces] = useState([]);
+  const [trendingSpacesLoading, setTrendingSpacesLoading] = useState(true);
 
   // Get API URL from environment variables
   const API_URL = import.meta.env.VITE_API_URL;
@@ -193,6 +213,80 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
     fetchTopics();
   }, []);
+
+  /**
+   * Fetches the user's joined spaces from the API
+   * This is used to populate the mobile menu drawer with spaces the user has joined
+   */
+  const fetchJoinedSpaces = useCallback(async () => {
+    try {
+      setJoinedSpacesLoading(true);
+      const response = await apiRequest('/api/header/joined-spaces');
+      const result = await response.json();
+      if (response.ok) {
+        setJoinedSpaces(result.spaces);
+      }
+    } catch (error) {
+      console.error('Failed to fetch joined spaces:', error);
+    } finally {
+      setJoinedSpacesLoading(false);
+    }
+  }, []);
+
+  // Fetch joined spaces when component mounts or when user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchJoinedSpaces();
+    }
+  }, [user, fetchJoinedSpaces]);
+
+  /**
+   * Fetches the hot spaces from the API
+   * This is used to populate the mobile menu drawer with most active spaces
+   */
+  const fetchHotSpaces = useCallback(async () => {
+    try {
+      setHotSpacesLoading(true);
+      const response = await apiRequest('/api/maincontent/hot_spaces');
+      const result = await response.json();
+      if (result.success) {
+        setHotSpaces(result.spaces);
+      }
+    } catch (error) {
+      console.error('Failed to fetch hot spaces:', error);
+    } finally {
+      setHotSpacesLoading(false);
+    }
+  }, []);
+
+  // Fetch hot spaces when component mounts
+  useEffect(() => {
+    fetchHotSpaces();
+  }, [fetchHotSpaces]);
+
+  /**
+   * Fetches the trending spaces from the API
+   * This is used to populate the mobile menu drawer with trending spaces
+   */
+  const fetchTrendingSpaces = useCallback(async () => {
+    try {
+      setTrendingSpacesLoading(true);
+      const response = await apiRequest('/api/spaces/trending');
+      const result = await response.json();
+      if (result.success) {
+        setTrendingSpaces(result.spaces);
+      }
+    } catch (error) {
+      console.error('Failed to fetch trending spaces:', error);
+    } finally {
+      setTrendingSpacesLoading(false);
+    }
+  }, []);
+
+  // Fetch trending spaces when component mounts
+  useEffect(() => {
+    fetchTrendingSpaces();
+  }, [fetchTrendingSpaces]);
 
   // A fetch that handles space creation
   const saveSpace = async () => {
@@ -404,7 +498,11 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
       }}
     >
       {/* Logo */}
-      <Grid item size={{ xs: 3, sm: 3, md: 3 }}>
+      <Grid
+        item
+        size={{ xs: 3, sm: 3, md: 3 }}
+        sx={{ display: { xs: 'none', sm: 'none', md: 'flex', lg: 'flex', xl: 'flex' } }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', width: 90, height: 90 }}>
           <Typography
             variant="h6"
@@ -935,6 +1033,338 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         />
       </Drawer>
 
+      {/* Menu */}
+      <Tooltip title="Menu" arrow>
+        <DragHandleRoundedIcon
+          onClick={() => setShowMobileMenu(true)}
+          sx={{
+            display: { xs: 'flex', sm: 'none' },
+            cursor: 'pointer'
+          }}
+        />
+      </Tooltip>
+
+      {/* Mobile Menu Drawer */}
+      <SwipeableDrawer
+        anchor="left"
+        open={showMobileMenu}
+        onClose={() => setShowMobileMenu(false)}
+        onOpen={() => setShowMobileMenu(true)}
+        PaperProps={{
+          sx: {
+            bgcolor: 'background.default',
+          }
+        }}
+      >
+        <Box sx={{ width: 250, p: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Menu</Typography>
+          <Typography
+            variant="overline"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'text.primary',
+            }}
+          >
+            JOINED SPACES
+          </Typography>
+          <List>
+            {joinedSpacesLoading ? (
+              // Show skeleton loaders while fetching
+              Array.from({ length: 4 }).map((_, index) => (
+                <ListItem key={index} sx={{ px: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Skeleton variant="circular" width={32} height={32} sx={{ mr: 2 }} />
+                    <Skeleton variant="text" width="60%" height={24} />
+                  </Box>
+                </ListItem>
+              ))
+            ) : joinedSpaces.length === 0 ? (
+              // Fallback message when no spaces joined
+              <ListItem sx={{ px: 0 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No spaces joined yet
+                </Typography>
+              </ListItem>
+            ) : (
+              // Display joined spaces with round avatars
+              joinedSpaces.map((space) => (
+                <ListItem
+                  key={space.id}
+                  button
+                  onClick={() => {
+                    navigate(`/${space.space_slug}`);
+                    setShowMobileMenu(false);
+                  }}
+                  sx={{
+                    px: 0,
+                    py: 1,
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Avatar
+                      src={space.avatar_url}
+                      alt={space.space_name}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        mr: 2,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {space.space_name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <ListItemText
+                      primary={
+                        <>
+                          <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                          <Box component="span" sx={{ color: 'text.primary' }}>{space.space_slug?.replace('spaces/', '') || space.space_slug}</Box>
+                        </>
+                      }
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        noWrap: true,
+                        sx: {
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '150px',
+                        }
+                      }}
+                    />
+                  </Box>
+                </ListItem>
+              ))
+            )}
+          </List>
+          {/* Trending Spaces */}
+          <Typography
+            variant="overline"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'text.primary',
+            }}
+          >
+            TRENDING SPACES
+          </Typography>
+          <List>
+            {trendingSpacesLoading ? (
+              // Show skeleton loaders while fetching
+              Array.from({ length: 3 }).map((_, index) => (
+                <ListItem key={index} sx={{ px: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Skeleton variant="circular" width={32} height={32} sx={{ mr: 2 }} />
+                    <Skeleton variant="text" width="60%" height={24} />
+                  </Box>
+                </ListItem>
+              ))
+            ) : trendingSpaces.length === 0 ? (
+              // Fallback message when no trending spaces
+              <ListItem sx={{ px: 0 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No trending spaces right now
+                </Typography>
+              </ListItem>
+            ) : (
+              // Display trending spaces with round avatars
+              trendingSpaces.map((space) => (
+                <ListItem
+                  key={space.id}
+                  button
+                  onClick={() => {
+                    navigate(`/spaces/${space.id}`);
+                    setShowMobileMenu(false);
+                  }}
+                  sx={{
+                    px: 0,
+                    py: 1,
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Avatar
+                      src={space.avatar_url}
+                      alt={space.space_name}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        mr: 2,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {space.space_name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <ListItemText
+                      primary={
+                        <>
+                          <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                          <Box component="span" sx={{ color: 'text.primary' }}>{space.space_slug?.replace('spaces/', '') || space.space_slug}</Box>
+                        </>
+                      }
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        noWrap: true,
+                        sx: {
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '150px',
+                        }
+                      }}
+                    />
+                  </Box>
+                </ListItem>
+              ))
+            )}
+          </List>
+
+          {/* Hot Right Now */}
+          <Typography
+            variant="overline"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'text.primary',
+            }}
+          >
+            HOT RIGHT NOW
+          </Typography>
+          <List>
+            {hotSpacesLoading ? (
+              // Show skeleton loaders while fetching
+              Array.from({ length: 3 }).map((_, index) => (
+                <ListItem key={index} sx={{ px: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Skeleton variant="circular" width={32} height={32} sx={{ mr: 2 }} />
+                    <Skeleton variant="text" width="60%" height={24} />
+                  </Box>
+                </ListItem>
+              ))
+            ) : hotSpaces.length === 0 ? (
+              // Fallback message when no hot spaces
+              <ListItem sx={{ px: 0 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No hot spaces right now
+                </Typography>
+              </ListItem>
+            ) : (
+              // Display hot spaces with round avatars
+              hotSpaces.map((space) => (
+                <ListItem
+                  key={space.id}
+                  button
+                  onClick={() => {
+                    navigate(`/spaces/${space.id}`);
+                    setShowMobileMenu(false);
+                  }}
+                  sx={{
+                    px: 0,
+                    py: 1,
+                    borderRadius: 1,
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Avatar
+                      src={space.avatar_url}
+                      alt={space.space_name}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        mr: 2,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {space.space_name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <ListItemText
+                      primary={
+                        <>
+                          <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                          <Box component="span" sx={{ color: 'text.primary' }}>{space.space_slug?.replace('spaces/', '') || space.space_slug}</Box>
+                        </>
+                      }
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        noWrap: true,
+                        sx: {
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '150px',
+                        }
+                      }}
+                    />
+                  </Box>
+                </ListItem>
+              ))
+            )}
+          </List>
+          {/* Spaces Settings */}
+          <Typography
+            variant="overline"
+            sx={{
+              mb: 2,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              color: 'text.primary',
+            }}
+          >
+            SPACES SETTINGS
+          </Typography>
+          <List sx={{ gap: 1 }}>
+            <ListItem
+              button
+              onClick={() => {
+                setOpenDrawer(true);
+                setShowMobileMenu(false);
+              }}
+              sx={{
+                px: 0,
+                py: 1,
+                borderRadius: 1,
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                <Rocket
+                  size={20}
+                  sx={{
+                    color: 'text.secondary',
+                  }}
+                />
+                <ListItemText
+                  primary="Create Space"
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: 500,
+                  }}
+                />
+              </Box>
+            </ListItem>
+          </List>
+        </Box>
+      </SwipeableDrawer>
+
       {/* Search Bar */}
       <Grid item size="grow">
         <TextField
@@ -986,6 +1416,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           searchQuery={searchQuery}
         />
       </Grid>
+
+
 
       {/* User Avatar */}
       <Grid item size="auto">
@@ -1108,7 +1540,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
             </Box>
           </Box>
 
-          <Box>
+          <Box sx={{ display: { xs: 'none', sm: 'none', md: 'flex' }, flexDirection: 'column' }}>
             <ExpBar />
 
             <Box sx={{

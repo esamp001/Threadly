@@ -1,5 +1,5 @@
 import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material'
-import { DiamondPlus, Home, LayoutTemplate, TrendingUp } from 'lucide-react'
+import { Bell, Home, MessageCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -59,12 +59,37 @@ const BottomNav = ({ openDrawer, setOpenDrawer }) => {
             }
           }}
         />
-        <BottomNavigationAction icon={<TrendingUp size={24} />} sx={{ minWidth: 'auto' }} />
-        <BottomNavigationAction icon={<LayoutTemplate size={24} />} sx={{ minWidth: 'auto' }} />
         <BottomNavigationAction
-          icon={<DiamondPlus size={24} />}
+          icon={
+            <Box
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'white',
+                borderRadius: '50%',
+                width: 56,
+                height: 56,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                transform: 'translateY(-8px)',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-12px)',
+                  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
+                },
+              }}
+            >
+              <MessageCircle size={28} />
+            </Box>
+          }
           sx={{ minWidth: 'auto' }}
-          onClick={() => setOpenDrawer(true)} // Make it clickable!
+          onClick={() => navigate('/messages')}
+        />
+        <BottomNavigationAction
+          icon={<Bell size={24} />}
+          sx={{ minWidth: 'auto' }}
+          onClick={() => navigate('/notifications')}
         />
       </BottomNavigation>
     </Box>

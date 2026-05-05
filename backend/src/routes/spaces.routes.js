@@ -21,7 +21,7 @@ router.get('/trending', async (req, res) => {
   try {
     const { timePeriod } = req.query;
     let query = knex('spaces')
-      .select('id', 'space_name', 'avatar_url', 'member_count', 'trending_score')
+      .select('id', 'space_name', 'space_slug', 'avatar_url', 'member_count', 'trending_score')
       .where('is_active', true);
 
     // Apply time-based filtering based on space creation date

@@ -140,7 +140,7 @@ router.get('/all_threads', checkAuth, async (req, res) => {
     let orderByClause = 'threads.created_at DESC'; // default to latest
 
     if (filter === 'hot') {
-      orderByClause = '(comment_count * 2) + threads.net_score DESC';
+      orderByClause = '(SELECT COUNT(*) FROM comments WHERE comments.thread_id = threads.id AND comments.is_active = true) * 2 + threads.net_score DESC';
     } else if (filter === 'top') {
       orderByClause = 'threads.net_score DESC';
     } else if (filter === 'latest') {
@@ -456,6 +456,52 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/maincontent/joined_spaces - Get joined spaces
+router.get('/joined_spaces', checkAuth, async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const joinedSpaces = await knex('spaces')
+      .select(
+        'spaces.id',
+        'spaces.space_name',
+        'spaces.avatar_url as space_avatar_url',
+        'spaces.space_slug',
+        'spaces.member_count',
+        knex.raw('COALESCE(scp.points, 0) as user_contribution_points')
+      )
+      .join('space_members', 'space_members.space_id', 'spaces.id')
+      .leftJoin('space_contributor_points as scp', function() {
+        this.on('scp.space_id', '=', 'spaces.id')
+            .andOn('scp.user_id', '=', knex.raw('?', [userId]));
+      })
+      .where('space_members.user_id', userId)
+      .where('spaces.is_active', true)
+      .orderBy('spaces.created_at', 'desc')
+      .limit(6);
+
+    console.log(joinedSpaces);
+    
+
+    const spacesWithTimeAgo = joinedSpaces.map(space => ({
+      ...space,
+      timeAgo: formatRelativeTime(space.created_at),
+      userContributionPoints: space.user_contribution_points || 0
+    }));
+
+    res.json({
+      success: true,
+      spaces: spacesWithTimeAgo
+    });
+  } catch (error) {
+    console.error('Failed to fetch joined spaces:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 

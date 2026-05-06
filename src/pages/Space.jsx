@@ -826,7 +826,17 @@ const Space = () => {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setThreads(result.threads || []);
+        const threads = result.threads || [];
+        setThreads(threads);
+
+        // Set all threads as expanded by default
+        const expandedState = {};
+        threads.forEach(thread => {
+          expandedState[thread.id] = true;
+        });
+
+        console.log(expandedState, "expandedState");
+        setExpandedThreads(expandedState);
       }
     } catch (error) {
       console.error('Failed to fetch threads:', error);
@@ -1394,7 +1404,7 @@ const Space = () => {
                 ) : (
                   <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                     {threads.map((thread) => (
-                      <ThreadContent
+                      < ThreadContent
                         componentRendered={componentName}
                         key={thread.id}
                         net_score={thread.net_score}
@@ -1571,6 +1581,8 @@ const Space = () => {
                         threadId={thread.id}
                         userVote={thread.userVote}
                         userAvatar={thread.user_avatar_url}
+                        expanded={expandedThreads[thread.id] !== false}
+                        onExpandedChange={(isExpanded) => handleExpandedChange(thread.id, isExpanded)}
                         onCommentOpen={() => handleCommentOpen(thread)}
                         onVoteUpdate={(updatedThread) => {
                           setThreads(prev =>

@@ -474,17 +474,15 @@ router.get('/joined_spaces', checkAuth, async (req, res) => {
         knex.raw('COALESCE(scp.points, 0) as user_contribution_points')
       )
       .join('space_members', 'space_members.space_id', 'spaces.id')
-      .leftJoin('space_contributor_points as scp', function() {
+      .leftJoin('space_contributor_points as scp', function () {
         this.on('scp.space_id', '=', 'spaces.id')
-            .andOn('scp.user_id', '=', knex.raw('?', [userId]));
+          .andOn('scp.user_id', '=', knex.raw('?', [userId]));
       })
       .where('space_members.user_id', userId)
       .where('spaces.is_active', true)
       .orderBy('spaces.created_at', 'desc')
       .limit(6);
 
-    console.log(joinedSpaces);
-    
 
     const spacesWithTimeAgo = joinedSpaces.map(space => ({
       ...space,

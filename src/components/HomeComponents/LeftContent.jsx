@@ -9,7 +9,6 @@ const LeftContent = () => {
   const [trendingSpaces, setTrendingSpaces] = useState([])
   const [hotSpaces, setHotSpaces] = useState([])
   const [joinedSpaces, setJoinedSpaces] = useState([])
-  console.log(joinedSpaces, "joinedSpaces")
   const [loading, setLoading] = useState(true)
   const [hotThreadsLoading, setHotThreadsLoading] = useState(true)
   const [joinedSpacesLoading, setJoinedSpacesLoading] = useState(true)
@@ -124,7 +123,6 @@ const LeftContent = () => {
       const response = await apiRequest('/api/maincontent/joined_spaces')
       const result = await response.json()
       if (result.success) {
-        console.log(result.spaces, 'joined spaces result')
         setJoinedSpaces(result.spaces)
       }
     } catch (error) {
@@ -346,14 +344,14 @@ const LeftContent = () => {
             Refresh
           </MenuItem>
           <Divider />
-          <MenuItem 
+          <MenuItem
             onClick={() => { handleJoinedViewModeChange('grid'); handleJoinedSpacesMenuClose(); }}
             disabled={joinedSpacesViewMode === 'grid'}
           >
             <Grid size={16} style={{ marginRight: 8 }} />
             Grid View
           </MenuItem>
-          <MenuItem 
+          <MenuItem
             onClick={() => { handleJoinedViewModeChange('list'); handleJoinedSpacesMenuClose(); }}
             disabled={joinedSpacesViewMode === 'list'}
           >
@@ -603,14 +601,14 @@ const LeftContent = () => {
             This Month
           </MenuItem>
           <Divider />
-          <MenuItem 
+          <MenuItem
             onClick={() => { handleTrendingViewModeChange('grid'); handleMenuClose(); }}
             disabled={trendingSpacesViewMode === 'grid'}
           >
             <Grid size={16} style={{ marginRight: 8 }} />
             Grid View
           </MenuItem>
-          <MenuItem 
+          <MenuItem
             onClick={() => { handleTrendingViewModeChange('list'); handleMenuClose(); }}
             disabled={trendingSpacesViewMode === 'list'}
           >

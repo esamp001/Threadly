@@ -133,23 +133,15 @@ router.post('/magic-link', async (req, res) => {
       { expiresIn: '15m' } // Link expires in 15 minutes
     );
 
-    console.log('Magic Token:', magicToken);
-
     // Create magic link URL
     const frontendUrl = process.env.NODE_ENV === 'production'
       ? 'https://threadly-xfzn.onrender.com'
       : 'http://localhost:5173';
 
-    console.log('Frontend URL:', frontendUrl);
-
     const magicLink = `${frontendUrl}/auth/magic-link?token=${magicToken}`;
-
-    console.log('Magic Link:', magicLink);
 
     // Send magic link email with timeout handling
     await sendMagicLinkEmail(email, magicLink, user.username);
-
-    console.log('Email sent successfully');
 
     res.json({
       message: 'Email sent successfully',

@@ -25,6 +25,4 @@ exports.seed = async function (knex) {
       .where('id', space.id)
       .update({ trending_score: trendingScore });
   }
-
-  console.log('Trending scores updated for all spaces');
 };

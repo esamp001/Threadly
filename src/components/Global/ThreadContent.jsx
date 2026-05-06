@@ -1,12 +1,12 @@
 // ThreadCard.jsx
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
-import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, Paper, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiRequest from '../../config/api';
-import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import VotingComponent from './VotingComponent';
 
@@ -27,16 +27,18 @@ const ThreadContent = ({
   onVoteUpdate,
   componentRendered,
   userAvatar,
+  expanded,
+  onExpandedChange
 }) => {
   const { showSnackbar } = useSnackbar();
-  const { user } = useAuth();
 
   // Local state for optimistic updates
   const [localNetScore, setLocalNetScore] = useState(net_score);
   const [localUserVote, setLocalUserVote] = useState(userVote);
   const [isVoting, setIsVoting] = useState(false);
+  // const [expanded, setExpanded] = useState(true);
 
-  // Debounce refs
+  // Debounce refs 
   let voteTimeout = null;
   let abortController = null;
 
@@ -105,146 +107,174 @@ const ThreadContent = ({
   };
 
   return (
-    <Paper sx={{ p: 2.5, backgroundColor: 'paper.backgroundColor', mb: 2 }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-        <Avatar
-          sx={{ height: 40, width: 40, mr: 1, flexShrink: 0 }}
-          src={componentRendered?.current === 'Space' ? userAvatar : spaceAvatar}
-          alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
-        >
-          {componentRendered?.current === 'Space'
-            ? (postedBy ? postedBy.charAt(0).toUpperCase() : 'U')
-            : (spaceName ? spaceName.charAt(0).toUpperCase() : 'S')
+    <Accordion 
+      expanded={expanded}
+      onChange={() => onExpandedChange && onExpandedChange(!expanded)}
+      sx={{ 
+        backgroundColor: 'paper.backgroundColor', 
+        mb: 2,
+        '&:before': {
+          display: 'none', // Remove default MUI divider
+        },
+        boxShadow: 'none' // Remove default shadow
+      }}
+    >
+      <AccordionSummary
+        sx={{ 
+          backgroundColor: 'paper.backgroundColor',
+          '&:hover': {
+            backgroundColor: 'action.hover',
           }
-        </Avatar>
-        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: 1 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden', maxWidth: '70%' }}>
-            {/* Primary: Space Name (The Subject) */}
-            {componentRendered?.current === 'Space' ? (
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {postedBy}
-              </Typography>
-            ) : (
-              <Link
-                to={`/spaces/${spaceId}`}
-                style={{
-                  textDecoration: 'none',
-                  color: 'inherit'
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: 'primary.main',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    }
-                  }}
-                >
-                  {spaceName}
-                </Typography>
-              </Link>
-            )}
+        }}
+      >
+        {/* Header and Title - Clickable Area */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          {/* Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Avatar
+              sx={{ height: 40, width: 40, mr: 1, flexShrink: 0, cursor: componentRendered?.current !== 'Space' ? 'pointer' : 'default' }}
+              src={componentRendered?.current === 'Space' ? userAvatar : spaceAvatar}
+              alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
+              onClick={componentRendered?.current !== 'Space' ? (e) => {
+                e.stopPropagation();
+                window.location.href = `/spaces/${spaceId}`;
+              } : undefined}
+            >
+              {componentRendered?.current === 'Space'
+                ? (postedBy ? postedBy.charAt(0).toUpperCase() : 'U')
+                : (spaceName ? spaceName.charAt(0).toUpperCase() : 'S')
+              }
+            </Avatar>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column'}}>
+                {/* Primary: Space Name */}
+                {componentRendered?.current === 'Space' ? (
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {postedBy}
+                  </Typography>
+                ) : (
+                  
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        display: 'inline'
+                      }}
+                    >
+                      {spaceName}
+                    </Typography>
 
-            {/* Secondary: Posted By (The Metadata) */}
-            {componentRendered?.current !== 'Space' && (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                  display: 'flex',
-                  gap: 0.5,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Posted by {postedBy}
-              </Typography>
-            )}
+                )}
+
+                {/* Secondary: Posted By */}
+                {componentRendered?.current !== 'Space' && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      display: 'flex',
+                      gap: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Posted by {postedBy}
+                  </Typography>
+                )}
+              </Box>
+           
+            </Box>
           </Box>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}>
-            {timeAgo}
+
+          <Box>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', flexShrink: 0, whiteSpace: 'nowrap', ml: 'auto' }}>
+              {timeAgo}
+            </Typography>
+          </Box>
+
+        </Box>
+      </AccordionSummary>
+
+      <AccordionDetails sx={{ p: 0, backgroundColor: 'paper.backgroundColor' }}>
+        <Box sx={{ p: 2.5, pt: 0 }}>
+          {/* Title */}
+          <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, overflow: 'hidden', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+            {title}
           </Typography>
-        </Box>
-      </Box>
+          {/* Content */}
+          {content && (
+            <Box
+              sx={{
+                mt: 1,
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                overflow: 'hidden',
+                maxWidth: '100%',
+                '& img': {
+                  maxWidth: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  margin: '1rem auto',
+                  borderRadius: '8px'
+                }
+              }}
+            >
+              <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
+            </Box>
+          )}
 
-      {/* Title */}
-      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mt: 1, overflow: 'hidden' }}>
-        {title}
-      </Typography>
+          {/* Actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {/* Voting */}
+              <VotingComponent
+                net_score={localNetScore}
+                userVote={localUserVote}
+                onVote={handleVote}
+                size="large"
+                loading={isVoting}
+              />
+            </Box>
 
-      {/* Content */}
-      {content && (
-        <Box
-          sx={{
-            mt: 2,
-            '& img': {
-              maxWidth: '100%',
-              height: 'auto',
-              display: 'block',
-              margin: '1rem auto',
-              borderRadius: '8px'
-            }
-          }}
-        >
-          <Box dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
+            <Box sx={{ gap: 1, display: 'flex' }}>
+              <Button
+                sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
+                variant='contained'
+                startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}
+                onClick={() => onCommentOpen(threadId)}
+              >
+                <Typography sx={{ color: 'text.secondary' }}>
+                  {comments}
+                </Typography>
+              </Button>
+              <Button
+                sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
+                variant='contained'
+                startIcon={<ReplyRoundedIcon sx={{ color: 'text.secondary' }} />}
+              // onClick={onShare}
+              >
+                <Typography sx={{ color: 'text.secondary' }}>
+                  {shares}
+                </Typography>
+              </Button>
+            </Box>
+          </Box>
         </Box>
-      )}
-
-      {/* Actions */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {/* Voting */}
-          <VotingComponent
-            net_score={localNetScore}
-            userVote={localUserVote}
-            onVote={handleVote}
-            size="large"
-            loading={isVoting}
-          />
-        </Box>
-
-        <Box sx={{ gap: 1, display: 'flex' }}>
-          <Button
-            sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
-            variant='contained'
-            startIcon={<MessageRoundedIcon sx={{ color: 'text.secondary' }} />}
-            onClick={() => onCommentOpen(threadId)}
-          >
-            <Typography sx={{ color: 'text.secondary' }}>
-              {comments}
-            </Typography>
-          </Button>
-          <Button
-            sx={{ borderRadius: 7, backgroundColor: 'button.backgroundColor' }}
-            variant='contained'
-            startIcon={<ReplyRoundedIcon sx={{ color: 'text.secondary' }} />}
-          // onClick={onShare}
-          >
-            <Typography sx={{ color: 'text.secondary' }}>
-              {shares}
-            </Typography>
-          </Button>
-        </Box>
-      </Box>
-    </Paper>
+      </AccordionDetails>
+    </Accordion>
   );
 };
 

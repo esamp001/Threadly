@@ -17,6 +17,7 @@ router.get('/hot_spaces', async (req, res) => {
       .select(
         'spaces.id',
         'spaces.space_name',
+        'spaces.space_slug',
         'spaces.avatar_url',
         knex.raw('COUNT(threads.id) as thread_count'),
         knex.raw('COALESCE(SUM((SELECT COUNT(*) FROM comments WHERE comments.thread_id = threads.id AND comments.is_active = true) * 2 + threads.net_score), 0) as activity_score')
@@ -24,7 +25,7 @@ router.get('/hot_spaces', async (req, res) => {
       .innerJoin('spaces', 'threads.space_id', 'spaces.id')
       .where('threads.is_active', true)
       .where('threads.created_at', '>=', twentyFourHoursAgo)
-      .groupBy('spaces.id', 'spaces.space_name', 'spaces.avatar_url')
+      .groupBy('spaces.id', 'spaces.space_name', 'spaces.space_slug', 'spaces.avatar_url')
       .orderByRaw('activity_score DESC')
       .limit(5);
 

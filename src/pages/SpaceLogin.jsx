@@ -20,6 +20,7 @@ import apiRequest from '../config/api';
 import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { auth, googleProvider } from '../firebase';
+import LeftSide from '../assets/LOGIN-SPACE.png';
 
 const SpaceLogin = () => {
   const { login } = useAuth();
@@ -146,7 +147,7 @@ const SpaceLogin = () => {
           }}
         >
           <img
-            src={Space}
+            src={LeftSide}
             alt="Space Illustration"
             style={{
               width: '100%',
@@ -207,7 +208,8 @@ const SpaceLogin = () => {
             sx={{
               fontWeight: 300,
               lineHeight: 1.6,
-              color: 'text.secondary'
+              color: 'text.secondary',
+              opacity: 0.8
             }}
           >
             Join the most adventurous community in the cosmos.{' '}

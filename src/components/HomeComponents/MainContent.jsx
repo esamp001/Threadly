@@ -91,10 +91,16 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     }
   }, [loading, threadsHasMore, threadsPage, threadFilter]);
 
+  // Single useEffect for all initial data fetching
+  useEffect(() => {
+    listSpaces();
+    fetchThreads();
+  }, [listSpaces, fetchThreads]);
+
   // Refetch threads when filter changes
   useEffect(() => {
     fetchThreads(false);
-  }, [threadFilter]);
+  }, [threadFilter, fetchThreads]);
 
   const handleCreateThread = async () => {
     // Validate required fields
@@ -178,7 +184,6 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     }));
   }, []);
 
-
   // Intersection Observer for infinite scroll on threads
   const lastElementRef = useCallback((node) => {
     if (loading) return;
@@ -197,12 +202,6 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
       observerRef.current.observe(node);
     }
   }, [loading, threadsHasMore, fetchThreads]);
-
-  // UseEffect
-  useEffect(() => {
-    listSpaces();
-    fetchThreads();
-  }, []);
 
 
   return (

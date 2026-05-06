@@ -7,61 +7,143 @@ import apiRequest from "../../config/api"
 const LeftContent = () => {
   const navigate = useNavigate()
   const [trendingSpaces, setTrendingSpaces] = useState([])
-  const [hotThreads, setHotThreads] = useState([])
   const [hotSpaces, setHotSpaces] = useState([])
+  const [joinedSpaces, setJoinedSpaces] = useState([])
+  console.log(joinedSpaces, "joinedSpaces")
   const [loading, setLoading] = useState(true)
   const [hotThreadsLoading, setHotThreadsLoading] = useState(true)
-  const [viewMode, setViewMode] = useState('grid')
+  const [joinedSpacesLoading, setJoinedSpacesLoading] = useState(true)
+  const [trendingSpacesViewMode, setTrendingSpacesViewMode] = useState('grid')
+  const [joinedSpacesViewMode, setJoinedSpacesViewMode] = useState('grid')
   const [menuAnchor, setMenuAnchor] = useState(null)
+  const [joinedSpacesMenuAnchor, setJoinedSpacesMenuAnchor] = useState(null)
 
-  // Fetch trending spaces on component mount
-  useEffect(() => {
-    const fetchTrendingSpaces = async () => {
-      try {
-        setLoading(true)
-        const response = await apiRequest('/api/spaces/trending')
-        const result = await response.json()
-        if (result.success) {
-          setTrendingSpaces(result.spaces)
-        }
-      } catch (error) {
-        console.error('Failed to fetch trending spaces:', error)
-      } finally {
-        setLoading(false)
+  // Memoized fetch functions
+  /**
+   * Fetches trending spaces from the API
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Initial component mount data loading
+   * - Refreshing trending spaces data
+   * - Time filter changes for trending spaces
+   *
+   * Behavior:
+   * - Sets loading state to true during fetch
+   * - Makes API request to /api/spaces/trending
+   * - Updates trendingSpaces state with successful response
+   * - Sets loading state to false after completion
+   *
+   * Dependencies:
+   * - None (empty dependency array)
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const fetchTrendingSpaces = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await apiRequest('/api/spaces/trending')
+      const result = await response.json()
+      if (result.success) {
+        setTrendingSpaces(result.spaces)
       }
+    } catch (error) {
+      console.error('Failed to fetch trending spaces:', error)
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
+  /**
+   * Fetches hot spaces from the API
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Initial component mount data loading
+   * - Refreshing hot spaces data
+   *
+   * Behavior:
+   * - Sets hotThreadsLoading state to true during fetch
+   * - Makes API request to /api/maincontent/hot_spaces
+   * - Updates hotSpaces state with successful response
+   * - Sets hotThreadsLoading state to false after completion
+   *
+   * Dependencies:
+   * - None (empty dependency array)
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const fetchHotSpaces = useCallback(async () => {
+    try {
+      setHotThreadsLoading(true)
+      const response = await apiRequest('/api/maincontent/hot_spaces')
+      const result = await response.json()
+      if (result.success) {
+        setHotSpaces(result.spaces)
+      }
+    } catch (error) {
+      console.error('Failed to fetch hot spaces:', error)
+    } finally {
+      setHotThreadsLoading(false)
+    }
+  }, [])
+
+  /**
+   * Fetches joined spaces from the API
+   *
+   * Wrapped in useCallback to memoize the function,
+   * preventing unnecessary re-creation on every render.
+   *
+   * Useful when:
+   * - Initial component mount data loading
+   * - Refreshing joined spaces data
+   * - After user joins/leaves spaces
+   *
+   * Behavior:
+   * - Sets joinedSpacesLoading state to true during fetch
+   * - Makes API request to /api/maincontent/joined_spaces
+   * - Updates joinedSpaces state with successful response
+   * - Logs joined spaces result for debugging
+   * - Sets joinedSpacesLoading state to false after completion
+   *
+   * Dependencies:
+   * - None (empty dependency array)
+   *
+   * Hooks used:
+   * - useCallback
+   */
+  const fetchJoinedSpaces = useCallback(async () => {
+    try {
+      setJoinedSpacesLoading(true)
+      const response = await apiRequest('/api/maincontent/joined_spaces')
+      const result = await response.json()
+      if (result.success) {
+        console.log(result.spaces, 'joined spaces result')
+        setJoinedSpaces(result.spaces)
+      }
+    } catch (error) {
+      console.error('Failed to fetch joined spaces:', error)
+    } finally {
+      setJoinedSpacesLoading(false)
+    }
+  }, [])
+
+  // Single useEffect for all initial data fetching
+  useEffect(() => {
     fetchTrendingSpaces()
-  }, [])
-
-  // Fetch hot spaces on component mount
-  useEffect(() => {
-    const fetchHotSpaces = async () => {
-      try {
-        setHotThreadsLoading(true)
-        const response = await apiRequest('/api/maincontent/hot_spaces')
-        const result = await response.json()
-        if (result.success) {
-          setHotSpaces(result.spaces)
-        }
-      } catch (error) {
-        console.error('Failed to fetch hot spaces:', error)
-      } finally {
-        setHotThreadsLoading(false)
-      }
-    }
-
     fetchHotSpaces()
-  }, [])
+    fetchJoinedSpaces()
+  }, [fetchTrendingSpaces, fetchHotSpaces, fetchJoinedSpaces])
 
   // Handle space card click
   const handleSpaceClick = (spaceId) => {
     navigate(`/spaces/${spaceId}`)
-  }
-
-  // Handle thread click
-  const handleThreadClick = (threadId, spaceId) => {
-    navigate(`/spaces/${spaceId}#thread-${threadId}`)
   }
 
   /**
@@ -97,12 +179,19 @@ const LeftContent = () => {
   }, [handleRefresh])
 
   /**
-   * Changes the view mode for trending spaces display
-   * This is used to switch between grid and list layouts
+   * Changes the view mode for trending spaces
    * @param {string} newViewMode - The view mode to apply ('grid' or 'list')
    */
-  const handleViewModeChange = useCallback((newViewMode) => {
-    setViewMode(newViewMode)
+  const handleTrendingViewModeChange = useCallback((newViewMode) => {
+    setTrendingSpacesViewMode(newViewMode)
+  }, [])
+
+  /**
+   * Changes the view mode for joined spaces
+   * @param {string} newViewMode - The view mode to apply ('grid' or 'list')
+   */
+  const handleJoinedViewModeChange = useCallback((newViewMode) => {
+    setJoinedSpacesViewMode(newViewMode)
   }, [])
 
   /**
@@ -120,6 +209,42 @@ const LeftContent = () => {
    */
   const handleMenuClose = useCallback(() => {
     setMenuAnchor(null)
+  }, [])
+
+  /**
+   * Opens the joined spaces dropdown menu
+   * This is used to display the menu with refresh and view options
+   * @param {Event} event - The click event that triggered the menu
+   */
+  const handleJoinedSpacesMenuOpen = useCallback((event) => {
+    setJoinedSpacesMenuAnchor(event.currentTarget)
+  }, [])
+
+  /**
+   * Closes the joined spaces dropdown menu
+   * This is used to hide the menu after an option is selected
+   */
+  const handleJoinedSpacesMenuClose = useCallback(() => {
+    setJoinedSpacesMenuAnchor(null)
+  }, [])
+
+  /**
+   * Refreshes the joined spaces list by re-fetching from the API
+   * This is used to get the latest joined spaces data
+   */
+  const handleJoinedSpacesRefresh = useCallback(async () => {
+    try {
+      setJoinedSpacesLoading(true)
+      const response = await apiRequest('/api/maincontent/joined_spaces')
+      const result = await response.json()
+      if (result.success) {
+        setJoinedSpaces(result.spaces)
+      }
+    } catch (error) {
+      console.error('Failed to refresh joined spaces:', error)
+    } finally {
+      setJoinedSpacesLoading(false)
+    }
   }, [])
 
   return (
@@ -193,6 +318,251 @@ const LeftContent = () => {
         </Box>
       </Paper>
 
+      {/* Content of left side - Joined Threads */}
+      <Paper sx={{ p: 2, backgroundColor: 'paper.backgroundColor', borderTopLeftRadius: 0, borderBottomLeftRadius: 0, mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography sx={{ fontWeight: 700 }}>
+            Your joined Spaces
+          </Typography>
+
+          <Box
+            onClick={handleJoinedSpacesMenuOpen}
+            sx={{ cursor: 'pointer', p: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+          >
+            <Ellipsis color="gray" size={20} />
+          </Box>
+        </Box>
+
+        <Menu
+          anchorEl={joinedSpacesMenuAnchor}
+          open={Boolean(joinedSpacesMenuAnchor)}
+          onClose={handleJoinedSpacesMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          PaperProps={{ sx: { bgcolor: 'background.default' } }}
+        >
+          <MenuItem onClick={() => { handleJoinedSpacesRefresh(); handleJoinedSpacesMenuClose(); }}>
+            <RefreshCw size={16} style={{ marginRight: 8 }} />
+            Refresh
+          </MenuItem>
+          <Divider />
+          <MenuItem 
+            onClick={() => { handleJoinedViewModeChange('grid'); handleJoinedSpacesMenuClose(); }}
+            disabled={joinedSpacesViewMode === 'grid'}
+          >
+            <Grid size={16} style={{ marginRight: 8 }} />
+            Grid View
+          </MenuItem>
+          <MenuItem 
+            onClick={() => { handleJoinedViewModeChange('list'); handleJoinedSpacesMenuClose(); }}
+            disabled={joinedSpacesViewMode === 'list'}
+          >
+            <List size={16} style={{ marginRight: 8 }} />
+            List View
+          </MenuItem>
+        </Menu>
+
+        {/* Joined Spaces Grid */}
+        {joinedSpacesViewMode === 'grid' ? (
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1.3, justifyContent: 'center', alignItems: 'center' }}>
+            {joinedSpacesLoading ? (
+              // Show skeleton while loading
+              Array.from({ length: 6 }).map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    height: { xs: 130, md: 120, lg: 150 },
+                    width: { xs: 110, md: 100, lg: 120 },
+                    borderRadius: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Skeleton
+                    variant="rectangular"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      bgcolor: '#FFFFFF',
+                      borderBottomLeftRadius: 12,
+                      borderBottomRightRadius: 12,
+                      px: 1,
+                      py: 0.5
+                    }}
+                  >
+                    <Skeleton variant="text" width="80%" height={14} sx={{ mb: 0.5 }} />
+                    <Skeleton variant="text" width="60%" height={12} />
+                  </Box>
+                </Box>
+              ))
+            ) : joinedSpaces.length > 0 ? (
+              // Show joined spaces in grid view
+              joinedSpaces.map((space) => (
+                <Box
+                  key={space.id}
+                  onClick={() => handleSpaceClick(space.id)}
+                  sx={{
+                    height: { xs: 130, md: 120, lg: 130 },
+                    width: { xs: 110, md: 100, lg: 120 },
+                    borderRadius: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      borderColor: 'primary.main'
+                    }
+                  }}
+                >
+                  {space.space_avatar_url ? (
+                    <Box
+                      component="img"
+                      src={space.space_avatar_url}
+                      alt={space.space_name}
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        bgcolor: 'action.hover',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography variant="h4" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        {space.space_name?.charAt(0).toUpperCase()}
+                      </Typography>
+                    </Box>
+                  )}
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      bgcolor: '#FFFFFF',
+                      borderBottomLeftRadius: 12,
+                      borderBottomRightRadius: 12,
+                      px: 1,
+                      py: 0.5
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                      <Box component="span" sx={{ color: 'black' }}>{space.space_slug?.replace('spaces/', '') || space.space_name}</Box>
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#666666', fontSize: '0.7rem', fontWeight: 500 }}>
+                      {space.userContributionPoints ? `🔥 ${space.userContributionPoints}pts` : 'No points yet'}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))
+            ) : (
+              // Empty state
+              <Box sx={{ textAlign: 'center', py: 4, width: '100%' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  No joined spaces yet
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Join spaces to see them here
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        ) : (
+          // List view for joined spaces
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {joinedSpacesLoading ? (
+              // Show skeleton while loading
+              Array.from({ length: 6 }).map((_, index) => (
+                <Box key={index} sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  p: 1,
+                  borderRadius: 2
+                }}>
+                  <Skeleton variant="circular" width={32} height={32} />
+                  <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="text" height={18} width="70%" />
+                  </Box>
+                </Box>
+              ))
+            ) : joinedSpaces.length > 0 ? (
+              // Show joined spaces in list view
+              joinedSpaces.map((space) => (
+                <Box
+                  key={space.id}
+                  onClick={() => handleSpaceClick(space.id)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    p: 1,
+                    borderRadius: 2,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover'
+                    }
+                  }}
+                >
+                  <Avatar
+                    sx={{ width: 32, height: 32 }}
+                    src={space.space_avatar_url}
+                    alt={space.space_name}
+                  >
+                    {space.space_name?.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Box component="span" sx={{ color: 'primary.main' }}>spaces/</Box>
+                      <Box component="span" sx={{ color: 'text.primary' }}>{space.space_slug?.replace('spaces/', '') || space.space_name}</Box>
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
+                      {space.userContributionPoints ? `🔥 ${space.userContributionPoints}pts` : 'No points yet'}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))
+            ) : (
+              // Empty state
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  No joined spaces yet
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Join spaces to see them here
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Paper>
+
       {/* Content of left side - Trending Spaces */}
       <Paper sx={{ p: 2, backgroundColor: 'paper.backgroundColor', borderTopLeftRadius: 0, borderBottomLeftRadius: 0, mt: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -233,18 +603,24 @@ const LeftContent = () => {
             This Month
           </MenuItem>
           <Divider />
-          <MenuItem onClick={() => { handleViewModeChange('grid'); handleMenuClose(); }}>
+          <MenuItem 
+            onClick={() => { handleTrendingViewModeChange('grid'); handleMenuClose(); }}
+            disabled={trendingSpacesViewMode === 'grid'}
+          >
             <Grid size={16} style={{ marginRight: 8 }} />
             Grid View
           </MenuItem>
-          <MenuItem onClick={() => { handleViewModeChange('list'); handleMenuClose(); }}>
+          <MenuItem 
+            onClick={() => { handleTrendingViewModeChange('list'); handleMenuClose(); }}
+            disabled={trendingSpacesViewMode === 'list'}
+          >
             <List size={16} style={{ marginRight: 8 }} />
             List View
           </MenuItem>
         </Menu>
 
         {/* Content of left side - Spaces */}
-        {viewMode === 'grid' ? (
+        {trendingSpacesViewMode === 'grid' ? (
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1.3, justifyContent: 'center', alignItems: 'center' }}>
             {loading ? (
               // Show skeleton while loading

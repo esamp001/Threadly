@@ -63,10 +63,9 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     } finally {
       setLoading(false);
     }
-  }, [page, loading, hasMore]);
+  }, []);
 
   const fetchThreads = useCallback(async (loadMore = false) => {
-
     const currentPage = loadMore ? threadsPage + 1 : 1;
     try {
       setLoading(true);
@@ -90,18 +89,18 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     } finally {
       setLoading(false);
     }
-  }, [loading, threadsHasMore, threadsPage, threadFilter]);
+  }, []);
 
   // Single useEffect for all initial data fetching
   useEffect(() => {
     listSpaces();
     fetchThreads();
-  }, [listSpaces, fetchThreads]);
+  }, []);
 
   // Refetch threads when filter changes
   useEffect(() => {
     fetchThreads(false);
-  }, [threadFilter, fetchThreads]);
+  }, [threadFilter]);
 
   const handleCreateThread = async () => {
     // Validate required fields

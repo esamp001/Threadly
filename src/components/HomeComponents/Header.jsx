@@ -43,6 +43,7 @@ import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import { getTitle } from '../../utils/rankingHelpers';
 import { addRecentSearch } from '../../utils/searchHelpers';
+import FinalChar from '../../assets/FINAL CHAR.png';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 import ExpBar from './ExpBar';
 import SearchDropdown from './SearchDropdown';
@@ -86,7 +87,6 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [searchAnchorEl, setSearchAnchorEl] = useState(null);
-  const [hamburgerOpen, setHamburgerOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [joinedSpaces, setJoinedSpaces] = useState([]);
   const [joinedSpacesLoading, setJoinedSpacesLoading] = useState(true);
@@ -520,6 +520,16 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               E
             </Box>
           </Typography>
+          <img
+            src={FinalChar}
+            alt="Space Character"
+            style={{
+              width: '55px',
+              height: '55px',
+              marginLeft: '4px',
+              objectFit: 'contain'
+            }}
+          />
         </Box>
       </Grid>
 
@@ -1338,7 +1348,8 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               sx={{
                 px: 0,
                 py: 1,
-                borderRadius: 1,
+                borderRadius: .5,
+                cursor: 'pointer',
                 transition: 'all 0.2s ease-in-out',
                 '&:hover': {
                   backgroundColor: 'action.hover',

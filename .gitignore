@@ -39,3 +39,6 @@ src/assets/FINALSPACEPNG.png
 src/assets/FINALSVG.svg
 src/assets/New Project.svg
 src/assets/SVGSPACE.svg
+backend/env.development
+backend/env.production
+backend/env.test

@@ -1,11 +1,10 @@
 // ThreadCard.jsx
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
-import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, Paper, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
 import VotingComponent from './VotingComponent';
@@ -31,6 +30,7 @@ const ThreadContent = ({
   onExpandedChange
 }) => {
   const { showSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   // Local state for optimistic updates
   const [localNetScore, setLocalNetScore] = useState(net_score);
@@ -107,21 +107,34 @@ const ThreadContent = ({
   };
 
   return (
-    <Accordion 
+    <Accordion
       expanded={expanded}
       onChange={() => onExpandedChange && onExpandedChange(!expanded)}
-      sx={{ 
-        backgroundColor: 'paper.backgroundColor', 
+      sx={{
+        backgroundColor: 'paper.backgroundColor',
         mb: 2,
         '&:before': {
           display: 'none', // Remove default MUI divider
         },
-        boxShadow: 'none' // Remove default shadow
+        boxShadow: 'none', // Remove default shadow
+        borderRadius: '0 !important',
+        '& .MuiAccordion-root': {
+          borderRadius: '0 !important',
+        },
+        '& .MuiPaper-root': {
+          borderRadius: '0 !important',
+        },
+        '& .MuiPaper-elevation1': {
+          borderRadius: '0 !important',
+        }
       }}
     >
       <AccordionSummary
-        sx={{ 
+        sx={{
           backgroundColor: 'paper.backgroundColor',
+          borderRadius: 0,
+          display: 'flex',
+          alignItems: 'center',
           '&:hover': {
             backgroundColor: 'action.hover',
           }
@@ -137,7 +150,7 @@ const ThreadContent = ({
               alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
               onClick={componentRendered?.current !== 'Space' ? (e) => {
                 e.stopPropagation();
-                window.location.href = `/spaces/${spaceId}`;
+                navigate(`/spaces/${spaceId}`);
               } : undefined}
             >
               {componentRendered?.current === 'Space'
@@ -146,7 +159,7 @@ const ThreadContent = ({
               }
             </Avatar>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column'}}>
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                 {/* Primary: Space Name */}
                 {componentRendered?.current === 'Space' ? (
                   <Typography
@@ -163,18 +176,18 @@ const ThreadContent = ({
                     {postedBy}
                   </Typography>
                 ) : (
-                  
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        color: 'primary.main',
-                        fontWeight: 600,
-                        fontSize: '0.9rem',
-                        display: 'inline'
-                      }}
-                    >
-                      {spaceName}
-                    </Typography>
+
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      display: 'inline'
+                    }}
+                  >
+                    {spaceName}
+                  </Typography>
 
                 )}
 
@@ -195,7 +208,7 @@ const ThreadContent = ({
                   </Typography>
                 )}
               </Box>
-           
+
             </Box>
           </Box>
 
@@ -208,7 +221,7 @@ const ThreadContent = ({
         </Box>
       </AccordionSummary>
 
-      <AccordionDetails sx={{ p: 0, backgroundColor: 'paper.backgroundColor' }}>
+      <AccordionDetails sx={{ p: 0, backgroundColor: 'paper.backgroundColor', borderRadius: 0 }}>
         <Box sx={{ p: 2.5, pt: 0 }}>
           {/* Title */}
           <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, overflow: 'hidden', wordWrap: 'break-word', overflowWrap: 'break-word' }}>

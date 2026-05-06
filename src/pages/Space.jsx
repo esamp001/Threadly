@@ -315,6 +315,7 @@ const Space = () => {
   const [editorKey, setEditorKey] = useState(0);
   const [selectedThreadData, setSelectedThreadData] = useState(null);
   const [openCommentThreads, setOpenCommentThreads] = useState(false);
+  const [expandedThreads, setExpandedThreads] = useState({});
   const [coverPhotoLoading, setCoverPhotoLoading] = useState(false);
   const coverPhotoInputRef = useRef(null);
   const [coverPhotoBlur, setCoverPhotoBlur] = useState(false);
@@ -973,6 +974,19 @@ const Space = () => {
   }, []);
 
   /**
+   * Handle thread expansion state change
+   * This is used to toggle the expanded state of thread accordions
+   * @param {string} threadId - The ID of the thread
+   * @param {boolean} isExpanded - Whether the thread should be expanded
+   */
+  const handleExpandedChange = useCallback((threadId, isExpanded) => {
+    setExpandedThreads(prev => ({
+      ...prev,
+      [threadId]: isExpanded
+    }));
+  }, []);
+
+  /**
    * Show loading state while fetching data
    */
   if (loading) {
@@ -1396,6 +1410,8 @@ const Space = () => {
                         threadId={thread.id}
                         userVote={thread.userVote}
                         userAvatar={thread.user_avatar_url}
+                        expanded={expandedThreads[thread.id] !== false}
+                        onExpandedChange={(isExpanded) => handleExpandedChange(thread.id, isExpanded)}
                         onCommentOpen={() => handleCommentOpen(thread)}
                         onVoteUpdate={(updatedThread) => {
                           setThreads(prev =>

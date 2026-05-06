@@ -26,6 +26,7 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [threads, setThreads] = useState([]);
+  const [expandedThreads, setExpandedThreads] = useState({});
   const [page, setPage] = useState(1);
   const limit = 10;
   const observerRef = useRef(null);
@@ -181,6 +182,13 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     setOpenCommentThreads(prev => ({
       ...prev,
       [threadId]: false
+    }));
+  }, []);
+
+  const handleExpandedChange = useCallback((threadId, isExpanded) => {
+    setExpandedThreads(prev => ({
+      ...prev,
+      [threadId]: isExpanded
     }));
   }, []);
 
@@ -410,8 +418,10 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
         </Box>
       ) : (
         threads.map((thread, index) => (
-          <div key={thread.id} ref={index === threads.length - 1 && threadsHasMore ? lastElementRef : null}>
+          <div style={{ marginBottom: expandedThreads[thread.id] !== false ? '.5rem' : '0rem' }} key={thread.id} ref={index === threads.length - 1 && threadsHasMore ? lastElementRef : null}>
             <ThreadContent
+              expanded={expandedThreads[thread.id] !== false}
+              onExpandedChange={(isExpanded) => handleExpandedChange(thread.id, isExpanded)}
               net_score={thread.net_score}
               userVote={thread.userVote}
               avatar={thread.avatar_url}

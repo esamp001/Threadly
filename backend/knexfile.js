@@ -1,8 +1,9 @@
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Auto-detect environment and load appropriate .env file
 const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: `.env.${env}` });
+dotenv.config({ path: path.join(__dirname, `env.${env}`) });
 
 module.exports = {
   client: 'pg',

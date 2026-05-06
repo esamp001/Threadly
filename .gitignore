@@ -39,3 +39,13 @@ src/assets/FINALSPACEPNG.png
 src/assets/FINALSVG.svg
 src/assets/New Project.svg
 src/assets/SVGSPACE.svg
+
+# Environment files
+env.production
+env.development
+env.test
+env.example
+backend/env.production
+backend/env.development
+backend/env.test
+backend/env.example

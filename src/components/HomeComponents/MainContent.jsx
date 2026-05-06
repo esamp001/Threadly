@@ -89,7 +89,7 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [threadFilter]);
 
   // Single useEffect for all initial data fetching
   useEffect(() => {

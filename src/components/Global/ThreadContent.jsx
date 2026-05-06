@@ -131,7 +131,7 @@ const ThreadContent = ({
     >
       <AccordionSummary
         sx={{
-          backgroundColor: 'paper.backgroundColor',
+          backgroundColor: 'paper.accordionHeader',
           borderRadius: 0,
           display: 'flex',
           alignItems: 'center',
@@ -222,7 +222,7 @@ const ThreadContent = ({
       </AccordionSummary>
 
       <AccordionDetails sx={{ p: 0, backgroundColor: 'paper.backgroundColor', borderRadius: 0 }}>
-        <Box sx={{ p: 2.5, pt: 0 }}>
+        <Box sx={{ p: 2.5, pt: 2 }}>
           {/* Title */}
           <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, overflow: 'hidden', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
             {title}
@@ -236,6 +236,13 @@ const ThreadContent = ({
                 overflowWrap: 'break-word',
                 overflow: 'hidden',
                 maxWidth: '100%',
+                lineHeight: 1.4,
+                '& p': {
+                  margin: '0.5rem 0',
+                },
+                '& br': {
+                  marginBottom: '0.25rem',
+                },
                 '& img': {
                   maxWidth: '100%',
                   height: 'auto',

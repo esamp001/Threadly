@@ -38,12 +38,12 @@ import {
 import Rocket from 'lucide-react/dist/esm/icons/rocket';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import FinalChar from '../../assets/FINAL CHAR.png';
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import { getTitle } from '../../utils/rankingHelpers';
 import { addRecentSearch } from '../../utils/searchHelpers';
-import FinalChar from '../../assets/FINAL CHAR.png';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
 import ExpBar from './ExpBar';
 import SearchDropdown from './SearchDropdown';
@@ -550,17 +550,32 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           mr: { lg: 10, xl: 20 },
           alignItems: 'center'
         }}>
-          <Home
-            onClick={() => {
-              if (location.pathname === '/home') {
-                window.location.reload();
-              } else {
-                navigate('/home');
+          <Tooltip
+            title="Home"
+            arrow
+            sx={{
+              '& .MuiTooltip-tooltip': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+                fontSize: '0.875rem',
+              },
+              '& .MuiTooltip-arrow': {
+                color: 'primary.main',
               }
             }}
-            style={{ cursor: 'pointer' }}
-            size={25}
-          />
+          >
+            <Home
+              onClick={() => {
+                if (location.pathname === '/home') {
+                  window.location.reload();
+                } else {
+                  navigate('/home');
+                }
+              }}
+              style={{ cursor: 'pointer' }}
+              size={25}
+            />
+          </Tooltip>
           <TrendingUp size={25} />
           <LayoutTemplate size={25} />
           <Tooltip

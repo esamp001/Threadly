@@ -18,6 +18,7 @@ const theme = createTheme({
       black: "#000000",
     },
     paper: {
+      accordionHeader: "#333333",
       backgroundColor: "#1818185e",
     },
     search: {

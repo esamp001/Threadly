@@ -47,23 +47,16 @@ export const uploadSingleFileToCloudinary = async (file, showSnackbar, fieldName
       showSnackbar('File size must be less than 5MB', 'error');
       throw new Error('File size too large');
     }
-
-    console.log('Starting upload for file:', file.name, 'Size:', file.size);
     
     const formData = new FormData();
     formData.append(fieldName, file);
-
-    console.log('Sending request to /api/cloudinary/upload');
     
     const response = await apiRequest('/api/cloudinary/upload', {
       method: 'POST',
       body: formData
     });
 
-    console.log('Response received:', response.status, response.statusText);
-
     const result = await response.json();
-    console.log('Response data:', result);
 
     if (response.ok) {
       showSnackbar(result.message, 'success');

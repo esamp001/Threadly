@@ -834,8 +834,7 @@ const Space = () => {
         threads.forEach(thread => {
           expandedState[thread.id] = true;
         });
-
-        console.log(expandedState, "expandedState");
+        
         setExpandedThreads(expandedState);
       }
     } catch (error) {

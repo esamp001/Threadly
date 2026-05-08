@@ -48,15 +48,22 @@ export const uploadSingleFileToCloudinary = async (file, showSnackbar, fieldName
       throw new Error('File size too large');
     }
 
+    console.log('Starting upload for file:', file.name, 'Size:', file.size);
+    
     const formData = new FormData();
     formData.append(fieldName, file);
 
+    console.log('Sending request to /api/cloudinary/upload');
+    
     const response = await apiRequest('/api/cloudinary/upload', {
       method: 'POST',
       body: formData
     });
 
+    console.log('Response received:', response.status, response.statusText);
+
     const result = await response.json();
+    console.log('Response data:', result);
 
     if (response.ok) {
       showSnackbar(result.message, 'success');
@@ -70,7 +77,18 @@ export const uploadSingleFileToCloudinary = async (file, showSnackbar, fieldName
     }
   } catch (error) {
     console.error('Error uploading file:', error);
-    showSnackbar('Failed to upload file', 'error');
+    console.error('Error type:', error.name);
+    console.error('Error message:', error.message);
+    
+    // Specific handling for connection errors
+    if (error.message.includes('Connection ended unexpectedly') || 
+        error.message.includes('Network') || 
+        error.name === 'TypeError') {
+      showSnackbar('Network error - please check your connection and try again', 'error');
+    } else {
+      showSnackbar('Failed to upload file', 'error');
+    }
+    
     throw error;
   }
 };

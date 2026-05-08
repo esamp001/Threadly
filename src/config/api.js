@@ -20,11 +20,30 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, config);
+    // Add timeout to detect connection issues
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...config,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
     return response;
   } catch (error) {
     console.error('API Request failed:', error);
-    throw error;
+    
+    // Enhanced error logging
+    if (error.name === 'AbortError') {
+      console.error('Request timed out after 30 seconds');
+      throw new Error('Request timed out - please try again');
+    } else if (error.message.includes('Connection ended unexpectedly')) {
+      console.error('Connection was terminated unexpectedly');
+      throw new Error('Connection ended unexpectedly - server may be overloaded');
+    } else {
+      throw error;
+    }
   }
 };
 

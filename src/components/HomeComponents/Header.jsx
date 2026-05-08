@@ -134,6 +134,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         const progressInterval = setInterval(() => {
           setUploadProgress(prev => {
             if (prev >= 90) {
+              
               clearInterval(progressInterval);
               return 90;
             }

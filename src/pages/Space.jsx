@@ -26,66 +26,114 @@ import { uploadImagesToCloudinary } from '../utils/cloudinary';
 // Reusable About Space Card component
 const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining, rules, contributors, isOwner, onSettingsClick, isMobile = false }) => {
   const cardStyles = isMobile
-    ? { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 0 }
-    : { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 };
+    ? {
+      backgroundColor: 'paper.backgroundColor',
+      p: 2,
+      borderRadius: 0,
+      // border: '1px solid',
+      // borderColor: 'divider'
+    }
+    : {
+      backgroundColor: 'paper.backgroundColor',
+      p: 2.5,
+      borderRadius: 2,
+        // border: '1px solid',
+        // borderColor: 'divider',
+      boxShadow: '0 12px 28px rgba(0, 0, 0, 0.3)'
+    };
+
+  const sectionTitleSx = {
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: 'text.secondary',
+    textTransform: 'uppercase',
+    fontWeight: 700,
+  };
+
+  const mutedTextSx = {
+    fontSize: 12,
+    color: 'text.secondary',
+  };
+
+  const statTileSx = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1.25,
+    p: 1.25,
+    borderRadius: 1.5,
+    backgroundColor: 'background.paper',
+    border: '1px solid',
+    borderColor: 'divider',
+  };
 
   return (
     <Paper sx={cardStyles}>
-      {/* Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography
-            sx={{
-              fontSize: 12,
-              letterSpacing: 2,
-              color: '#9ca3af',
-            }}
-          >
-            ABOUT SPACE
-          </Typography>
-        </Box>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+        <Typography sx={sectionTitleSx}>
+          ABOUT SPACE
+        </Typography>
         {isOwner && (
           <IconButton
             onClick={onSettingsClick}
-            sx={{ color: '#9ca3af', '&:hover': { color: '#d1d5db' } }}
+            sx={{
+              color: 'text.secondary',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1.5,
+              p: 0.75,
+              '&:hover': {
+                color: 'text.primary',
+                backgroundColor: 'action.hover',
+              }
+            }}
           >
             <SettingsIcon sx={{ fontSize: 18 }} />
           </IconButton>
         )}
       </Box>
 
-      {/* Description */}
+      {/* Description + Online Status */}
       <Box
         sx={{
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 1,
+          mb: 2,
+          p: 1.5,
+          borderRadius: 1.5,
+          backgroundColor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
         }}
       >
         <Typography
           sx={{
             fontSize: 14,
             lineHeight: 1.6,
-            color: '#d1d5db',
+            color: 'text.primary',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            mb: 1.25
           }}
         >
           {space?.description || 'No description available'}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-          <Circle
-            size={8}
-            fill="#22c55e"
-            color="#22c55e"
-            style={{ marginRight: '4px' }}
-          />
-          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 10,
+            backgroundColor: 'action.hover',
+            color: 'primary.main'
+          }}
+        >
+          <Circle size={8} fill="currentColor" color="currentColor" />
+          <Typography sx={mutedTextSx}>
             1 ONLINE
           </Typography>
         </Box>
@@ -94,14 +142,14 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       {/* Stats */}
       <Box
         sx={{
-          display: 'flex',
-          gap: 3,
-          mb: 3,
-          px: 1
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 1.5,
+          mb: 2.5
         }}
       >
-        {/* MEMBERS */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Members */}
+        <Box sx={statTileSx}>
           <Box
             sx={{
               display: 'flex',
@@ -110,23 +158,23 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
               width: 32,
               height: 32,
               borderRadius: '50%',
-              backgroundColor: 'rgba(107, 114, 128, 0.1)'
+              backgroundColor: 'action.hover'
             }}
           >
-            <PeopleIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+            <PeopleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
           </Box>
-          <Box>
-            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={sectionTitleSx}>
               Members
             </Typography>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
+            <Typography sx={{ fontSize: 17, fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
               {memberCount || 0}
             </Typography>
           </Box>
         </Box>
 
-        {/* CREATED DATE */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Created */}
+        <Box sx={statTileSx}>
           <Box
             sx={{
               display: 'flex',
@@ -135,27 +183,33 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
               width: 32,
               height: 32,
               borderRadius: '50%',
-              backgroundColor: 'rgba(107, 114, 128, 0.1)'
+              backgroundColor: 'action.hover'
             }}
           >
-            <AccessTimeIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+            <AccessTimeIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
           </Box>
-          <Box>
-            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={sectionTitleSx}>
               Created
             </Typography>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
-              {space?.createdAt
-                ? space.createdAt
-                : 'Unknown'}
+            <Typography
+              sx={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'text.primary',
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {space?.createdAt ? space.createdAt : 'Unknown'}
             </Typography>
           </Box>
         </Box>
       </Box>
 
-
-
-      {/* Button */}
+      {/* Join/Leave Button */}
       {isMember ? (
         <StyledButton
           onClick={onLeave}
@@ -182,37 +236,39 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
 
       {/* Space Rules Section */}
       <Box sx={{ mt: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography
-            sx={{
-              fontSize: 12,
-              letterSpacing: 2,
-              color: '#9ca3af',
-            }}
-          >
-            SPACE RULES
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Typography sx={{ ...sectionTitleSx, mb: 1.5 }}>
+          SPACE RULES
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {rules && rules.length > 0 ? (
             rules.map((rule, index) => (
-              <Typography
+              <Box
                 key={rule.id}
                 sx={{
-                  fontSize: 13,
-                  lineHeight: 1.5,
-                  color: '#d1d5db',
+                  p: 1.25,
+                  borderRadius: 1.5,
+                  backgroundColor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider'
                 }}
               >
-                {String(index + 1).padStart(2, '0')}. {rule.rule_text}
-              </Typography>
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: 'text.primary',
+                  }}
+                >
+                  {String(index + 1).padStart(2, '0')}. {rule.rule_text}
+                </Typography>
+              </Box>
             ))
           ) : (
             <Typography
               sx={{
                 fontSize: 13,
                 lineHeight: 1.5,
-                color: '#9ca3af',
+                color: 'text.secondary',
                 fontStyle: 'italic',
               }}
             >
@@ -224,38 +280,55 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
 
       {/* Top Contributors Section */}
       <Box sx={{ mt: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <EmojiEventsIcon sx={{ fontSize: 14, color: '#9ca3af', mr: 1 }} />
-          <Typography
-            sx={{
-              fontSize: 12,
-              letterSpacing: 2,
-              color: '#9ca3af',
-            }}
-          >
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <EmojiEventsIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 1 }} />
+          <Typography sx={sectionTitleSx}>
             TOP CONTRIBUTORS
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
           {contributors && contributors.length > 0 ? (
             contributors.map((contributor) => (
-              <Box key={contributor.user_id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                key={contributor.user_id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.25,
+                  p: 1.25,
+                  borderRadius: 1.5,
+                  backgroundColor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
                 <Avatar
                   src={contributor.avatar_url}
                   sx={{
-                    width: 32,
-                    height: 32,
-                    backgroundColor: '#6366f1',
+                    width: 34,
+                    height: 34,
+                    backgroundColor: 'primary.main',
+                    color: 'text.black',
                     fontSize: 14,
+                    fontWeight: 700,
                   }}
                 >
                   {contributor.username?.substring(0, 2).toUpperCase() || 'U'}
                 </Avatar>
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
                     {contributor.username}
                   </Typography>
-                  <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
+                  <Typography sx={mutedTextSx}>
                     {contributor.points} pts
                   </Typography>
                 </Box>
@@ -265,7 +338,7 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
             <Typography
               sx={{
                 fontSize: 13,
-                color: '#9ca3af',
+                color: 'text.secondary',
                 fontStyle: 'italic',
               }}
             >

@@ -26,6 +26,7 @@ const onboarding = require('./routes/onboarding.routes');
 const space = require('./routes/spaces.routes');
 const search = require('./routes/search.routes');
 const exp = require('./routes/exp.routes');
+const reports = require('./routes/reports.routes');
 // const login = require('./routes/login.routes');
 
 app.use('/api/cloudinary', cloudinary);
@@ -37,6 +38,7 @@ app.use('/api/onboarding', onboarding);
 app.use('/api/spaces', space);
 app.use('/api/search', search);
 app.use('/api/exp', exp);
+app.use('/api/reports', reports);
 // app.use('/api/login', login);
 
 module.exports = app;

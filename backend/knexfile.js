@@ -1,9 +1,15 @@
 const dotenv = require('dotenv');
+const fs = require('fs');
 const path = require('path');
 
 // Auto-detect environment and load appropriate .env file
 const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: path.join(__dirname, `env.${env}`) });
+const dotEnvPath = path.join(__dirname, `.env.${env}`);
+const legacyEnvPath = path.join(__dirname, `env.${env}`);
+
+dotenv.config({
+  path: fs.existsSync(dotEnvPath) ? dotEnvPath : legacyEnvPath,
+});
 
 module.exports = {
   client: 'pg',

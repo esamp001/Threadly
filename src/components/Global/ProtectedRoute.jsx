@@ -1,5 +1,6 @@
 import { Box, CircularProgress } from '@mui/material';
 import { Navigate } from 'react-router-dom';
+import BugReportFab from './BugReportFab';
 import { useAuth } from '../../../src/context/AuthContext/AuthContext';
 
 const ProtectedRoute = ({ children, requireOnboarding = true }) => {
@@ -20,7 +21,12 @@ const ProtectedRoute = ({ children, requireOnboarding = true }) => {
     return <Navigate to="/home" replace />;
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <BugReportFab />
+    </>
+  );
 };
 
 export default ProtectedRoute;

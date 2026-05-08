@@ -1,5 +1,4 @@
-const fs = require('fs');
-const path = require('path');
+const BUG_REPORT_RECIPIENT = 'ellejunsampaga@gmail.com';
 
 // SendGrid API option for Render free tier
 const sendViaSendGridAPI = async (to, subject, htmlContent) => {
@@ -26,6 +25,21 @@ const sendViaSendGridAPI = async (to, subject, htmlContent) => {
     console.error('SendGrid Error Details:', error.response?.body || error.message);
     throw error;
   }
+};
+
+/**
+ * Escapes HTML-sensitive characters from text input
+ * This is used to safely render user-submitted content in email templates
+ * @param {string} value - Raw text input
+ * @returns {string} - Escaped HTML-safe text
+ */
+const escapeHtml = (value = '') => {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 };
 
 /**
@@ -120,6 +134,97 @@ const sendMagicLinkEmail = async (to, magicLink, userName = '') => {
   }
 };
 
+/**
+ * Sends a bug report email to the Space support inbox
+ * This is used to collect actionable user feedback for future platform development
+ * @param {Object} payload - Bug report payload details
+ * @param {string} payload.message - User's bug report message
+ * @param {string} payload.reporterEmail - Reporter email from authenticated user
+ * @param {string} payload.reporterUsername - Reporter username from authenticated user
+ * @param {string|null} payload.screenshotUrl - Optional screenshot URL from Cloudinary
+ * @param {string|null} payload.pageUrl - Optional page URL where bug occurred
+ * @returns {Promise<Object>} - Email sending result metadata
+ */
+const sendBugReportEmail = async ({
+  message,
+  reporterEmail,
+  reporterUsername,
+  screenshotUrl = null,
+  pageUrl = null,
+}) => {
+  try {
+    const safeMessage = escapeHtml(message);
+    const safeReporterEmail = escapeHtml(reporterEmail);
+    const safeReporterUsername = escapeHtml(reporterUsername);
+    const safeScreenshotUrl = screenshotUrl ? escapeHtml(screenshotUrl) : null;
+    const safePageUrl = pageUrl ? escapeHtml(pageUrl) : null;
+    const sentAt = new Date().toISOString();
+
+    const htmlContent = `
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Space - New Bug Report</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #ffffff; margin: 0; padding: 0; }
+          .container { max-width: 700px; margin: 0 auto; padding: 32px 20px; }
+          .title { font-size: 24px; font-weight: 700; color: #121212; margin-bottom: 20px; }
+          .section { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+          .label { font-size: 13px; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+          .value { font-size: 14px; color: #121212; word-break: break-word; }
+          .message { white-space: pre-wrap; }
+          .footer { margin-top: 24px; font-size: 12px; color: #888; }
+          a { color: #1DB954; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="title">New Bug Report Submitted</div>
+
+          <div class="section">
+            <div class="label">Reporter</div>
+            <div class="value">${safeReporterUsername} (${safeReporterEmail})</div>
+          </div>
+
+          <div class="section">
+            <div class="label">Reported At</div>
+            <div class="value">${sentAt}</div>
+          </div>
+
+          ${safePageUrl ? `
+          <div class="section">
+            <div class="label">Page URL</div>
+            <div class="value"><a href="${safePageUrl}" target="_blank" rel="noopener noreferrer">${safePageUrl}</a></div>
+          </div>
+          ` : ''}
+
+          <div class="section">
+            <div class="label">Bug Description</div>
+            <div class="value message">${safeMessage}</div>
+          </div>
+
+          ${safeScreenshotUrl ? `
+          <div class="section">
+            <div class="label">Screenshot</div>
+            <div class="value"><a href="${safeScreenshotUrl}" target="_blank" rel="noopener noreferrer">${safeScreenshotUrl}</a></div>
+          </div>
+          ` : ''}
+
+          <div class="footer">This report was sent from the Space bug report tool.</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendViaSendGridAPI(BUG_REPORT_RECIPIENT, 'Space Bug Report', htmlContent);
+    return { success: true, messageId: 'sendgrid-api-' + Date.now() };
+  } catch (error) {
+    throw new Error(`Failed to send bug report email: ${error.message}`);
+  }
+};
+
 module.exports = {
   sendMagicLinkEmail,
+  sendBugReportEmail,
 };

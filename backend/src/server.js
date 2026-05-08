@@ -2,7 +2,7 @@ const dotenv = require('dotenv');
 
 // Auto-detect environment and load appropriate .env file
 const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: `env.${env}` });
+dotenv.config({ path: `.env.${env}` });
 
 const app = require('./app.js');
 

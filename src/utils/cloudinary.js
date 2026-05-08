@@ -33,6 +33,48 @@ export const dataURLtoFile = (dataUrl, filename) => {
  * @returns {Promise<string>} - Processed content with Cloudinary URLs
  */
 
+/**
+ * Upload a single file to Cloudinary (for avatars, space images, etc.)
+ * @param {File} file - The file to upload
+ * @param {function} showSnackbar - Snackbar notification function
+ * @param {string} fieldName - The field name for the upload (default: 'avatar')
+ * @returns {Promise<{url: string, publicId: string}>} - Upload result
+ */
+export const uploadSingleFileToCloudinary = async (file, showSnackbar, fieldName = 'avatar') => {
+  try {
+    // Validate file size (5MB limit for avatars)
+    if (file.size > 5 * 1024 * 1024) {
+      showSnackbar('File size must be less than 5MB', 'error');
+      throw new Error('File size too large');
+    }
+
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    const response = await apiRequest('/api/cloudinary/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      showSnackbar(result.message, 'success');
+      return {
+        url: result.url,
+        publicId: result.publicId
+      };
+    } else {
+      showSnackbar(result.message, 'error');
+      throw new Error(result.message);
+    }
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    showSnackbar('Failed to upload file', 'error');
+    throw error;
+  }
+};
+
 export const uploadImagesToCloudinary = async (content, showSnackbar) => {
   let processedContent = content;
   let match;

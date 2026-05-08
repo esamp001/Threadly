@@ -40,6 +40,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import FinalChar from '../../assets/FINAL CHAR.png';
 import apiRequest from '../../config/api';
+import { uploadSingleFileToCloudinary } from '../../utils/cloudinary';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
 import { getTitle } from '../../utils/rankingHelpers';
@@ -106,7 +107,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     'Space Members (Optional)'
   ];
 
-  // A fetch that handles avatar upload
+  // A fetch that handles avatar upload using the cloudinary utility
   const handleAvatarUpload = async (event) => {
     const file = event.target.files[0];
 
@@ -126,21 +127,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showSnackbar('File size must be less than 5MB', 'error');
-        setAvatarPreview(null);
-        return;
-      }
-
       try {
         setLoading(true);
-
-        // Create FormData
-        const formData = new FormData();
-        formData.append('avatar', file);
-
-        // Simulate progress (since fetch doesn't have built-in progress)
+        
+        // Simulate progress
         const progressInterval = setInterval(() => {
           setUploadProgress(prev => {
             if (prev >= 90) {
@@ -151,33 +141,18 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
           });
         }, 200);
 
-        const response = await fetch(`${API_URL}/api/cloudinary/upload`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`  // Add this if needed
-          },
-          body: formData,
-        });
+        const result = await uploadSingleFileToCloudinary(file, showSnackbar, 'avatar');
 
         clearInterval(progressInterval);
         setUploadProgress(100);
 
-        const result = await response.json();
-
-        if (response.ok) {
-          showSnackbar(result.message, 'success');
-          setAvatarPreview(result.url);
-          setFormData(prev => ({
-            ...prev,
-            avatarUrl: result.url,
-            avatarPublicId: result.publicId
-          }));
-        } else {
-          showSnackbar(result.message, 'error');
-          setAvatarPreview(null);
-        }
+        setAvatarPreview(result.url);
+        setFormData(prev => ({
+          ...prev,
+          avatarUrl: result.url,
+          avatarPublicId: result.publicId
+        }));
       } catch (error) {
-        showSnackbar('Failed to upload avatar', 'error');
         setAvatarPreview(null);
       } finally {
         setLoading(false);

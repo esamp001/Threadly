@@ -17,8 +17,6 @@ router.put('/profile', checkAuth, async (req, res) => {
   const { bio } = req.body;
   const userId = req.user.userId;
 
-  console.log({ bio, userId }, "params")
-
   try {
     await knex('users')
       .where('id', userId)

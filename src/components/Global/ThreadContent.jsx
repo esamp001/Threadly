@@ -106,6 +106,22 @@ const ThreadContent = ({
     }, 500);
   };
 
+  const isSpaceComponent = typeof componentRendered === 'string' 
+    ? componentRendered === 'Space' 
+    : componentRendered?.current === 'Space';
+
+  const handleProfileNavigate = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
+  };
+
+  const handleSpaceNavigate = (id) => {
+    if (id) {
+      navigate(`/spaces/${id}`);
+    }
+  };
+
   return (
     <Accordion
       expanded={expanded}
@@ -145,25 +161,40 @@ const ThreadContent = ({
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Avatar
-              sx={{ height: 40, width: 40, mr: 1, flexShrink: 0, cursor: componentRendered?.current !== 'Space' ? 'pointer' : 'default' }}
-              src={componentRendered?.current === 'Space' ? userAvatar : spaceAvatar}
-              alt={componentRendered?.current === 'Space' ? postedBy : spaceName}
-              onClick={componentRendered?.current !== 'Space' ? (e) => {
+              sx={{ 
+                height: 40, 
+                width: 40, 
+                mr: 1, 
+                flexShrink: 0, 
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.8 }
+              }}
+              src={isSpaceComponent ? userAvatar : spaceAvatar}
+              alt={isSpaceComponent ? postedBy : spaceName}
+              onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/spaces/${spaceId}`);
-              } : undefined}
+                if (isSpaceComponent) {
+                  handleProfileNavigate(postedBy);
+                } else {
+                  handleSpaceNavigate(spaceId);
+                }
+              }}
             >
-              {componentRendered?.current === 'Space'
+              {isSpaceComponent
                 ? (postedBy ? postedBy.charAt(0).toUpperCase() : 'U')
                 : (spaceName ? spaceName.charAt(0).toUpperCase() : 'S')
               }
             </Avatar>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                {/* Primary: Space Name */}
-                {componentRendered?.current === 'Space' ? (
+                {/* Primary: Space Name or Poster Name */}
+                {isSpaceComponent ? (
                   <Typography
                     variant="subtitle2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileNavigate(postedBy);
+                    }}
                     sx={{
                       color: 'primary.main',
                       fontWeight: 600,
@@ -171,44 +202,55 @@ const ThreadContent = ({
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' }
                     }}
                   >
                     {postedBy}
                   </Typography>
                 ) : (
-
                   <Typography
                     variant="subtitle2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSpaceNavigate(spaceId);
+                    }}
                     sx={{
                       color: 'primary.main',
                       fontWeight: 600,
                       fontSize: '0.9rem',
-                      display: 'inline'
+                      display: 'inline',
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline' }
                     }}
                   >
                     {spaceName}
                   </Typography>
-
                 )}
 
                 {/* Secondary: Posted By */}
-                {componentRendered?.current !== 'Space' && (
+                {!isSpaceComponent && (
                   <Typography
                     variant="caption"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileNavigate(postedBy);
+                    }}
                     sx={{
                       color: 'text.secondary',
                       display: 'flex',
                       gap: 0.5,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main' }
                     }}
                   >
                     Posted by {postedBy}
                   </Typography>
                 )}
               </Box>
-
             </Box>
           </Box>
 

@@ -8225,7 +8225,7 @@ function isMuiElement(element, muiNames) {
   return React21.isValidElement(element) && muiNames.indexOf(
     // For server components `muiName` is available in element.type._payload.value.muiName
     // relevant info - https://github.com/facebook/react/blob/2807d781a08db8e9873687fccc25c0f12b4fb3d4/packages/react/src/ReactLazy.js#L45
-    // eslint-disable-next-line no-underscore-dangle
+     
     element.type.muiName ?? element.type?._payload?.value?.muiName
   ) !== -1;
 }
@@ -17285,7 +17285,7 @@ function useAutocomplete(props) {
     // Only sync the highlighted index when the option switch between empty and not
     filteredOptions.length,
     // Don't sync the highlighted index with the value when multiple
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     multiple ? false : value,
     changeHighlightedIndex,
     setHighlightedIndex,
@@ -40221,12 +40221,12 @@ function usePagination(props = {}) {
     ...hidePrevButton ? [] : ["previous"],
     ...startPages,
     // Start ellipsis
-    // eslint-disable-next-line no-nested-ternary
+     
     ...siblingsStart > boundaryCount + 2 ? ["start-ellipsis"] : boundaryCount + 1 < count - boundaryCount ? [boundaryCount + 1] : [],
     // Sibling pages
     ...range(siblingsStart, siblingsEnd),
     // End ellipsis
-    // eslint-disable-next-line no-nested-ternary
+     
     ...siblingsEnd < count - boundaryCount - 1 ? ["end-ellipsis"] : count - boundaryCount > boundaryCount ? [count - boundaryCount] : [],
     ...endPages,
     ...hideNextButton ? [] : ["next"],

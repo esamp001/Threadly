@@ -40,9 +40,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import FinalChar from '../../assets/FINAL CHAR.png';
 import apiRequest from '../../config/api';
-import { uploadSingleFileToCloudinary } from '../../utils/cloudinary';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { uploadSingleFileToCloudinary } from '../../utils/cloudinary';
 import { getTitle } from '../../utils/rankingHelpers';
 import { addRecentSearch } from '../../utils/searchHelpers';
 import ConfirmationDialog from '../Notifications/ConfirmationDialog';
@@ -129,12 +129,12 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
       try {
         setLoading(true);
-        
+
         // Simulate progress
         const progressInterval = setInterval(() => {
           setUploadProgress(prev => {
             if (prev >= 90) {
-              
+
               clearInterval(progressInterval);
               return 90;
             }
@@ -351,7 +351,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
     if (activeStep === 0) {
       if (!formData.spaceName) errors.spaceName = 'Space name is required';
+      else if (formData.spaceName.length > 255) errors.spaceName = 'Space name cannot exceed 255 characters';
+
       if (!formData.spaceDescription) errors.spaceDescription = 'Description is required';
+      else if (formData.spaceDescription.length > 255) errors.spaceDescription = 'Description cannot exceed 255 characters';
     }
 
     if (activeStep === 1) {
@@ -364,7 +367,11 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     setFieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      showSnackbar('Please fill in all required fields', 'error');
+      if (formData.spaceDescription.length > 255) {
+        showSnackbar('Character limit exceeded (255 characters max)', 'error');
+      } else {
+        showSnackbar('Please fill in all required fields', 'error');
+      }
       return true;
     }
 
@@ -779,13 +786,22 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                     sx={{ mt: 1, width: '100%' }}
                     required
                     onChange={(e) => {
-                      const slug = e.target.value
+                      const value = e.target.value;
+                      const slug = value
                         .toLowerCase()
                         .replace(/[^a-z0-9]+/g, '-')
                         .replace(/(^-|-$)/g, '');
-                      setFormData({ ...formData, spaceName: e.target.value, spaceSlug: slug });
+
+                      setFormData({ ...formData, spaceName: value, spaceSlug: slug });
+
+                      // Immediate validation for character limit
+                      if (value.length > 255) {
+                        setFieldErrors(prev => ({ ...prev, spaceName: 'Space name cannot exceed 255 characters' }));
+                      } else if (fieldErrors.spaceName) {
+                        setFieldErrors(prev => ({ ...prev, spaceName: '' }));
+                      }
                     }}
-                    helperText={fieldErrors.spaceName}
+                    helperText={fieldErrors.spaceName || (formData.spaceName.length > 200 ? `${formData.spaceName.length}/255` : '')}
                     error={!!fieldErrors.spaceName}
                   />
 
@@ -806,14 +822,24 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
 
                 <TextFieldThreadly
                   label="Description"
-                  onChange={(e) => setFormData({ ...formData, spaceDescription: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, spaceDescription: value });
+
+                    // Immediate validation for character limit
+                    if (value.length > 255) {
+                      setFieldErrors(prev => ({ ...prev, spaceDescription: 'Description cannot exceed 255 characters' }));
+                    } else if (fieldErrors.spaceDescription) {
+                      setFieldErrors(prev => ({ ...prev, spaceDescription: '' }));
+                    }
+                  }}
                   variant="outlined"
                   size="small"
                   sx={{ mt: 2, width: '100%', borderRadius: 2 }}
                   multiline
                   rows={2}
                   rowsMax={2}
-                  helperText={fieldErrors.spaceDescription}
+                  helperText={fieldErrors.spaceDescription || (formData.spaceDescription.length > 200 ? `${formData.spaceDescription.length}/255` : '')}
                   error={!!fieldErrors.spaceDescription}
                 />
               </Box>

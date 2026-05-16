@@ -308,10 +308,16 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
           {/* COMMENT INPUT */}
           <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
             <Avatar
-              src={threadData?.current_user_avatar_url}
-              sx={{ width: 30, height: 30 }}
+              src={user?.avatar_url}
+              onClick={() => handleProfileNavigate(user?.username)}
+              sx={{ 
+                width: 30, 
+                height: 30, 
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.8 }
+              }}
             >
-              {threadData?.current_user_avatar_url?.[0]?.toUpperCase()}
+              {user?.username?.[0]?.toUpperCase()}
             </Avatar>
 
             <Box sx={{ flex: 1 }}>

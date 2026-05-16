@@ -4,8 +4,8 @@ import NoPhotographyRoundedIcon from '@mui/icons-material/NoPhotographyRounded';
 import PeopleIcon from '@mui/icons-material/People';
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Avatar, Box, Button, Grid, IconButton, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography } from '@mui/material';
-import { Circle, Flame } from 'lucide-react';
+import { Avatar, Box, Button, Grid, IconButton, Menu, MenuItem, MobileStepper, Paper, Skeleton, Typography, useTheme } from '@mui/material';
+import { Flame } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
@@ -22,32 +22,52 @@ import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { uploadImagesToCloudinary } from '../utils/cloudinary';
 
-
 // Reusable About Space Card component
 const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining, rules, contributors, isOwner, onSettingsClick, isMobile = false }) => {
-  const cardStyles = isMobile
-    ? { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 0 }
-    : { backgroundColor: 'paper.backgroundColor', p: 2, borderRadius: 1 };
+  const cardStyles = {
+    backgroundColor: 'background.paper',
+    p: { xs: 2, md: 3 },
+    borderRadius: { xs: 0, md: 2 },
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: 'none',
+    overflow: 'hidden',
+    position: 'relative'
+  };
 
   return (
     <Paper sx={cardStyles}>
+      {/* Accent Top Bar */}
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: `linear-gradient(90deg, ${isMember ? '#f43f5e' : '#6366f1'} 0%, ${isMember ? '#e11d48' : '#4f46e5'} 100%)`
+      }} />
+
       {/* Title */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography
-            sx={{
-              fontSize: 12,
-              letterSpacing: 2,
-              color: '#9ca3af',
-            }}
-          >
-            ABOUT SPACE
-          </Typography>
-        </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography
+          sx={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: 1.5,
+            color: 'text.secondary',
+            textTransform: 'uppercase'
+          }}
+        >
+          Community Info
+        </Typography>
         {isOwner && (
           <IconButton
             onClick={onSettingsClick}
-            sx={{ color: '#9ca3af', '&:hover': { color: '#d1d5db' } }}
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              '&:hover': { color: 'primary.main', bgcolor: 'rgba(99, 102, 241, 0.1)' }
+            }}
           >
             <SettingsIcon sx={{ fontSize: 18 }} />
           </IconButton>
@@ -55,130 +75,106 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       </Box>
 
       {/* Description */}
-      <Box
-        sx={{
-          overflow: 'hidden',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 1,
-        }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Typography
           sx={{
-            fontSize: 14,
+            fontSize: { xs: '0.9rem', md: '0.95rem' },
             lineHeight: 1.6,
-            color: '#d1d5db',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
+            color: 'text.primary',
+            fontWeight: 400
           }}
         >
           {space?.description || 'No description available'}
         </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-          <Circle
-            size={8}
-            fill="#22c55e"
-            color="#22c55e"
-            style={{ marginRight: '4px' }}
-          />
-          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            1 ONLINE
-          </Typography>
-        </Box>
       </Box>
 
-      {/* Stats */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 3,
-          mb: 3,
-          px: 1
-        }}
-      >
-        {/* MEMBERS */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              backgroundColor: 'rgba(107, 114, 128, 0.1)'
-            }}
-          >
-            <PeopleIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-          </Box>
-          <Box>
-            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Members
-            </Typography>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
+      {/* Stats Grid */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={6}>
+          <Box sx={{
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            height: '100%'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <PeopleIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+              <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase' }}>
+                Members
+              </Typography>
+            </Box>
+            <Typography sx={{ fontSize: 18, fontWeight: 800, color: 'text.primary' }}>
               {memberCount || 0}
             </Typography>
           </Box>
-        </Box>
-
-        {/* CREATED DATE */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              backgroundColor: 'rgba(107, 114, 128, 0.1)'
-            }}
-          >
-            <AccessTimeIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
-          </Box>
-          <Box>
-            <Typography sx={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              Created
-            </Typography>
-            <Typography sx={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
-              {space?.createdAt
-                ? space.createdAt
-                : 'Unknown'}
+        </Grid>
+        <Grid item xs={6}>
+          <Box sx={{
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            height: '100%'
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <AccessTimeIcon sx={{ fontSize: 14, color: 'primary.main' }} />
+              <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase' }}>
+                Created
+              </Typography>
+            </Box>
+            <Typography sx={{ fontSize: 13, fontWeight: 700, color: 'text.primary', mt: 0.5 }}>
+              {space?.createdAt || 'Unknown'}
             </Typography>
           </Box>
-        </Box>
-      </Box>
-
-
+        </Grid>
+      </Grid>
 
       {/* Button */}
-      {isMember ? (
-        <StyledButton
-          onClick={onLeave}
-          disabled={joining}
-          variant="danger"
-          sx={{
-            width: '100%',
-          }}
-        >
-          {joining ? 'Processing...' : 'Leave Space'}
-        </StyledButton>
-      ) : (
-        <CustomButton
-          onClick={onJoin}
-          disabled={joining}
-          fetchOnclick={onJoin}
-          sx={{
-            width: '100%',
-          }}
-        >
-          {joining ? 'Processing...' : 'Join Space'}
-        </CustomButton>
-      )}
+      <Box sx={{ mb: 3 }}>
+        {isMember ? (
+          <Button
+            fullWidth
+            onClick={onLeave}
+            disabled={joining}
+            variant="outlined"
+            sx={{
+              textTransform: 'none',
+              borderRadius: '12px',
+              py: 1,
+              borderColor: 'rgba(244, 63, 94, 0.5)',
+              color: '#f43f5e',
+              fontWeight: 700,
+              '&:hover': {
+                borderColor: '#f43f5e',
+                bgcolor: 'rgba(244, 63, 94, 0.05)'
+              }
+            }}
+          >
+            {joining ? 'Leaving...' : 'Leave Community'}
+          </Button>
+        ) : (
+          <Button
+            fullWidth
+            onClick={onJoin}
+            disabled={joining}
+            variant="contained"
+            sx={{
+              textTransform: 'none',
+              borderRadius: '12px',
+              py: 1.2,
+              fontWeight: 800,
+              // boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
+              '&:hover': {
+                // boxShadow: '0 6px 20px rgba(99, 102, 241, 0.6)',
+                transform: 'translateY(-1px)'
+              }
+            }}
+          >
+            {joining ? 'Joining...' : 'Join Community'}
+          </Button>
+        )}
+      </Box>
 
       {/* Space Rules Section */}
       <Box sx={{ mt: 3 }}>
@@ -242,17 +238,29 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
               <Box key={contributor.user_id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Avatar
                   src={contributor.avatar_url}
+                  onClick={() => navigate(`/profile/${contributor.username}`)}
                   sx={{
                     width: 32,
                     height: 32,
                     backgroundColor: '#6366f1',
                     fontSize: 14,
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.8 }
                   }}
                 >
                   {contributor.username?.substring(0, 2).toUpperCase() || 'U'}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
+                  <Typography
+                    onClick={() => navigate(`/profile/${contributor.username}`)}
+                    sx={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#d1d5db',
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main', textDecoration: 'underline' }
+                    }}
+                  >
                     {contributor.username}
                   </Typography>
                   <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
@@ -279,6 +287,7 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
 };
 
 const Space = () => {
+  const theme = useTheme();
   const { spaceId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -1035,13 +1044,17 @@ const Space = () => {
       <Grid size={12}>
         <Box
           sx={{
-            height: { xs: 250, md: 420 },
+            width: '100%',
+            height: { xs: 230, sm: 260, md: 320 },
             backgroundColor: 'background.paper',
             position: 'relative',
             display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            pb: 30
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            overflow: 'hidden',
+            borderRadius: { xs: 0, md: 2 },
+            mb: { xs: 2, md: 4 },
+            boxShadow: theme.shadows[4]
           }}
         >
 
@@ -1101,196 +1114,245 @@ const Space = () => {
             </>
           )}
 
-          {/* Cover Photo Placeholder */}
+          {/* Cover Photo Backdrop */}
           <Box
             sx={{
               position: 'absolute',
               top: 0,
               left: 0,
               right: 0,
-              bottom: 5,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
+              bottom: 0,
               backgroundImage: space?.cover_photo_url
-                ? `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${space.cover_photo_url})`
-                : 'none',
+                ? `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url(${space.cover_photo_url})`
+                : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               opacity: coverPhotoLoading ? 0.5 : 1,
-              filter: coverPhotoBlur ? 'blur(4px)' : 'none'
+              filter: coverPhotoBlur ? 'blur(4px)' : 'none',
+              transition: 'all 0.5s ease-in-out'
+            }}
+          />
+
+          {/* Space Information - Glassmorphism Overlay */}
+          <Box
+            sx={{
+              position: 'relative',
+              zIndex: 20,
+              width: '100%',
+              p: { xs: 2, sm: 3, md: 4 },
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'flex-end' },
+              gap: { xs: 2, sm: 3 },
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+              backdropFilter: 'blur(4px)'
             }}
           >
-
-            {/* Space Information Section */}
+            {/* Space Avatar */}
             <Box
+              onClick={(e) => {
+                if (space?.userRole === 'owner') {
+                  setAvatarMenuAnchor(e.currentTarget);
+                  setAvatarMenuOpen(true);
+                }
+              }}
               sx={{
                 position: 'relative',
-                zIndex: 20,
-                p: 3,
-                textAlign: 'center',
-                mt: -2
+                zIndex: 30,
+                cursor: space?.userRole === 'owner' ? 'pointer' : 'default',
+                transition: 'transform 0.3s ease',
+                '&:hover': { transform: 'scale(1.05)' }
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexDirection: 'column', width: '100%' }}>
-                <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
-                  <Typography
-                    variant="h4"
+              <Avatar
+                src={space?.avatar_url}
+                sx={{
+                  width: { xs: 70, sm: 100, md: 120 },
+                  height: { xs: 70, sm: 100, md: 120 },
+                  backgroundColor: 'primary.main',
+                  fontSize: { xs: 32, sm: 40, md: 48 },
+                  border: '4px solid rgba(255, 255, 255, 0.1)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  opacity: avatarLoading ? 0.5 : 1
+                }}
+              >
+                {space?.name?.charAt(0)?.toUpperCase() || 'S'}
+              </Avatar>
+            </Box>
+
+            {/* Info Text */}
+            <Box sx={{ flex: 1, textAlign: 'left', pb: { xs: 1, sm: 0 } }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 900,
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+                  textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                  mb: 0.5
+                }}
+              >
+                {space?.name || 'Space Name'}
+              </Typography>
+
+              <Typography
+                variant="body1"
+                sx={{
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  maxWidth: '600px',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  lineHeight: 1.4,
+                  mb: 1.5,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}
+              >
+                {space?.description || 'Space description goes here'}
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                {trendingRank && (
+                  <Box
                     sx={{
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      textTransform: 'uppercase',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'block'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      bgcolor: 'rgba(99, 102, 241, 0.9)',
+                      px: 1.2,
+                      py: 0.4,
+                      borderRadius: '20px',
+                      backdropFilter: 'blur(4px)',
+                      border: '1px solid rgba(255,255,255,0.1)'
                     }}
                   >
-                    {space?.name || 'Space Name'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {trendingRank && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        bgcolor: 'primary.main',
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 2
-                      }}
-                    >
-                      <EmojiEventsIcon sx={{ fontSize: 16, color: 'white' }} />
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
-                        #{trendingRank} Trending
-                      </Typography>
-                    </Box>
-                  )}
-                  {hotRank && (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        bgcolor: 'primary.main',
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 2
-                      }}
-                    >
-                      <Flame size={16} color="white" />
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 600 }}>
-                        #{hotRank} Hot
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-              <Box sx={{ width: { xs: '300px', md: '500px' }, overflow: 'hidden' }}>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: 'text.primary',
-                    mt: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'block'
-                  }}
-                >
-                  {space?.description || 'Space description goes here'}
-                </Typography>
+                    <EmojiEventsIcon sx={{ fontSize: 14, color: 'white' }} />
+                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 700, fontSize: '0.7rem' }}>
+                      #{trendingRank} TRENDING
+                    </Typography>
+                  </Box>
+                )}
+                {hotRank && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      bgcolor: 'rgba(244, 63, 94, 0.9)',
+                      px: 1.2,
+                      py: 0.4,
+                      borderRadius: '20px',
+                      backdropFilter: 'blur(4px)',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    <Flame size={14} color="white" />
+                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 700, fontSize: '0.7rem' }}>
+                      #{hotRank} HOT
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </Box>
           </Box>
-
-          {/* Space Avatar - Centered */}
-          <Box
-            onClick={(e) => {
-              if (space?.userRole === 'owner') {
-                setAvatarMenuAnchor(e.currentTarget);
-                setAvatarMenuOpen(true);
-              }
-            }}
-            sx={{
-              position: 'absolute',
-              bottom: { xs: -40, sm: -50, md: -60 },
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 10,
-              cursor: space?.userRole === 'owner' ? 'pointer' : 'default'
-            }}
-          >
-            <Avatar
-              src={space?.avatar_url}
-              sx={{
-                width: { xs: 80, sm: 100, md: 120 },
-                height: { xs: 80, sm: 100, md: 120 },
-                backgroundColor: 'primary.main',
-                fontSize: { xs: 32, sm: 40, md: 48 },
-                border: '4px solid',
-                borderColor: 'background.default',
-                opacity: avatarLoading ? 0.5 : 1,
-                transition: 'opacity 0.3s'
-              }}
-            >
-              {space?.name?.charAt(0)?.toUpperCase() || 'S'}
-            </Avatar>
-          </Box>
-
-          {/* Avatar Menu */}
-          <Menu
-            anchorEl={avatarMenuAnchor}
-            open={avatarMenuOpen}
-            onClose={() => setAvatarMenuOpen(false)}
-            anchorOrigin={{
-              vertical: 'center',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'center',
-              horizontal: 'left',
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                setAvatarMenuOpen(false);
-                avatarInputRef.current?.click();
-              }}
-            >
-              <PhotoCameraRoundedIcon sx={{ mr: 1 }} />
-              Change Photo
-            </MenuItem>
-            {space?.avatar_url && (
-              <MenuItem onClick={handleAvatarRemove}>
-                <NoPhotographyRoundedIcon sx={{ mr: 1 }} />
-                Remove Photo
-              </MenuItem>
-            )}
-          </Menu>
         </Box>
+
+        {/* Avatar Menu */}
+        <Menu
+          anchorEl={avatarMenuAnchor}
+          open={avatarMenuOpen}
+          onClose={() => setAvatarMenuOpen(false)}
+          anchorOrigin={{
+            vertical: 'center',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'center',
+            horizontal: 'left',
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setAvatarMenuOpen(false);
+              avatarInputRef.current?.click();
+            }}
+          >
+            <PhotoCameraRoundedIcon sx={{ mr: 1 }} />
+            Change Photo
+          </MenuItem>
+          {space?.avatar_url && (
+            <MenuItem onClick={handleAvatarRemove}>
+              <NoPhotographyRoundedIcon sx={{ mr: 1 }} />
+              Remove Photo
+            </MenuItem>
+          )}
+        </Menu>
       </Grid>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
-          <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '1rem', md: '1.25rem' } }}>
-            Threads
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '1rem', md: '1.25rem' }, ml: { xs: 0, sm: 0.5 } }}>
-            Lists
-          </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', p: 2, pb: 1 }}>
+        <Box sx={{ display: 'flex', gap: 3 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              cursor: 'pointer',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -4,
+                left: 0,
+                width: '100%',
+                height: 2,
+                bgcolor: 'primary.main',
+                transform: 'scaleX(1)',
+                transition: 'transform 0.3s ease'
+              }
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '0.85rem', md: '1.1rem' }, letterSpacing: '0.5px' }}>
+              Threads
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              position: 'relative',
+              cursor: 'pointer',
+              opacity: 0.5,
+              transition: 'opacity 0.3s',
+              '&:hover': { opacity: 1 },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -4,
+                left: 0,
+                width: '100%',
+                height: 2,
+                bgcolor: 'primary.main',
+                transform: 'scaleX(0)',
+                transition: 'transform 0.3s ease'
+              }
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', textTransform: 'uppercase', fontSize: { xs: '0.85rem', md: '1.1rem' }, letterSpacing: '0.5px' }}>
+              Lists
+            </Typography>
+          </Box>
         </Box>
 
         {!showThreadForm && (
           <CustomButton
             onClick={() => setShowThreadForm(true)}
             sx={{
-              fontSize: { xs: '9px', sm: '10px' },
-              minWidth: { xs: 'auto', sm: 'auto' },
-              px: { xs: 1.5, sm: 2 }
+              fontSize: { xs: '10px', sm: '11px' },
+              borderRadius: '20px',
+              px: { xs: 2, sm: 3 },
+              // boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                // boxShadow: '0 6px 20px rgba(99, 102, 241, 0.6)'
+              }
             }}
           >
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Create Thread</Box>
@@ -1302,68 +1364,73 @@ const Space = () => {
       {/* Thread List and About Space Card */}
       <Grid sx={{ width: '100%', justifyContent: 'center' }} container spacing={2}>
         {/* Mobile: Swipeable View */}
-        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%', pb: 8 }}>
-          <MobileStepper
-            steps={2}
-            position="static"
-            activeStep={activeStep}
-            sx={{
-              justifyContent: 'center',
-              backgroundColor: 'transparent',
-              mt: 2,
-              '& .MuiMobileStepper-dot': {
-                backgroundColor: 'divider'
-              },
-              '& .MuiMobileStepper-dotActive': {
-                backgroundColor: 'primary.main'
-              }
-            }}
-          />
-          <Box {...swipeHandlers}>
+        <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%', pb: 4 }}>
+          <Box {...swipeHandlers} sx={{ minHeight: '400px' }}>
             {activeStep === 0 && (
-              <Box>
+              <Box sx={{ px: 1 }}>
                 {/* Thread Creation Form */}
                 {showThreadForm && (
-                  <Box sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Box sx={{
+                    mb: 4,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'background.paper',
+                    // border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: theme.shadows[2]
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Avatar
                         src={user?.avatar_url}
+                        onClick={() => navigate(`/profile/${user?.username}`)}
                         sx={{
-                          width: 40,
-                          height: 40,
+                          width: 36,
+                          height: 36,
                           backgroundColor: 'primary.main',
-                          fontSize: 20,
-                          mr: 1
+                          fontSize: 18,
+                          mr: 1.5,
+                          cursor: 'pointer',
+                          border: '2px solid',
+                          borderColor: 'divider'
                         }}
                       >
                         {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </Avatar>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                        Create a New Thread
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ mb: 2 }}>
                       <TextFieldThreadly
-                        label="Thread Title"
+                        label="What's on your mind?"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         maxLength={300}
                         showCharCount
                       />
                     </Box>
-                    <QuillEditor
-                      key={editorKey}
-                      isExpanded={showThreadForm}
-                      value={formData.content}
-                      onChange={(htmlContent) => {
-                        setFormData(prev => ({ ...prev, content: htmlContent }));
-                      }}
-                      placeholder="Share your thoughts..."
-                      height="150px"
-                    />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        variant="contained"
-                        onClick={handleCreateThread}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        {creatingThread ? 'Creating...' : 'Create Thread'}
-                      </Button>
+
+                    <Box sx={{
+                      mb: 2,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      // border: '1px solid',
+                      // borderColor: 'divider'
+                    }}>
+                      <QuillEditor
+                        key={editorKey}
+                        isExpanded={showThreadForm}
+                        value={formData.content}
+                        onChange={(htmlContent) => {
+                          setFormData(prev => ({ ...prev, content: htmlContent }));
+                        }}
+                        placeholder="Share your thoughts..."
+                        height="150px"
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
                       <Button
                         variant="outlined"
                         onClick={() => {
@@ -1371,9 +1438,25 @@ const Space = () => {
                           setFormData({ title: '', content: '' });
                         }}
                         disabled={creatingThread}
-                        sx={{ textTransform: 'none' }}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '10px',
+                          px: 3
+                        }}
                       >
                         Cancel
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={handleCreateThread}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '10px',
+                          px: 3,
+                          fontWeight: 700
+                        }}
+                      >
+                        {creatingThread ? 'Posting...' : 'Post Thread'}
                       </Button>
                     </Box>
                   </Box>
@@ -1474,6 +1557,29 @@ const Space = () => {
               </Box>
             )}
           </Box>
+
+          {/* Mobile Stepper at the bottom */}
+          <MobileStepper
+            steps={2}
+            position="static"
+            activeStep={activeStep}
+            sx={{
+              justifyContent: 'center',
+              backgroundColor: 'transparent',
+              mt: 2,
+              '& .MuiMobileStepper-dot': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                width: 6,
+                height: 6
+              },
+              '& .MuiMobileStepper-dotActive': {
+                backgroundColor: 'primary.main',
+                width: 10,
+                height: 6,
+                borderRadius: '3px'
+              }
+            }}
+          />
         </Box>
 
         {/* Desktop: Regular Layout */}
@@ -1485,20 +1591,46 @@ const Space = () => {
               <Box sx={{ p: 2 }}>
                 {/* Thread Creation Form */}
                 {showThreadForm && (
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{
+                    mb: 4,
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: theme.shadows[3],
+                    animation: 'fadeIn 0.3s ease-out'
+                  }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                       <Avatar
                         src={user?.avatar_url}
+                        onClick={() => navigate(`/profile/${user?.username}`)}
                         sx={{
-                          width: 40,
-                          height: 40,
+                          width: 48,
+                          height: 48,
                           backgroundColor: 'primary.main',
-                          fontSize: 20,
-                          mr: 1
+                          fontSize: 24,
+                          mr: 2,
+                          cursor: 'pointer',
+                          border: '2px solid',
+                          borderColor: 'divider',
+                          transition: 'transform 0.2s',
+                          '&:hover': { transform: 'scale(1.1)' }
                         }}
                       >
                         {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                       </Avatar>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}>
+                          Create a New Thread
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          Share something with the {space?.name} community
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ mb: 2.5 }}>
                       <TextFieldThreadly
                         label="Thread Title"
                         value={formData.title}
@@ -1507,34 +1639,66 @@ const Space = () => {
                         showCharCount
                       />
                     </Box>
-                    <QuillEditor
-                      key={editorKey}
-                      isExpanded={showThreadForm}
-                      value={formData.content}
-                      onChange={(htmlContent) => {
-                        setFormData(prev => ({ ...prev, content: htmlContent }));
-                      }}
-                      placeholder="Share your thoughts..."
-                      height="150px"
-                    />
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+
+                    <Box sx={{
+                      mb: 3,
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      transition: 'border-color 0.2s',
+                      '&:focus-within': { borderColor: 'primary.main' }
+                    }}>
+                      <QuillEditor
+                        key={editorKey}
+                        isExpanded={showThreadForm}
+                        value={formData.content}
+                        onChange={(htmlContent) => {
+                          setFormData(prev => ({ ...prev, content: htmlContent }));
+                        }}
+                        placeholder="Share your thoughts, ideas, or questions..."
+                        height="200px"
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                       <Button
-                        variant="contained"
-                        onClick={handleCreateThread}
-                        sx={{ textTransform: 'none' }}
-                      >
-                        {creatingThread ? 'Creating...' : 'Create Thread'}
-                      </Button>
-                      <Button
-                        variant="outlined"
+                        variant="text"
                         onClick={() => {
                           setShowThreadForm(false);
                           setFormData({ title: '', content: '' });
                         }}
                         disabled={creatingThread}
-                        sx={{ textTransform: 'none' }}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '12px',
+                          px: 4,
+                          fontWeight: 700,
+                          color: 'text.secondary',
+                          '&:hover': { color: 'text.primary', bgcolor: 'rgba(255,255,255,0.05)' }
+                        }}
                       >
                         Cancel
+                      </Button>
+                      <Button
+                        variant="contained"
+                        onClick={handleCreateThread}
+                        disabled={creatingThread || !formData.title.trim()}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '12px',
+                          px: 5,
+                          py: 1.2,
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
+                          '&:hover': {
+                            boxShadow: '0 6px 20px rgba(99, 102, 241, 0.6)',
+                            transform: 'translateY(-1px)'
+                          }
+                        }}
+                      >
+                        {creatingThread ? 'Posting...' : 'Post Thread'}
                       </Button>
                     </Box>
                   </Box>

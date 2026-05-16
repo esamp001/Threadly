@@ -239,9 +239,13 @@ const MainContent = ({ spaces, setSpaces, threadFilter = 'latest' }) => {
             {/* Content */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Avatar
-                sx={{ height: 50, width: 50 }}
+                sx={{ height: 50, width: 50, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
                 src={user?.avatar_url}
                 alt={user?.username}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${user?.username}`);
+                }}
               >
                 {user?.username ? user.username.charAt(0).toUpperCase() : 'J'}
               </Avatar>

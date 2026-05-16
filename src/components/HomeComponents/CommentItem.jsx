@@ -6,12 +6,15 @@ import {
   Avatar,
   Box,
   Button,
+  Menu,
+  MenuItem,
   TextField,
   Typography
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
 import VotingComponent from '../Global/VotingComponent';
@@ -23,13 +26,18 @@ const CommentItem = ({
   newCommentId,
   comments,
   setComments,
+  currentUserId,
 }) => {
   const { showSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   // States
   const [replyTexts, setReplyTexts] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [votingCommentIds, setVotingCommentIds] = useState(new Set());
+  const [editingComment, setEditingComment] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
 
   let voteTimeout = null;
   let abortController = null;
@@ -176,6 +184,130 @@ const CommentItem = ({
     }
   };
 
+  /**
+   * Helper function to check if comment can be edited
+   * Only author can edit within 5 minutes of creation
+   * @param {string} createdAt - The comment creation timestamp
+   * @param {number} createdById - The comment author ID
+   * @param {number} currentUserId - The current user ID
+   * @returns {boolean} - True if comment can be edited
+   */
+  const canEditComment = (createdAt, createdById, currentUserId) => {
+
+    // Check if user is the author
+    if (createdById !== currentUserId) {
+      return false;
+    }
+
+    // If createdAt is missing or invalid, assume it's editable (for newly created comments)
+    if (!createdAt) {
+      return true;
+    }
+
+    // Check if comment is within 5 minutes of creation
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const commentCreatedDate = new Date(createdAt);
+
+    // If date parsing fails, assume it's editable
+    if (isNaN(commentCreatedDate.getTime())) {
+      console.warn('Invalid comment created_at:', createdAt);
+      return true;
+    }
+
+    const result = commentCreatedDate > fiveMinutesAgo;
+    return result;
+  };
+
+  /**
+   * Navigate to user profile page
+   * This is used to navigate to a user's profile when clicking on their name or avatar
+   * @param {string} username - The username of the user to navigate to
+   */
+  const handleProfileNavigate = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
+  };
+
+  // Handle comment edit
+  const handleEditSubmit = async () => {
+    if (!editText.trim()) return;
+
+    try {
+      const response = await apiRequest(`/api/comments/${editingComment}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content: editText.trim() })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update comment in state
+        const updateCommentRecursively = (comments, commentId, newContent) => {
+          return comments.map(comment => {
+            if (comment.id === commentId) {
+              return { ...comment, content: newContent };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: updateCommentRecursively(comment.replies, commentId, newContent)
+              };
+            }
+            return comment;
+          });
+        };
+
+        setComments(prev => updateCommentRecursively(prev, editingComment, data.comment.content));
+        setEditingComment(null);
+        setEditText('');
+        showSnackbar('Comment updated successfully', 'success');
+      } else {
+        showSnackbar(data.error_message || 'Failed to update comment', 'error');
+      }
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      showSnackbar('Error editing comment', 'error');
+    }
+  };
+
+  // Handle comment delete
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await apiRequest(`/api/comments/${commentId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update comment in state to show as deleted
+        const updateCommentRecursively = (comments, commentId) => {
+          return comments.map(comment => {
+            if (comment.id === commentId) {
+              return { ...comment, is_active: false, content: 'This comment is deleted by user' };
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: updateCommentRecursively(comment.replies, commentId)
+              };
+            }
+            return comment;
+          });
+        };
+
+        setComments(prev => updateCommentRecursively(prev, commentId));
+        showSnackbar('Comment deleted', 'success');
+      } else {
+        showSnackbar(data.error_message || 'Failed to delete comment', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      showSnackbar('Error deleting comment', 'error');
+    }
+  };
+
   return (
     // THIS WHOLE COMPONENT IS MAPPED EACH COMMENT ITEM
     <Box sx={{ ml: depth > 0 ? 5 : 0, position: 'relative' }}>
@@ -210,13 +342,20 @@ const CommentItem = ({
       <Box sx={{ display: 'flex', gap: 1 }}>
         <Avatar
           src={comment.user_avatar_url}
+          onClick={() => handleProfileNavigate(comment.author)}
           sx={{
             width: 32,
             height: 32,
             fontSize: 13,
             bgcolor: 'primary.main',
             border: '2px solid',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            cursor: 'pointer',
+            '&:hover': {
+              opacity: 0.8,
+              transform: 'scale(1.05)'
+            },
+            transition: 'all 0.2s ease-in-out'
           }}
         >
           {comment.author?.[0]?.toUpperCase() || 'A'}
@@ -227,6 +366,7 @@ const CommentItem = ({
             <Typography
               fontWeight={600}
               fontSize={14}
+              onClick={() => handleProfileNavigate(comment.author)}
               sx={{
                 color: 'text.primary',
                 '&:hover': {
@@ -248,16 +388,41 @@ const CommentItem = ({
           </Box>
 
           {/* COMMENT ITEM CONTENT */}
-          <Typography
-            fontSize={14}
-            sx={{
-              lineHeight: 1.6,
-              color: 'text.primary',
-              wordBreak: 'break-word'
-            }}
-          >
-            {comment.content}
-          </Typography>
+          {editingComment === comment.id ? (
+            <TextField
+              fullWidth
+              multiline
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleEditSubmit();
+                }
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  fontSize: 14,
+                },
+                '& .MuiInput-underline:before': {
+                  borderBottomColor: 'divider',
+                },
+              }}
+              autoFocus
+            />
+          ) : (
+            <Typography
+              fontSize={14}
+              sx={{
+                lineHeight: 1.6,
+                color: comment.is_active === false ? 'text.disabled' : 'text.primary',
+                wordBreak: 'break-word',
+                fontStyle: comment.is_active === false ? 'italic' : 'normal'
+              }}
+            >
+              {comment.content}
+            </Typography>
+          )}
 
           {/* COMMENT ITEM ACTIONS */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1.5 }}>
@@ -311,20 +476,71 @@ const CommentItem = ({
               </Box>
 
               {/* MORE OPTIONS BUTTON */}
-              <IconButton
-                size="small"
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': {
-                    color: 'primary.main',
-                    backgroundColor: 'action.hover'
-                  }
-                }}
-              >
-                <MoreHorizIcon fontSize="small" />
-              </IconButton>
+              {comment.is_active !== false && (
+                <>
+                  <IconButton
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      '&:hover': {
+                        color: 'primary.main',
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                  >
+                    <MoreHorizIcon fontSize="small" />
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={() => setAnchorEl(null)}
+                  >
+                    {canEditComment(comment.created_at, comment.created_by, currentUserId) && (
+                      <MenuItem
+                        onClick={() => {
+                          setAnchorEl(null);
+                          setEditingComment(comment.id);
+                          setEditText(comment.content);
+                        }}
+                      >
+                        Edit
+                      </MenuItem>
+                    )}
+                    <MenuItem
+                      onClick={() => {
+                        setAnchorEl(null);
+                        handleDeleteComment(comment.id);
+                      }}
+                    >
+                      Delete
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
             </Box>
 
+            {editingComment === comment.id && (
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={handleEditSubmit}
+                  disabled={!editText.trim()}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    setEditingComment(null);
+                    setEditText('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            )}
             {replyingTo === comment.id && (
               <Box sx={{ mt: 2 }}>
                 <TextField
@@ -420,6 +636,7 @@ const CommentItem = ({
                   setComments={setComments}
                   onReplyingTo={setReplyingTo}
                   onReplyTextsChange={setReplyTexts}
+                  currentUserId={currentUserId}
                 />
               ))}
             </AccordionDetails>

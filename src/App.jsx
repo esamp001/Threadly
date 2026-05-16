@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext/AuthContext'
 import Home from "./pages/Home"
 import MagicLinkAuth from "./pages/MagicLinkAuth"
 import Onboarding from "./pages/Onboarding"
+import Profile from "./pages/Profile"
 import Search from "./pages/Search"
 import Space from "./pages/Space"
 import ThreadlyLogin from "./pages/SpaceLogin"
@@ -29,6 +30,7 @@ function App() {
         {ProtectedRoutes("/spaces/:spaceId", <Space />)}
         {ProtectedRoutes("/spaces/:spaceId/settings", <SpaceSettings />)}
         {ProtectedRoutes("/search", <Search />)}
+        {ProtectedRoutes("/profile/:username", <Profile />)}
       </Routes>
     </AuthProvider>
   )

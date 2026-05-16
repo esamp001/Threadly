@@ -72,6 +72,8 @@ erDiagram
         int downvotes
         int net_score
         boolean is_active
+        timestamp deleted_at
+        int deleted_by FK
         timestamp created_at
         timestamp updated_at
     }

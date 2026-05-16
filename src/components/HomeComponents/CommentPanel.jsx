@@ -11,11 +11,15 @@ import {
 } from '@mui/material';
 import DOMPurify from 'dompurify';
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
+import { useAuth } from '../../context/AuthContext/AuthContext';
 import CommentItem from './CommentItem';
 
 
 const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpdate }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isPostingComment, setIsPostingComment] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
@@ -24,6 +28,17 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [replyTexts, setReplyTexts] = useState({});
+
+  /**
+   * Navigate to user profile page
+   * This is used to navigate to a user's profile when clicking on their name or avatar
+   * @param {string} username - The username of the user to navigate to
+   */
+  const handleProfileNavigate = (username) => {
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
+  };
 
   // Handles posting a new comment to a thread.
   const handlePostComment = async (threadId) => {
@@ -211,7 +226,17 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <Avatar
                   src={threadData.user_avatar_url}
-                  sx={{ width: 37, height: 37 }}
+                  onClick={() => handleProfileNavigate(threadData.username)}
+                  sx={{
+                    width: 37,
+                    height: 37,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      opacity: 0.8,
+                      transform: 'scale(1.05)'
+                    },
+                    transition: 'all 0.2s ease-in-out'
+                  }}
                 >
                   {threadData.username?.[0]?.toUpperCase()}
                 </Avatar>
@@ -219,7 +244,16 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
                     <Typography
                       variant="caption"
-                      sx={{ fontWeight: 500, color: 'text.primary', lineHeight: 1.2 }}
+                      onClick={() => handleProfileNavigate(threadData.username)}
+                      sx={{
+                        fontWeight: 500,
+                        color: 'text.primary',
+                        lineHeight: 1.2,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: 'primary.main'
+                        }
+                      }}
                     >
                       {threadData.username}
                     </Typography>
@@ -404,7 +438,25 @@ const CommentPanel = ({ isOpen, isClose, threadId, threadData, onCommentCountUpd
                     setComments={setComments}
                     onReplyingTo={setReplyingTo}
                     onReplyTextsChange={setReplyTexts}
+                    currentUserId={user?.id}
                   />
+                  {comment.replies.map((reply, index) => (
+                    <CommentItem
+                      key={reply.id}
+                      comment={reply}
+                      depth={1}
+                      isLastChild={index === comment.replies.length - 1}
+                      expandedReplies={expandedReplies}
+                      newCommentId={newCommentId}
+                      replyTexts={replyTexts}
+                      replyingTo={replyingTo}
+                      comments={comments}
+                      setComments={setComments}
+                      onReplyingTo={setReplyingTo}
+                      onReplyTextsChange={setReplyTexts}
+                      currentUserId={user?.id}
+                    />
+                  ))}
                 </Box>
               ))
             )}

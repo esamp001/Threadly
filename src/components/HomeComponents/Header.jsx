@@ -1469,7 +1469,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               }}
             >
               <MenuItem
-                // onClick={handleMenuClose}
+                onClick={() => {
+                  handleMenuClose();
+                  navigate(`/profile/${user?.username}`);
+                }}
                 sx={{
                   px: 2,
                   py: 1.5,

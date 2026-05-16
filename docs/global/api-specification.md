@@ -507,9 +507,14 @@ Add a comment to a thread.
 ```
 
 ### PUT /api/comments/:id
-Update a comment.
+Edit a comment.
 
 **Headers:** `Authorization: Bearer <token>`
+
+**Permission Requirements:**
+- Only the comment author can edit their own comment
+- Edit must be within 5 minutes of comment creation
+- Returns 403 if time limit exceeded or user is not author
 
 **Request:**
 ```json
@@ -522,28 +527,81 @@ Update a comment.
 ```json
 {
   "success": true,
-  "data": {
-    "comment": {
-      "id": 1,
-      "content": "Updated comment content",
-      "isEdited": true,
-      "updatedAt": "2024-01-01T01:00:00Z"
-    }
-  },
-  "message": "Comment updated successfully"
+  "status": 200,
+  "error_message": "",
+  "comment": {
+    "id": 1,
+    "content": "Updated comment content",
+    "thread_id": 1,
+    "parent_id": null,
+    "created_by": 123,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:05:00Z",
+    "username": "john_doe",
+    "user_avatar_url": "https://example.com/avatar.jpg"
+  }
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "success": false,
+  "status": 403,
+  "error_message": "Edit time limit exceeded (5 minutes)"
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "success": false,
+  "status": 403,
+  "error_message": "Not the comment author"
 }
 ```
 
 ### DELETE /api/comments/:id
-Delete a comment.
+Soft delete a comment.
 
 **Headers:** `Authorization: Bearer <token>`
+
+**Permission Requirements:**
+- Comment author can delete their own comment
+- Space moderators and admins can delete any comment in their space
+- Regular members cannot delete others' comments
+
+**Behavior:**
+- Performs a soft delete (sets `is_active` to false)
+- Records `deleted_at` timestamp
+- Records `deleted_by` user ID
+- Comment remains visible with message "This comment is deleted by user"
+- Replies to deleted comments remain visible
 
 **Response (200):**
 ```json
 {
   "success": true,
-  "message": "Comment deleted successfully"
+  "status": 200,
+  "error_message": ""
+}
+```
+
+**Error Response (403):**
+```json
+{
+  "success": false,
+  "status": 403,
+  "error_message": "Not authorized to delete this comment"
+}
+```
+
+**Error Response (404):**
+```json
+{
+  "success": false,
+  "status": 404,
+  "error_message": "Comment not found"
 }
 ```
 

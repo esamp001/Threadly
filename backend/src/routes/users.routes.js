@@ -6,7 +6,40 @@ const express = require('express');
 const router = express.Router();
 const knex = require('../db/knex');
 const { optionalAuth } = require('../middleware/optionalAuth');
+const { checkAuth } = require('../middleware/checkAuth');
 const { formatRelativeTime } = require('../utils/timeHelpers');
+
+/**
+ * Update current user's profile bio
+ * PUT /api/users/profile
+ */
+router.put('/profile', checkAuth, async (req, res) => {
+  const { bio } = req.body;
+  const userId = req.user.userId;
+
+  console.log({ bio, userId }, "params")
+
+  try {
+    await knex('users')
+      .where('id', userId)
+      .update({
+        bio,
+        updated_at: knex.fn.now()
+      });
+
+    res.json({
+      success: true,
+      message: 'Bio updated successfully',
+      bio
+    });
+  } catch (error) {
+    console.error('Error updating bio:', error);
+    res.status(500).json({
+      success: false,
+      error_message: 'Failed to update bio'
+    });
+  }
+});
 
 /**
  * Get user profile data by username

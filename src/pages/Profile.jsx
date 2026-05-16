@@ -1,13 +1,23 @@
 import {
   AlternateEmailOutlined,
   CalendarTodayOutlined,
+  CheckOutlined,
+  CloseOutlined,
   EmojiEventsOutlined,
+  ExpandLess,
+  ExpandMore,
   TravelExploreOutlined
 } from '@mui/icons-material';
 import {
   alpha,
-  Avatar, Box, Button, Container, Divider, Grid, Paper,
-  Skeleton, Tab, Tabs, Typography, useTheme
+  Avatar, Box, Button,
+  CircularProgress,
+  Container, Divider, Grid, Paper,
+  Skeleton, Tab, Tabs,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,6 +26,7 @@ import Header from '../components/HomeComponents/Header';
 import ExpBar from '../components/Profile/ExpBar';
 import FollowButton from '../components/Profile/FollowButton';
 import ProfileComments from '../components/Profile/ProfileComments';
+import ProfileEdit from '../components/Profile/ProfileEdit';
 import ProfileThreads from '../components/Profile/ProfileThreads';
 import apiRequest from '../config/api';
 import { useAuth } from '../context/AuthContext/AuthContext';
@@ -31,6 +42,9 @@ const Profile = () => {
   const { showSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -42,6 +56,41 @@ const Profile = () => {
   const [hasMoreThreads, setHasMoreThreads] = useState(true);
   const [commentsPage, setCommentsPage] = useState(1);
   const [threadsPage, setThreadsPage] = useState(1);
+  const [isExpanded, setIsExpanded] = useState(!isMobile);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editedBio, setEditedBio] = useState('');
+  const [bioUpdating, setBioUpdating] = useState(false);
+
+  // Automatically update expansion when switching between mobile/desktop views
+  useEffect(() => {
+    setIsExpanded(!isMobile);
+  }, [isMobile]);
+
+  // Sync editedBio with profile bio when editing starts
+  useEffect(() => {
+    if (profile) {
+      setEditedBio(profile.bio || '');
+    }
+  }, [profile, isEditingBio]);
+
+  /**
+   * Handle bio update
+   */
+  const handleBioSave = async () => {
+    setBioUpdating(true);
+    try {
+      const response = await apiRequest.put('/users/profile', { bio: editedBio });
+      if (response.data.success) {
+        setProfile(prev => ({ ...prev, bio: editedBio }));
+        setIsEditingBio(false);
+        showSnackbar('Bio updated successfully', 'success');
+      }
+    } catch (error) {
+      showSnackbar(error.response?.data?.error_message || 'Failed to update bio', 'error');
+    } finally {
+      setBioUpdating(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     try {
@@ -331,29 +380,26 @@ const Profile = () => {
   }
   const isOwnProfile = currentUser?.username === username;
 
-  const theme = useTheme();
-
   return (
     <>
       <Header />
-      <Grid sx={{ p: { xs: 1, md: 3 } }} container spacing={3} maxWidth="xl" >
+      <Grid sx={{ p: { xs: 0, md: 3 }, mt: { xs: 0, md: 2 } }} container spacing={{ xs: 0, md: 3 }}>
         {/* Profile Sidebar */}
         <Grid item size={{ xs: 12, lg: 3.5, xl: 3 }}>
-          <Paper
-            elevation={0}
+          <Box
             sx={{
-              borderRadius: '16px 16px 0 0',
+              borderRadius: { xs: 0, md: '16px 16px 0 0' },
               overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
               bgcolor: 'background.paper',
-              position: 'relative'
+              position: 'relative',
+              border: '1px solid',
+              borderColor: 'divider'
             }}
           >
             {/* Hero Banner Section */}
             <Box
               sx={{
-                height: 120,
+                height: { xs: 80, md: 120 },
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 position: 'relative'
               }}
@@ -395,10 +441,59 @@ const Profile = () => {
                   {profile.username}
                 </Typography>
 
-                {profile.bio && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, px: 2, lineHeight: 1.6 }}>
-                    {profile.bio}
-                  </Typography>
+                {isEditingBio ? (
+                  <Box sx={{ mt: 2, px: 2 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      variant="outlined"
+                      size="small"
+                      placeholder="Write something about yourself..."
+                      value={editedBio}
+                      onChange={(e) => setEditedBio(e.target.value)}
+                      disabled={bioUpdating}
+                      sx={{ mb: 1 }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      <Button
+                        size="small"
+                        startIcon={bioUpdating ? <CircularProgress size={16} /> : <CheckOutlined />}
+                        onClick={handleBioSave}
+                        disabled={bioUpdating}
+                        variant="contained"
+                        sx={{ borderRadius: 99, textTransform: 'none' }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="small"
+                        startIcon={<CloseOutlined />}
+                        onClick={() => setIsEditingBio(false)}
+                        disabled={bioUpdating}
+                        variant="outlined"
+                        sx={{ borderRadius: 99, textTransform: 'none' }}
+                      >
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box sx={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        mt: 1,
+                        px: 2,
+                        lineHeight: 1.6,
+                        fontStyle: profile.bio ? 'normal' : 'italic',
+                        opacity: profile.bio ? 1 : 0.6
+                      }}
+                    >
+                      {profile.bio || "No bio yet."}
+                    </Typography>
+                  </Box>
                 )}
 
                 <Box sx={{ mt: 3 }}>
@@ -411,8 +506,6 @@ const Profile = () => {
                   )}
                 </Box>
               </Box>
-
-              <Divider sx={{ mb: 3, opacity: 0.6 }} />
 
               {/* Iconized Stats */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, px: 1 }}>
@@ -442,100 +535,126 @@ const Profile = () => {
                 </Box>
               </Box>
 
-              {/* EXP Bar with Icon */}
-              <Box sx={{ mb: 4, p: 2, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), border: '1px solid', borderColor: alpha(theme.palette.primary.main, 0.1) }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                  <EmojiEventsOutlined sx={{ color: 'primary.main', fontSize: 20 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Level Progression</Typography>
-                </Box>
-                <ExpBar expPoints={profile.expPoints} level={profile.level} />
-              </Box>
+              <Divider sx={{ mb: 2, opacity: 0.6 }} />
 
-              {/* Account Information */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="overline" sx={{ mb: 2, color: 'text.secondary', fontWeight: 700, display: 'block' }}>
-                  Account Information
-                </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'action.hover', display: 'flex' }}>
-                      <CalendarTodayOutlined sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Member Since</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDate(profile.createdAt)}</Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'action.hover', display: 'flex' }}>
-                      <AlternateEmailOutlined sx={{ fontSize: 18, color: 'text.secondary' }} />
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Username</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>@{profile.username}</Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
+              <Button
+                fullWidth
+                variant="text"
+                onClick={() => setIsExpanded(!isExpanded)}
+                endIcon={isExpanded ? <ExpandLess /> : <ExpandMore />}
+                sx={{
+                  mb: 1,
+                  textTransform: 'none',
+                  color: 'text.secondary',
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: 'transparent', color: 'primary.main' }
+                }}
+              >
+                {isExpanded ? 'Show Less' : 'Show More Info'}
+              </Button>
 
-              {/* Spaces */}
-              {profile.spaces && profile.spaces.length > 0 && (
-                <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <TravelExploreOutlined sx={{ color: 'text.secondary', fontSize: 20 }} />
-                    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                      Active Spaces ({profile.spaces.length})
-                    </Typography>
+              <Box sx={{
+                maxHeight: isExpanded ? '1000px' : '0px',
+                overflow: 'hidden',
+                transition: 'max-height 0.4s ease-in-out',
+                opacity: isExpanded ? 1 : 0,
+                visibility: isExpanded ? 'visible' : 'hidden'
+              }}>
+                {/* EXP Bar with Icon */}
+                <Box sx={{ mb: 4, p: 2, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <EmojiEventsOutlined sx={{ color: 'primary.main', fontSize: 20 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Level Progression</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {profile.spaces.slice(0, 5).map((space) => (
-                      <Box
-                        key={space.id}
-                        onClick={() => navigate(`/spaces/${space.id}`)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1.5,
-                          p: 1.5,
-                          borderRadius: 2,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.08),
-                            transform: 'translateX(4px)'
-                          }
-                        }}
-                      >
-                        <Avatar
-                          src={space.space_avatar_url}
-                          sx={{ width: 28, height: 28, bgcolor: 'primary.main', fontSize: '0.9rem', fontWeight: 700 }}
-                        >
-                          {space.name?.charAt(0)?.toUpperCase()}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {space.name}
-                          </Typography>
-                        </Box>
+                  <ExpBar expPoints={profile.expPoints} level={profile.level} />
+                </Box>
+
+                {/* Account Information */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="overline" sx={{ mb: 2, color: 'text.secondary', fontWeight: 700, display: 'block' }}>
+                    Account Information
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'action.hover', display: 'flex' }}>
+                        <CalendarTodayOutlined sx={{ fontSize: 18, color: 'text.secondary' }} />
                       </Box>
-                    ))}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Member Since</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{formatDate(profile.createdAt)}</Typography>
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ p: 1, borderRadius: 1.5, bgcolor: 'action.hover', display: 'flex' }}>
+                        <AlternateEmailOutlined sx={{ fontSize: 18, color: 'text.secondary' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Username</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>@{profile.username}</Typography>
+                      </Box>
+                    </Box>
                   </Box>
                 </Box>
-              )}
+
+                {/* Spaces */}
+                {profile.spaces && profile.spaces.length > 0 && (
+                  <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <TravelExploreOutlined sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700 }}>
+                        Active Spaces ({profile.spaces.length})
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {profile.spaces.slice(0, 5).map((space) => (
+                        <Box
+                          key={space.id}
+                          onClick={() => navigate(`/spaces/${space.id}`)}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            p: 1.5,
+                            borderRadius: 2,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                              transform: 'translateX(4px)'
+                            }
+                          }}
+                        >
+                          <Avatar
+                            src={space.space_avatar_url}
+                            sx={{ width: 28, height: 28, bgcolor: 'primary.main', fontSize: '0.9rem', fontWeight: 700 }}
+                          >
+                            {space.name?.charAt(0)?.toUpperCase()}
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {space.name}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
             </Box>
-          </Paper>
+          </Box>
         </Grid>
 
         {/* Main Content */}
         <Grid item size={{ xs: 12, lg: 8.5, xl: 9 }}>
-          <Paper
-            elevation={0}
+          <Box
             sx={{
-              borderRadius: '16px 16px 0 0',
+              borderRadius: { xs: 0, md: '16px 16px 0 0' },
+              backgroundColor: 'background.paper',
+              overflow: 'hidden',
+              mt: { xs: 2, md: 0 },
               border: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
-              overflow: 'hidden'
+              borderColor: 'divider'
             }}
           >
             <Tabs
@@ -544,8 +663,6 @@ const Profile = () => {
               sx={{
                 px: 2,
                 pt: 1,
-                borderBottom: 1,
-                borderColor: 'divider',
                 '& .MuiTab-root': {
                   textTransform: 'none',
                   fontWeight: 700,
@@ -558,6 +675,7 @@ const Profile = () => {
             >
               <Tab label={`Comments (${profile.stats.commentsCount})`} />
               <Tab label={`Posts (${profile.stats.threadsCount})`} />
+              {isOwnProfile && <Tab label="Settings" />}
             </Tabs>
 
             <Box sx={{ p: 1 }}>
@@ -578,8 +696,16 @@ const Profile = () => {
                   onLoadMore={loadMoreThreads}
                 />
               )}
+
+              {activeTab === 2 && isOwnProfile && (
+                <ProfileEdit
+                  profile={profile}
+                  onUpdate={(updatedProfile) => setProfile(updatedProfile)}
+                  showSnackbar={showSnackbar}
+                />
+              )}
             </Box>
-          </Paper>
+          </Box>
         </Grid>
       </Grid>
       {/* </Container> */}

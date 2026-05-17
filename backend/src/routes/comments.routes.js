@@ -304,10 +304,14 @@ router.get('/', checkAuth, async (req, res) => {
 });
 
 router.post('/vote', checkAuth, async (req, res) => {
-  const { commentId, voteType } = req.body;
+  // `vote` is the final resolved numeric state: 1 (upvote), -1 (downvote), 0 (remove vote)
+  const { commentId, vote } = req.body;
   const userId = req.user?.userId;
 
-  const numericVote = voteType === 'upvote' ? 1 : -1;
+  // Validate vote value
+  if (![1, 0, -1].includes(vote)) {
+    return res.status(400).json({ success: false, error: 'Invalid vote value' });
+  }
 
   try {
     await knex.transaction(async (trx) => {
@@ -321,52 +325,40 @@ router.post('/vote', checkAuth, async (req, res) => {
         .where({ user_id: userId, comment_id: commentId })
         .first();
 
-      // Case 1: No previous vote - add new vote
-      if (!existingVote) {
-        await trx('comment_votes').insert({
-          user_id: userId,
-          comment_id: commentId,
-          vote_type: numericVote
-        });
+      const prevVote = existingVote ? existingVote.vote_type : 0;
 
-        await trx('comments')
-          .where({ id: commentId })
-          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .increment('net_score', numericVote);
-
-        // Award EXP to comment author for receiving upvote
-        if (numericVote === 1 && comment.created_by !== userId) {
-          const expResult = await awardExp(comment.created_by, 'reply_upvote', commentId, trx);
-          if (!expResult.success) {
-            console.warn('Failed to award EXP for comment upvote:', expResult.error);
-          }
-        }
+      // No change needed — idempotent guard (handles spam that resolves to same state)
+      if (prevVote === vote) {
+        return;
       }
-      // Case 2: Same vote clicked again → remove vote (neutral)
-      else if (existingVote.vote_type === numericVote) {
+
+      // --- Remove previous vote from DB and comment counters ---
+      if (existingVote) {
         await trx('comment_votes')
           .where({ user_id: userId, comment_id: commentId })
           .delete();
 
         await trx('comments')
           .where({ id: commentId })
-          .decrement(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .decrement('net_score', numericVote);
+          .decrement(prevVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement('net_score', prevVote);
       }
-      // Case 3: Switching vote (upvote → downvote or vice versa)
-      else {
-        await trx('comment_votes')
-          .where({ user_id: userId, comment_id: commentId })
-          .update({ vote_type: numericVote });
+
+      // --- Apply new vote if not un-voting (vote !== 0) ---
+      if (vote !== 0) {
+        await trx('comment_votes').insert({
+          user_id: userId,
+          comment_id: commentId,
+          vote_type: vote
+        });
 
         await trx('comments')
           .where({ id: commentId })
-          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
-          .increment('net_score', numericVote * 2);
+          .increment(vote === 1 ? 'upvotes' : 'downvotes', 1)
+          .increment('net_score', vote);
 
-        // Award EXP if switching from downvote to upvote
-        if (numericVote === 1 && comment.created_by !== userId) {
+        // Award EXP to comment author for receiving upvote
+        if (vote === 1 && comment.created_by !== userId) {
           const expResult = await awardExp(comment.created_by, 'reply_upvote', commentId, trx);
           if (!expResult.success) {
             console.warn('Failed to award EXP for comment upvote:', expResult.error);

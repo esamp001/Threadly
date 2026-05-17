@@ -3,7 +3,7 @@ import MessageRoundedIcon from '@mui/icons-material/MessageRounded';
 import ReplyRoundedIcon from '@mui/icons-material/ReplyRounded';
 import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, Typography } from '@mui/material';
 import DOMPurify from 'dompurify';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -35,75 +35,81 @@ const ThreadContent = ({
   // Local state for optimistic updates
   const [localNetScore, setLocalNetScore] = useState(net_score);
   const [localUserVote, setLocalUserVote] = useState(userVote);
-  const [isVoting, setIsVoting] = useState(false);
   // const [expanded, setExpanded] = useState(true);
 
-  // Debounce refs 
-  let voteTimeout = null;
-  let abortController = null;
+  // Refs persist across renders — critical for debounce correctness
+  const voteTimeoutRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  // Track the latest resolved vote so the debounced API call always sends the final state
+  const pendingVoteRef = useRef(null);
 
-  // Handle vote for thread
+  // Handle vote for thread — Reddit-style: always interactive, debounced API call
   const handleVote = (voteType) => {
-    const oldUserVote = localUserVote || 0;
+    // Read the current vote from the ref so rapid clicks always see the latest value
+    const currentVote = pendingVoteRef.current !== null ? pendingVoteRef.current : (localUserVote || 0);
     let newUserVote;
 
     // Toggle logic
     if (voteType === 'upvote') {
-      newUserVote = (oldUserVote === 1) ? 0 : 1;
+      newUserVote = (currentVote === 1) ? 0 : 1;
     } else {
-      newUserVote = (oldUserVote === -1) ? 0 : -1;
+      newUserVote = (currentVote === -1) ? 0 : -1;
     }
 
-    const scoreChange = newUserVote - oldUserVote;
+    const scoreChange = newUserVote - currentVote;
 
-    // Immediate optimistic update
+    // Immediate optimistic update — UI is never blocked
     setLocalNetScore(prev => prev + scoreChange);
     setLocalUserVote(newUserVote);
 
-    // Clear previous pending requests
-    if (voteTimeout) clearTimeout(voteTimeout);
-    if (abortController) abortController.abort();
+    // Track the latest intended vote for the debounced request
+    pendingVoteRef.current = newUserVote;
 
-    // Set loading state
-    setIsVoting(true);
+    // Cancel any in-flight request and pending debounce timer
+    if (voteTimeoutRef.current) clearTimeout(voteTimeoutRef.current);
+    if (abortControllerRef.current) abortControllerRef.current.abort();
 
-    // Set debounce timer
-    voteTimeout = setTimeout(async () => {
-      abortController = new AbortController();
+    // Debounce: only fire API after the user stops clicking for 600ms
+    voteTimeoutRef.current = setTimeout(async () => {
+      const finalVote = pendingVoteRef.current;
+      abortControllerRef.current = new AbortController();
 
       try {
         await apiRequest(`/api/maincontent/threads/vote`, {
           method: 'POST',
-          signal: abortController.signal,
+          signal: abortControllerRef.current.signal,
           body: JSON.stringify({
             threadId,
-            voteType,
+            // Send the resolved numeric vote (-1 | 0 | 1) so the server
+            // always gets the final intended state, not just an action verb
+            vote: finalVote,
           }),
         });
 
-        // Optimistic update already applied, just notify parent
+        // Notify parent with the settled values
         if (onVoteUpdate) {
           onVoteUpdate({
             id: threadId,
             net_score: localNetScore,
-            userVote: localUserVote
+            userVote: finalVote,
           });
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          console.log('Request cancelled because user clicked again');
+          // A newer click cancelled this request — ignore
         } else {
-          console.error("Actual Error:", error);
+          console.error('Vote error:', error);
           showSnackbar('Error voting', 'error');
-          // Rollback on error
+          // Rollback both optimistic state and the pending ref
           setLocalNetScore(prev => prev - scoreChange);
-          setLocalUserVote(oldUserVote);
+          setLocalUserVote(currentVote);
+          pendingVoteRef.current = currentVote;
         }
       } finally {
-        // Clear loading state
-        setIsVoting(false);
+        voteTimeoutRef.current = null;
+        abortControllerRef.current = null;
       }
-    }, 500);
+    }, 600);
   };
 
   const isSpaceComponent = typeof componentRendered === 'string'
@@ -312,7 +318,6 @@ const ThreadContent = ({
                 userVote={localUserVote}
                 onVote={handleVote}
                 size="large"
-                loading={isVoting}
               />
             </Box>
 

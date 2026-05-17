@@ -10,9 +10,8 @@ import { Box, Typography } from "@mui/material";
  * @param {number} userVote - Current user's vote: 1 (upvote), -1 (downvote), 0 (none)
  * @param {function} onVote - Callback to handle vote action
  * @param {string} size - Size variant: 'small' or 'large'
- * @param {boolean} loading - Whether a vote request is in progress
  */
-const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading = false }) => {
+const VotingComponent = ({ net_score, userVote, onVote, size = 'small' }) => {
   const sizeConfig = {
     small: {
       iconSize: 18,
@@ -44,11 +43,10 @@ const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading 
     justifyContent: 'center',
     px: config.px,
     py: config.py,
-    cursor: loading ? 'default' : 'pointer',
-    opacity: loading ? 0.5 : 1,
+    cursor: 'pointer',
     transition: 'background-color 0.15s ease',
     bgcolor: isActive ? `${activeColor}28` : 'transparent',
-    '&:hover': loading ? {} : {
+    '&:hover': {
       bgcolor: isActive ? `${activeColor}40` : `${activeColor}14`,
     },
   });
@@ -83,7 +81,7 @@ const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading 
       {/* Upvote segment */}
       <Box
         sx={segmentSx('#4CAF50', userVote === 1)}
-        onClick={() => !loading && onVote('upvote')}
+        onClick={() => onVote('upvote')}
       >
         <ExpandLessRoundedIcon
           sx={{
@@ -111,11 +109,6 @@ const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading 
             transition: 'color 0.2s ease',
             minWidth: '16px',
             textAlign: 'center',
-            animation: loading ? 'pulse 1.5s ease-in-out infinite' : 'none',
-            '@keyframes pulse': {
-              '0%, 100%': { opacity: 0.5 },
-              '50%': { opacity: 1 }
-            }
           }}
         >
           {net_score}
@@ -125,7 +118,7 @@ const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading 
       {/* Downvote segment */}
       <Box
         sx={segmentSx('#F44336', userVote === -1)}
-        onClick={() => !loading && onVote('downvote')}
+        onClick={() => onVote('downvote')}
       >
         <ExpandMoreRoundedIcon
           sx={{

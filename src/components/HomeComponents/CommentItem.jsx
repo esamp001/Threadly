@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import { MessageCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -34,32 +34,22 @@ const CommentItem = ({
   // States
   const [replyTexts, setReplyTexts] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
-  const [votingCommentIds, setVotingCommentIds] = useState(new Set());
   const [editingComment, setEditingComment] = useState(null);
   const [editText, setEditText] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
 
-  let voteTimeout = null;
-  let abortController = null;
+  // Refs for debounce — one timeout + abort controller per comment id
+  const voteTimeoutsRef = useRef({});
+  const abortControllersRef = useRef({});
+  // Track the latest resolved vote per comment so the debounced request always sends the final state
+  const pendingVoteRefs = useRef({});
 
-  // Helper function - update vote recursively
-  const updateVoteRecursively = (comments, commentId, actionType) => {
+  // Helper function - update vote recursively using resolved numeric vote
+  const updateVoteRecursively = (comments, commentId, newUserVote) => {
     return comments.map(comment => {
       if (comment.id === commentId) {
-        const oldUserVote = comment.userVote || 0; // 1, 0, or -1
-        let newUserVote;
-
-        // 1. Determine the NEW userVote state
-        if (actionType === 'upvote') {
-          newUserVote = (oldUserVote === 1) ? 0 : 1;
-        } else {
-          newUserVote = (oldUserVote === -1) ? 0 : -1;
-        }
-
-        // 2. Calculate the "Swing"
-        // Example: If old was -1 and new is 1, change is 1 - (-1) = +2
+        const oldUserVote = comment.userVote || 0;
         const scoreChange = newUserVote - oldUserVote;
-
         return {
           ...comment,
           net_score: comment.net_score + scoreChange,
@@ -70,7 +60,7 @@ const CommentItem = ({
       if (comment.replies?.length > 0) {
         return {
           ...comment,
-          replies: updateVoteRecursively(comment.replies, commentId, actionType)
+          replies: updateVoteRecursively(comment.replies, commentId, newUserVote)
         };
       }
 
@@ -90,48 +80,61 @@ const CommentItem = ({
     return null;
   };
 
-  // Handle comment vote
+  // Handle comment vote — Reddit-style: always interactive, debounced API call
   const handleCommentVote = (actionType, commentId) => {
-    // 1. IMMEDIATE OPTIMISTIC UPDATE
-    setComments(prev => updateVoteRecursively(prev, commentId, actionType));
+    // Resolve current vote from ref (latest) or the comments state
+    const currentVote = pendingVoteRefs.current[commentId] !== undefined
+      ? pendingVoteRefs.current[commentId]
+      : (() => {
+          const found = findCommentById(comments, commentId);
+          return found ? (found.userVote || 0) : 0;
+        })();
 
-    // 2. CLEAR PREVIOUS PENDING REQUESTS FOR THIS SPECIFIC COMMENT
-    if (voteTimeout) clearTimeout(voteTimeout);
-    // If a network request is already flying, cancel it
-    if (abortController) abortController.abort();
+    // Compute new resolved vote
+    let newUserVote;
+    if (actionType === 'upvote') {
+      newUserVote = currentVote === 1 ? 0 : 1;
+    } else {
+      newUserVote = currentVote === -1 ? 0 : -1;
+    }
 
-    // 3. SET LOADING STATE
-    setVotingCommentIds(prev => new Set(prev).add(commentId));
+    // Immediate optimistic update — UI is never blocked
+    setComments(prev => updateVoteRecursively(prev, commentId, newUserVote));
 
-    // 4. SET A DEBOUNCE TIMER
-    voteTimeout = setTimeout(async () => {
-      // Create a new controller for this specific request
-      abortController = new AbortController();
+    // Track the latest intended vote for this comment
+    pendingVoteRefs.current[commentId] = newUserVote;
+
+    // Cancel any in-flight request and pending timer for this comment
+    if (voteTimeoutsRef.current[commentId]) clearTimeout(voteTimeoutsRef.current[commentId]);
+    if (abortControllersRef.current[commentId]) abortControllersRef.current[commentId].abort();
+
+    // Debounce: only fire API after user stops clicking for 600ms
+    voteTimeoutsRef.current[commentId] = setTimeout(async () => {
+      const finalVote = pendingVoteRefs.current[commentId];
+      abortControllersRef.current[commentId] = new AbortController();
 
       try {
         await apiRequest(`/api/comments/vote`, {
           method: 'POST',
-          signal: abortController.signal,
+          signal: abortControllersRef.current[commentId].signal,
           body: JSON.stringify({
             commentId,
-            voteType: actionType, // Send the action type ('upvote'/'downvote')
+            // Send the resolved numeric vote so the server always gets the final state
+            vote: finalVote,
           }),
         });
-
       } catch (error) {
         if (error.name !== 'AbortError') {
-          // Rollback optimistic update
-          setComments(prev => updateVoteRecursively(prev, commentId, actionType));
+          // Rollback: restore to what was before this whole interaction
+          setComments(prev => updateVoteRecursively(prev, commentId, currentVote));
+          pendingVoteRefs.current[commentId] = currentVote;
+          showSnackbar('Error voting', 'error');
         }
       } finally {
-        // Clear loading state
-        setVotingCommentIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(commentId);
-          return newSet;
-        });
+        delete voteTimeoutsRef.current[commentId];
+        delete abortControllersRef.current[commentId];
       }
-    }, 500); // Wait 500ms for the user to stop "spamming"
+    }, 600);
   };
 
   // Handle reply submission
@@ -433,7 +436,6 @@ const CommentItem = ({
                 net_score={comment.net_score}
                 userVote={comment.userVote}
                 onVote={(voteType) => handleCommentVote(voteType, comment.id)}
-                loading={votingCommentIds.has(comment.id)}
               />
 
               {/* REPLY BUTTON */}

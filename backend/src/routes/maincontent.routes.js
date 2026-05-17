@@ -328,10 +328,14 @@ router.post('/create_thread', checkAuth, async (req, res) => {
 });
 
 router.post('/threads/vote', checkAuth, async (req, res) => {
-  const { threadId, voteType } = req.body;
+  // `vote` is the final resolved numeric state: 1 (upvote), -1 (downvote), 0 (remove vote)
+  const { threadId, vote } = req.body;
   const userId = req.user.userId;
 
-  const numericVote = voteType === 'upvote' ? 1 : -1;
+  // Validate vote value
+  if (![1, 0, -1].includes(vote)) {
+    return res.status(400).json({ success: false, error: 'Invalid vote value' });
+  }
 
   try {
     await knex.transaction(async (trx) => {
@@ -345,30 +349,53 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
         .where({ user_id: userId, thread_id: threadId })
         .first();
 
-      // Case 1: No previous vote
-      if (!existingVote) {
+      const prevVote = existingVote ? existingVote.vote_type : 0;
+
+      // No change needed — idempotent guard (handles spam that resolves to same state)
+      if (prevVote === vote) {
+        return;
+      }
+
+      // --- Remove previous vote from DB and thread counters ---
+      if (existingVote) {
+        await trx('scores')
+          .where({ user_id: userId, thread_id: threadId })
+          .delete();
+
+        await trx('threads')
+          .where({ id: threadId })
+          .decrement(prevVote === 1 ? 'upvotes' : 'downvotes', 1)
+          .decrement('net_score', prevVote);
+
+        // Undo contributor points from the old upvote
+        if (prevVote === 1 && thread.created_by !== userId) {
+          await trx('space_contributor_points')
+            .where({ space_id: thread.space_id, user_id: thread.created_by })
+            .decrement('points', 2)
+            .decrement('upvotes_received', 1);
+        }
+      }
+
+      // --- Apply new vote if not un-voting (vote !== 0) ---
+      if (vote !== 0) {
         await trx('scores').insert({
           user_id: userId,
           thread_id: threadId,
-          vote_type: numericVote
+          vote_type: vote
         });
 
         await trx('threads')
           .where({ id: threadId })
-          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .increment('net_score', numericVote);
+          .increment(vote === 1 ? 'upvotes' : 'downvotes', 1)
+          .increment('net_score', vote);
 
-        // Award EXP to thread author for receiving upvote
-        if (numericVote === 1 && thread.created_by !== userId) {
+        // Award EXP and contributor points for new upvote
+        if (vote === 1 && thread.created_by !== userId) {
           const expResult = await awardExp(thread.created_by, 'thread_upvote', threadId, trx);
           if (!expResult.success) {
             console.warn('Failed to award EXP for thread upvote:', expResult.error);
           }
-        }
 
-        // Update contributor points for thread author if upvote
-        // +2 points for receiving an upvote, +1 upvotes_received
-        if (numericVote === 1 && thread.created_by !== userId) {
           await trx('space_contributor_points')
             .insert({
               space_id: thread.space_id,
@@ -385,68 +412,6 @@ router.post('/threads/vote', checkAuth, async (req, res) => {
               upvotes_received: trx.raw('space_contributor_points.upvotes_received + 1'),
               updated_at: trx.fn.now()
             });
-        }
-      }
-
-      // Case 2: Same vote clicked again → remove vote
-      else if (existingVote.vote_type === numericVote) {
-        await trx('scores')
-          .where({ user_id: userId, thread_id: threadId })
-          .delete();
-
-        await trx('threads')
-          .where({ id: threadId })
-          .decrement(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .decrement('net_score', numericVote);
-
-        // Decrement contributor points for thread author if removing upvote
-        if (numericVote === 1 && thread.created_by !== userId) {
-          await trx('space_contributor_points')
-            .where({ space_id: thread.space_id, user_id: thread.created_by })
-            .decrement('points', 2)
-            .decrement('upvotes_received', 1);
-        }
-      }
-
-      // Case 3: Switching vote
-      else {
-        await trx('scores')
-          .where({ user_id: userId, thread_id: threadId })
-          .update({ vote_type: numericVote });
-
-        await trx('threads')
-          .where({ id: threadId })
-          .increment(numericVote === 1 ? 'upvotes' : 'downvotes', 1)
-          .decrement(numericVote === 1 ? 'downvotes' : 'upvotes', 1)
-          .increment('net_score', numericVote * 2);
-
-        // Update contributor points for thread author when switching votes
-        if (thread.created_by !== userId) {
-          if (numericVote === 1) {
-            // Switching from downvote to upvote: +4 points total (+2 for new upvote, +2 to reverse downvote penalty)
-            await trx('space_contributor_points')
-              .insert({
-                space_id: thread.space_id,
-                user_id: thread.created_by,
-                points: 4,
-                posts_count: 0,
-                comments_count: 0,
-                upvotes_received: 1,
-                updated_at: trx.fn.now()
-              })
-              .onConflict(['space_id', 'user_id'])
-              .merge({
-                points: trx.raw('space_contributor_points.points + 4'),
-                upvotes_received: trx.raw('space_contributor_points.upvotes_received + 1'),
-                updated_at: trx.fn.now()
-              });
-          } else {
-            // Switching from upvote to downvote: -4 points total (-2 to remove upvote, -2 for downvote penalty)
-            await trx('space_contributor_points')
-              .where({ space_id: thread.space_id, user_id: thread.created_by })
-              .decrement('points', 4)
-              .decrement('upvotes_received', 1);
-          }
         }
       }
     });

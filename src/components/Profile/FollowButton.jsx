@@ -1,7 +1,7 @@
-import { Button } from '@mui/material';
 import { useCallback, useState } from 'react';
 import apiRequest from '../../config/api';
 import { useSnackbar } from '../../context/SnackbarContext';
+import CustomButton from '../HomeComponents/CustomButton';
 
 /**
  * Follow/Unfollow button component
@@ -22,16 +22,18 @@ const FollowButton = ({ userId, isFollowing, onFollowUpdate }) => {
    */
   const handleFollow = useCallback(async () => {
     setLoading(true);
-    
+
     try {
-      const response = await apiRequest(`/api/follow/${userId}`, {
+      const raw = await apiRequest(`/api/follow/${userId}`, {
         method: localIsFollowing ? 'DELETE' : 'POST'
       });
+
+      const response = await raw.json();
 
       if (response.success) {
         const newIsFollowing = !localIsFollowing;
         setLocalIsFollowing(newIsFollowing);
-        
+
         if (onFollowUpdate) {
           onFollowUpdate(
             newIsFollowing,
@@ -55,20 +57,32 @@ const FollowButton = ({ userId, isFollowing, onFollowUpdate }) => {
   }, [userId, localIsFollowing, onFollowUpdate, showSnackbar]);
 
   return (
-    <Button
-      variant={localIsFollowing ? 'outlined' : 'contained'}
+    <CustomButton
       onClick={handleFollow}
       disabled={loading}
-      fullWidth
       sx={{
-        borderRadius: 2,
-        textTransform: 'none',
-        fontWeight: 600,
-        py: 1.5
+        width: '100%',
+        // Override styles when already following — muted outlined look
+        ...(localIsFollowing && {
+          bgcolor: 'background.paper',
+          color: 'text.secondary',
+          border: '1.5px solid',
+          borderColor: 'divider',
+          boxShadow: '0 5px 0 rgba(0,0,0,0.18)',
+          '&:hover': {
+            bgcolor: 'action.hover',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 7px 0 rgba(0,0,0,0.18)',
+          },
+          '&:active': {
+            transform: 'translateY(4px)',
+            boxShadow: '0 1px 0 rgba(0,0,0,0.18)',
+          },
+        })
       }}
     >
       {loading ? 'Loading...' : localIsFollowing ? 'Following' : 'Follow'}
-    </Button>
+    </CustomButton>
   );
 };
 

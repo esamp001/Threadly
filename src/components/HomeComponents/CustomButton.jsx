@@ -1,26 +1,37 @@
-import { Button, Typography } from '@mui/material'
+import { Button } from '@mui/material'
 
 const CustomButton = ({ children, fetchOnclick, startIcon, onClick, disabled, sx }) => (
   <Button
     onClick={onClick || fetchOnclick}
     startIcon={startIcon}
     disabled={disabled}
+    disableElevation
+    variant='contained'
     sx={{
-      borderRadius: 7,
-      typography: 'button',
-      fontSize: '10px',
-      fontWeight: 300,
-      border: '3px solid white',
-      letterSpacing: '0.05rem',
+      borderRadius: '10px',
       textTransform: 'none',
-      boxShadow: theme => `0 4px 0 0 ${theme.palette.primary.main}`,
+      fontWeight: 700,
+      py: 1.4,
+      color: '#fff',
+      position: 'relative',
+      transition: 'transform 0.1s ease, box-shadow 0.1s ease',
+      boxShadow: '0 5px 0 rgba(0,0,0,0.8)',
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: '0 7px 0 rgba(0,0,0,0.8)',
+      },
+      '&:active': {
+        transform: 'translateY(4px)',
+        boxShadow: '0 1px 0 rgba(0,0,0,0.8)',
+      },
+      '&:disabled': {
+        boxShadow: 'none',
+        transform: 'none',
+      },
       ...sx,
     }}
-    variant='contained'
   >
-    <Typography variant='subtitle1' sx={{ fontWeight: 300, color: 'text.primary' }}>
-      {children}
-    </Typography>
+    {children}
   </Button>
 )
 

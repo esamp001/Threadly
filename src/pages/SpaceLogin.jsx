@@ -12,7 +12,7 @@ import Paper from '@mui/material/Paper';
 import { signInWithPopup } from 'firebase/auth';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Space from "../assets/space-astro.svg";
+import LeftSide from '../assets/LOGIN-SPACE.png';
 import CustomButton from '../components/HomeComponents/CustomButton';
 import EmailAuth from '../components/Login/EmailAuth';
 import LoginTextField from '../components/Login/LoginTextField';
@@ -20,7 +20,6 @@ import apiRequest from '../config/api';
 import { useAuth } from '../context/AuthContext/AuthContext';
 import { useSnackbar } from '../context/SnackbarContext';
 import { auth, googleProvider } from '../firebase';
-import LeftSide from '../assets/LOGIN-SPACE.png';
 
 const SpaceLogin = () => {
   const { login } = useAuth();

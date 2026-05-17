@@ -106,8 +106,8 @@ const ThreadContent = ({
     }, 500);
   };
 
-  const isSpaceComponent = typeof componentRendered === 'string' 
-    ? componentRendered === 'Space' 
+  const isSpaceComponent = typeof componentRendered === 'string'
+    ? componentRendered === 'Space'
     : componentRendered?.current === 'Space';
 
   const handleProfileNavigate = (username) => {
@@ -132,23 +132,28 @@ const ThreadContent = ({
         '&:before': {
           display: 'none', // Remove default MUI divider
         },
-        boxShadow: 'none', // Remove default shadow
-        borderRadius: '0 !important',
+        borderRadius: '12px !important',
+        overflow: 'hidden',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+        // transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        // '&:hover': {
+        //   transform: 'translateY(-2px)',
+        //   boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+        // },
         '& .MuiAccordion-root': {
-          borderRadius: '0 !important',
+          borderRadius: '12px !important',
         },
         '& .MuiPaper-root': {
-          borderRadius: '0 !important',
+          borderRadius: '12px !important',
         },
         '& .MuiPaper-elevation1': {
-          borderRadius: '0 !important',
+          borderRadius: '12px !important',
         }
       }}
     >
       <AccordionSummary
         sx={{
           backgroundColor: 'paper.accordionHeader',
-          borderRadius: 0,
           display: 'flex',
           alignItems: 'center',
           '&:hover': {
@@ -161,11 +166,11 @@ const ThreadContent = ({
           {/* Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Avatar
-              sx={{ 
-                height: 40, 
-                width: 40, 
-                mr: 1, 
-                flexShrink: 0, 
+              sx={{
+                height: 40,
+                width: 40,
+                mr: 1,
+                flexShrink: 0,
                 cursor: 'pointer',
                 '&:hover': { opacity: 0.8 }
               }}

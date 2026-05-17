@@ -2,100 +2,138 @@ import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import { Box, Typography } from "@mui/material";
 
+/**
+ * Voting component for threads and comments
+ * This is used to display and handle upvote/downvote interactions
+ *
+ * @param {number} net_score - Current net vote score
+ * @param {number} userVote - Current user's vote: 1 (upvote), -1 (downvote), 0 (none)
+ * @param {function} onVote - Callback to handle vote action
+ * @param {string} size - Size variant: 'small' or 'large'
+ * @param {boolean} loading - Whether a vote request is in progress
+ */
 const VotingComponent = ({ net_score, userVote, onVote, size = 'small', loading = false }) => {
   const sizeConfig = {
     small: {
-      iconSize: 20,
+      iconSize: 18,
       fontSize: '0.75rem',
-      padding: 0.5,
-      minWidth: '20px'
+      px: 0.8,
+      py: 0.4,
     },
     large: {
-      iconSize: 28,
+      iconSize: 24,
       fontSize: '0.875rem',
-      padding: 1,
-      minWidth: '20px'
+      px: 1.2,
+      py: 0.6,
     }
   };
 
   const config = sizeConfig[size];
 
+  // Pedestal shadow colour based on current vote
+  const pedestalColor = userVote === 1
+    ? 'rgba(76, 175, 80, 0.7)'
+    : userVote === -1
+      ? 'rgba(244, 67, 54, 0.7)'
+      : 'rgba(0, 0, 0, 0.5)';
+
+  // Shared segment button styles
+  const segmentSx = (activeColor, isActive) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    px: config.px,
+    py: config.py,
+    cursor: loading ? 'default' : 'pointer',
+    opacity: loading ? 0.5 : 1,
+    transition: 'background-color 0.15s ease',
+    bgcolor: isActive ? `${activeColor}28` : 'transparent',
+    '&:hover': loading ? {} : {
+      bgcolor: isActive ? `${activeColor}40` : `${activeColor}14`,
+    },
+  });
+
   return (
-    <Box sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 0.5,
-      backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'transparent',
-      borderRadius: 3,
-      p: config.padding,
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      border: userVote !== 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
-      '&:hover': {
-        backgroundColor: userVote === 1 ? '#a2cca26e' : userVote === -1 ? '#b8626f83' : 'rgba(255, 255, 255, 0.05)',
-        transform: 'translateY(-1px)'
-      }
-    }}>
-      <Box sx={{
-        display: 'flex',
+    <Box
+      sx={{
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: 0.5
-      }}>
-        {/* UPVOTE BUTTON */}
+        borderRadius: '20px',
+        border: '1px solid',
+        borderColor: userVote === 1
+          ? 'rgba(76, 175, 80, 0.4)'
+          : userVote === -1
+            ? 'rgba(244, 67, 54, 0.4)'
+            : 'rgba(255, 255, 255, 0.1)',
+        overflow: 'hidden',
+        bgcolor: 'rgba(255,255,255,0.03)',
+        boxShadow: `0 4px 0 ${pedestalColor}`,
+        transition: 'border-color 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease',
+        userSelect: 'none',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          boxShadow: `0 6px 0 ${pedestalColor}`,
+        },
+        '&:active': {
+          transform: 'translateY(3px)',
+          boxShadow: `0 1px 0 ${pedestalColor}`,
+        },
+      }}
+    >
+      {/* Upvote segment */}
+      <Box
+        sx={segmentSx('#4CAF50', userVote === 1)}
+        onClick={() => !loading && onVote('upvote')}
+      >
         <ExpandLessRoundedIcon
           sx={{
-            color: userVote === 1 ? '#4CAF50' : size === 'large' ? 'text.primary' : 'text.secondary',
-            height: config.iconSize,
-            width: config.iconSize,
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading ? 0.5 : 1,
-            transition: 'all 0.2s ease',
+            color: userVote === 1 ? '#4CAF50' : 'text.secondary',
+            fontSize: config.iconSize,
+            transition: 'color 0.15s ease, transform 0.15s ease',
+            transform: userVote === 1 ? 'scale(1.15)' : 'scale(1)',
+          }}
+        />
+      </Box>
+
+      {/* Score */}
+      <Box sx={{
+        px: config.px,
+        borderLeft: '1px solid rgba(255,255,255,0.08)',
+        borderRight: '1px solid rgba(255,255,255,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        <Typography
+          sx={{
+            fontSize: config.fontSize,
+            fontWeight: 700,
+            color: userVote === 1 ? '#4CAF50' : userVote === -1 ? '#F44336' : 'text.secondary',
+            transition: 'color 0.2s ease',
+            minWidth: '16px',
+            textAlign: 'center',
             animation: loading ? 'pulse 1.5s ease-in-out infinite' : 'none',
             '@keyframes pulse': {
-              '0%, 100%': { opacity: 0.5, transform: 'scale(0.95)' },
-              '50%': { opacity: 0.8, transform: 'scale(1.05)' }
-            },
-            '&:hover': loading ? {} : {
-              color: userVote === 1 ? '#4CAF50' : '#4CAF50',
-              transform: 'scale(1.1)'
+              '0%, 100%': { opacity: 0.5 },
+              '50%': { opacity: 1 }
             }
           }}
-          onClick={() => !loading && onVote('upvote')}
-        />
-        <Typography variant='subtitle2' sx={{
-          color: userVote !== 0 ? '#FFFFFF' : size === 'large' ? 'text.primary' : 'text.secondary',
-          fontWeight: userVote !== 0 ? 700 : 500,
-          fontSize: config.fontSize,
-          transition: 'all 0.2s ease',
-          minWidth: config.minWidth,
-          textAlign: 'center',
-          animation: loading ? 'pulse 1.5s ease-in-out infinite' : 'none',
-          '@keyframes pulse': {
-            '0%, 100%': { opacity: 0.6, transform: 'scale(0.98)' },
-            '50%': { opacity: 1, transform: 'scale(1.02)' }
-          }
-        }}>
+        >
           {net_score}
         </Typography>
-        {/* DOWNVOTE BUTTON */}
+      </Box>
+
+      {/* Downvote segment */}
+      <Box
+        sx={segmentSx('#F44336', userVote === -1)}
+        onClick={() => !loading && onVote('downvote')}
+      >
         <ExpandMoreRoundedIcon
           sx={{
-            color: userVote === -1 ? '#F44336' : size === 'large' ? 'text.primary' : 'text.secondary',
-            height: config.iconSize,
-            width: config.iconSize,
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading ? 0.5 : 1,
-            transition: 'all 0.2s ease',
-            animation: loading ? 'pulse 1.5s ease-in-out infinite' : 'none',
-            '@keyframes pulse': {
-              '0%, 100%': { opacity: 0.5, transform: 'scale(0.95)' },
-              '50%': { opacity: 0.8, transform: 'scale(1.05)' }
-            },
-            '&:hover': loading ? {} : {
-              color: userVote === -1 ? '#F44336' : '#F44336',
-              transform: 'scale(1.1)'
-            }
+            color: userVote === -1 ? '#F44336' : 'text.secondary',
+            fontSize: config.iconSize,
+            transition: 'color 0.15s ease, transform 0.15s ease',
+            transform: userVote === -1 ? 'scale(1.15)' : 'scale(1)',
           }}
-          onClick={() => !loading && onVote('downvote')}
         />
       </Box>
     </Box>

@@ -12,7 +12,7 @@ const { checkAuth } = require('../middleware/checkAuth');
  * POST /api/follow/:userId
  */
 router.post('/:userId', checkAuth, async (req, res) => {
-  const { userId } = req.params;
+  const userId = parseInt(req.params.userId, 10);
   const followerId = req.user.userId;
 
   let success = true;
@@ -30,7 +30,7 @@ router.post('/:userId', checkAuth, async (req, res) => {
     }
 
     // Prevent self-follow
-    if (userId === followerId.toString()) {
+    if (userId === followerId) {
       success = false;
       error_message = 'Cannot follow yourself';
       status = 400;
@@ -58,11 +58,10 @@ router.post('/:userId', checkAuth, async (req, res) => {
       return;
     }
 
-    // Create follow relationship
+    // Create follow relationship (let DB handle created_at default)
     await knex('user_follows').insert({
       follower_id: followerId,
-      following_id: userId,
-      created_at: new Date()
+      following_id: userId
     });
 
     // Get updated follower count
@@ -79,7 +78,7 @@ router.post('/:userId', checkAuth, async (req, res) => {
   } catch (error) {
     console.error('Error following user:', error);
     success = false;
-    error_message = 'Failed to follow user';
+    error_message = error.message || 'Failed to follow user';
     status = 500;
   } finally {
     res.status(status).json({ success, error_message, result });
@@ -91,7 +90,7 @@ router.post('/:userId', checkAuth, async (req, res) => {
  * DELETE /api/follow/:userId
  */
 router.delete('/:userId', checkAuth, async (req, res) => {
-  const { userId } = req.params;
+  const userId = parseInt(req.params.userId, 10);
   const followerId = req.user.userId;
 
   let success = true;
@@ -139,7 +138,7 @@ router.delete('/:userId', checkAuth, async (req, res) => {
   } catch (error) {
     console.error('Error unfollowing user:', error);
     success = false;
-    error_message = 'Failed to unfollow user';
+    error_message = error.message || 'Failed to unfollow user';
     status = 500;
   } finally {
     res.status(status).json({ success, error_message, result });
@@ -151,7 +150,7 @@ router.delete('/:userId', checkAuth, async (req, res) => {
  * GET /api/follow/:userId/status
  */
 router.get('/:userId/status', checkAuth, async (req, res) => {
-  const { userId } = req.params;
+  const userId = parseInt(req.params.userId, 10);
   const currentUserId = req.user.userId;
 
   let success = true;
@@ -267,9 +266,9 @@ router.get('/:userId/followers', async (req, res) => {
     error_message = 'Failed to fetch followers';
     status = 500;
   } finally {
-    res.status(status).json({ 
-      success, 
-      error_message, 
+    res.status(status).json({
+      success,
+      error_message,
       followers,
       hasMore,
       currentPage: parseInt(page)
@@ -341,9 +340,9 @@ router.get('/:userId/following', async (req, res) => {
     error_message = 'Failed to fetch following';
     status = 500;
   } finally {
-    res.status(status).json({ 
-      success, 
-      error_message, 
+    res.status(status).json({
+      success,
+      error_message,
       following,
       hasMore,
       currentPage: parseInt(page)

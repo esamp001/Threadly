@@ -205,3 +205,66 @@ if (avatarPublicId && avatarPublicId.length > 255) throw new Error('Avatar publi
 - Fails fast before starting database transactions
 - Better user experience than generic database errors
 
+## UI Design — Pedestal Effect on Buttons
+
+**Always prefer the pedestal effect on buttons wherever possible.** This is the preferred design language for Threadly — it gives buttons a tactile, physical depth that feels premium and interactive.
+
+### What is the Pedestal Effect?
+
+The pedestal effect uses a solid `box-shadow` below a button (no blur), combined with `translateY` transforms on hover and active states. The button appears to sit on a raised platform — it lifts slightly on hover and presses down on click.
+
+### Standard Implementation
+
+Use `CustomButton` (`src/components/HomeComponents/CustomButton.jsx`) as the base for all primary action buttons — it has the pedestal effect built in:
+
+```jsx
+import CustomButton from '../components/HomeComponents/CustomButton';
+
+// Basic usage — inherits full pedestal style automatically
+<CustomButton onClick={handleAction}>
+  Submit
+</CustomButton>
+
+// With sx overrides for custom colour (e.g. danger/red actions)
+<CustomButton
+  onClick={handleDelete}
+  sx={{
+    bgcolor: 'transparent',
+    color: '#f43f5e',
+    border: '1.5px solid rgba(244, 63, 94, 0.5)',
+    boxShadow: '0 5px 0 rgba(244, 63, 94, 0.35)',
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 7px 0 rgba(244, 63, 94, 0.35)',
+    },
+    '&:active': {
+      transform: 'translateY(4px)',
+      boxShadow: '0 1px 0 rgba(244, 63, 94, 0.35)',
+    },
+  }}
+>
+  Delete
+</CustomButton>
+```
+
+### Pedestal Shadow Values
+
+| State | Transform | Box Shadow |
+|-------|-----------|------------|
+| Default | none | `0 5px 0 rgba(0,0,0,0.8)` |
+| Hover | `translateY(-2px)` | `0 7px 0 rgba(0,0,0,0.8)` |
+| Active (click) | `translateY(4px)` | `0 1px 0 rgba(0,0,0,0.8)` |
+| Disabled | none | none |
+
+### Rules
+
+- Always use `disableElevation` on MUI `Button` to prevent shadow conflicts
+- Always add `transition: 'transform 0.1s ease, box-shadow 0.1s ease'` for smooth animation
+- Match the shadow colour to the button colour for coloured pedestal variants (e.g. red button → red shadow)
+- Use `CustomButton` as the default — only use raw `Button` if `CustomButton` cannot satisfy the requirement
+
+### Components Already Using This Pattern
+
+- `CustomButton` — base implementation
+- `FollowButton` — uses `CustomButton` directly
+- `Space.jsx` — Join Community & Leave Community buttons

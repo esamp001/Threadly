@@ -133,46 +133,37 @@ const AboutSpaceCard = ({ space, isMember, memberCount, onJoin, onLeave, joining
       {/* Button */}
       <Box sx={{ mb: 3 }}>
         {isMember ? (
-          <Button
-            fullWidth
+          <CustomButton
             onClick={onLeave}
             disabled={joining}
-            variant="outlined"
             sx={{
-              textTransform: 'none',
-              borderRadius: '12px',
-              py: 1,
-              borderColor: 'rgba(244, 63, 94, 0.5)',
+              width: '100%',
+              bgcolor: 'transparent',
               color: '#f43f5e',
-              fontWeight: 700,
+              border: '1.5px solid rgba(244, 63, 94, 0.5)',
+              boxShadow: '0 5px 0 rgba(244, 63, 94, 0.35)',
               '&:hover': {
+                bgcolor: 'rgba(244, 63, 94, 0.05)',
                 borderColor: '#f43f5e',
-                bgcolor: 'rgba(244, 63, 94, 0.05)'
-              }
+                transform: 'translateY(-2px)',
+                boxShadow: '0 7px 0 rgba(244, 63, 94, 0.35)',
+              },
+              '&:active': {
+                transform: 'translateY(4px)',
+                boxShadow: '0 1px 0 rgba(244, 63, 94, 0.35)',
+              },
             }}
           >
             {joining ? 'Leaving...' : 'Leave Community'}
-          </Button>
+          </CustomButton>
         ) : (
-          <Button
-            fullWidth
+          <CustomButton
             onClick={onJoin}
             disabled={joining}
-            variant="contained"
-            sx={{
-              textTransform: 'none',
-              borderRadius: '12px',
-              py: 1.2,
-              fontWeight: 800,
-              // boxShadow: '0 4px 14px rgba(99, 102, 241, 0.4)',
-              '&:hover': {
-                // boxShadow: '0 6px 20px rgba(99, 102, 241, 0.6)',
-                transform: 'translateY(-1px)'
-              }
-            }}
+            sx={{ width: '100%' }}
           >
             {joining ? 'Joining...' : 'Join Community'}
-          </Button>
+          </CustomButton>
         )}
       </Box>
 

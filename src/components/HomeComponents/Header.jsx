@@ -1509,7 +1509,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                   key={space.id}
                   button
                   onClick={() => {
-                    navigate(`/${space.space_slug}`);
+                    navigate(`/spaces/${space.id}`);
                     setShowMobileMenu(false);
                   }}
                   sx={{

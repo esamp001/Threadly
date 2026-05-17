@@ -244,10 +244,18 @@ const Profile = () => {
       <>
         <Header openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} />
         <Box sx={{ pb: { xs: '70px', sm: 0 } }}>
-          <Grid sx={{ p: 2 }} container spacing={3}>
+          <Grid sx={{ p: { xs: 0, md: 3 }, mt: { xs: 0, md: 2 } }} container spacing={{ xs: 0, md: 3 }}>
             {/* Profile Sidebar Skeleton */}
-            <Grid size={{ xs: 0, sm: 0, md: 0, lg: 3, xl: 3 }}>
-              <Paper sx={{ p: 3, bgcolor: 'background.paper' }}>
+            <Grid size={{ xs: 12, lg: 3.5, xl: 3 }}>
+              <Paper
+                sx={{
+                  p: 3,
+                  bgcolor: 'background.paper',
+                  borderRadius: { xs: 0, md: '16px 16px 0 0' },
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
                   <Skeleton variant="circular" width={120} height={120} sx={{ mx: 'auto', mb: 2 }} />
                   <Skeleton variant="text" width="60%" height={32} sx={{ mx: 'auto', mb: 1 }} />
@@ -306,8 +314,16 @@ const Profile = () => {
             </Grid>
 
             {/* Main Content Skeleton */}
-            <Grid size={{ xs: 0, sm: 0, md: 0, lg: 9, xl: 9 }}>
-              <Paper sx={{ bgcolor: 'background.paper' }}>
+            <Grid size={{ xs: 12, lg: 8.5, xl: 9 }}>
+              <Paper
+                sx={{
+                  bgcolor: 'background.paper',
+                  mt: { xs: 2, md: 0 },
+                  borderRadius: { xs: 0, md: '16px 16px 0 0' },
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
                   <Box sx={{ display: 'flex', gap: 4 }}>
                     <Skeleton variant="text" width={100} height={48} />

@@ -15,6 +15,7 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Paper,
   Radio,
   RadioGroup,
   Select,
@@ -24,21 +25,24 @@ import {
   Stepper,
   SwipeableDrawer,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
   Typography
 } from '@mui/material';
 import {
-  DiamondPlus,
   Home,
   LayoutTemplate,
+  Medal,
   Search as SearchIcon,
-  TrendingUp
 } from 'lucide-react';
 import Rocket from 'lucide-react/dist/esm/icons/rocket';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AstroSpace from "../../assets/astro-space.png";
 import FinalChar from '../../assets/FINAL CHAR.png';
+import LeaderboardOcto from "../../assets/leaderboard-octo.png";
 import apiRequest from '../../config/api';
 import { useAuth } from '../../context/AuthContext/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
@@ -56,6 +60,10 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [openLeaderboardDrawer, setOpenLeaderboardDrawer] = useState(false);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardTab, setLeaderboardTab] = useState(0);
+  const [leaderboardData, setLeaderboardData] = useState({ levels: [], contributors: [] });
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -106,6 +114,52 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
     'Privacy & Access Settings',
     'Space Members (Optional)'
   ];
+
+  /**
+   * Handles switching tabs inside the leaderboard drawer
+   * This is used to toggle between level masters and space legends views
+   * @param {object} event - The MUI tab change event object
+   * @param {number} newValue - The index of the selected tab
+   */
+  const handleLeaderboardTabChange = (event, newValue) => {
+    setLeaderboardTab(newValue);
+  };
+
+  /**
+   * Opens the leaderboard drawer and lazily fetches leaderboard data
+   * This is used to display the top platform players when clicking the TrendingUp icon
+   */
+  const handleLeaderboardClick = async () => {
+    setOpenLeaderboardDrawer(true);
+    if (leaderboardData.levels.length === 0 && leaderboardData.contributors.length === 0) {
+      await fetchLeaderboardData();
+    }
+  };
+
+  /**
+   * Fetches leaderboard datasets from the backend API
+   * This is used to retrieve level masters and space contributors rankings in parallel
+   */
+  const fetchLeaderboardData = async () => {
+    try {
+      setLeaderboardLoading(true);
+      const response = await apiRequest('/api/header/leaderboard');
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setLeaderboardData({
+          levels: result.levels || [],
+          contributors: result.contributors || []
+        });
+      } else {
+        showSnackbar(result.error_message || 'Failed to fetch leaderboard', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      showSnackbar('Failed to fetch leaderboard', 'error');
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
 
   // A fetch that handles avatar upload using the cloudinary utility
   const handleAvatarUpload = async (event) => {
@@ -559,7 +613,26 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               size={25}
             />
           </Tooltip>
-          <TrendingUp size={25} />
+          <Tooltip
+            title="Leaderboard"
+            arrow
+            sx={{
+              '& .MuiTooltip-tooltip': {
+                backgroundColor: 'primary.main',
+                color: 'white',
+                fontSize: '0.875rem',
+              },
+              '& .MuiTooltip-arrow': {
+                color: 'primary.main',
+              }
+            }}
+          >
+            <Medal
+              onClick={handleLeaderboardClick}
+              style={{ cursor: 'pointer' }}
+              size={25}
+            />
+          </Tooltip>
           <LayoutTemplate size={25} />
           <Tooltip
             title="Create space"
@@ -575,7 +648,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               }
             }}
           >
-            <DiamondPlus
+            <Rocket
               onClick={() => setOpenDrawer(true)}
               style={{ cursor: 'pointer' }}
               size={25}
@@ -1060,6 +1133,321 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
         />
       </Drawer>
 
+      {/* Global Gamification Leaderboard Drawer */}
+      <Drawer
+        anchor="top"
+        open={openLeaderboardDrawer}
+        onClose={() => setOpenLeaderboardDrawer(false)}
+        PaperProps={{
+          sx: {
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            maxHeight: '85vh',
+            overflowY: 'auto'
+          }
+        }}
+      >
+        <Box sx={{
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          p: { xs: 2, sm: 4 },
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          minHeight: '400px'
+        }}>
+          {/* Close Button / Header */}
+          <Box sx={{ width: '100%', maxWidth: '600px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 1 }}>
+              Global Leaderboard
+            </Typography>
+            <Button
+              onClick={() => setOpenLeaderboardDrawer(false)}
+              sx={{ textTransform: 'none', color: 'text.secondary' }}
+            >
+              Close
+            </Button>
+          </Box>
+
+          {/* Octo Speech Row */}
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 3,
+            width: '100%',
+            maxWidth: '600px',
+            mb: 3,
+            mt: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            textAlign: { xs: 'center', sm: 'left' }
+          }}>
+            <Box sx={{ position: 'relative' }}>
+              <img
+                src={leaderboardTab === 0 ? LeaderboardOcto : AstroSpace}
+                alt={leaderboardTab === 0 ? "Octo Mascot" : "Astro Mascot"}
+                style={{
+                  width: 90,
+                  height: 90,
+                  objectFit: 'contain',
+                  filter: leaderboardTab === 0
+                    ? 'drop-shadow(0px 4px 12px rgba(33, 150, 243, 0.45))'
+                    : 'drop-shadow(0px 4px 12px rgba(156, 39, 176, 0.55))',
+                }}
+              />
+            </Box>
+
+            {/* Speech bubble */}
+            <Paper sx={{
+              position: 'relative',
+              bgcolor: leaderboardTab === 0 ? 'rgba(33, 150, 243, 0.06)' : 'rgba(156, 39, 176, 0.06)',
+              border: leaderboardTab === 0 ? '1px solid rgba(33, 150, 243, 0.2)' : '1px solid rgba(156, 39, 176, 0.2)',
+              borderRadius: '16px',
+              p: 2,
+              flexGrow: 1,
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                left: { xs: '50%', sm: '-8px' },
+                top: { xs: '-8px', sm: '50%' },
+                transform: { xs: 'translateX(-50%) rotate(45deg)', sm: 'translateY(-50%) rotate(45deg)' },
+                width: '16px',
+                height: '16px',
+                bgcolor: 'background.paper',
+                borderLeft: leaderboardTab === 0 ? '1px solid rgba(33, 150, 243, 0.2)' : '1px solid rgba(156, 39, 176, 0.2)',
+                borderBottom: {
+                  xs: 'none',
+                  sm: leaderboardTab === 0 ? '1px solid rgba(33, 150, 243, 0.2)' : '1px solid rgba(156, 39, 176, 0.2)'
+                },
+                borderTop: {
+                  xs: leaderboardTab === 0 ? '1px solid rgba(33, 150, 243, 0.2)' : '1px solid rgba(156, 39, 176, 0.2)',
+                  sm: 'none'
+                },
+                zIndex: 1
+              }
+            }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontStyle: 'italic',
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  lineHeight: 1.5,
+                  zIndex: 2
+                }}
+              >
+                {leaderboardTab === 0
+                  ? "Ahoy! Level Masters are the most active explorers in Space! Scale the ranks by posting threads, sharing knowledge, and leveling up your profile! 🚀"
+                  : "Space Legends are the heartbeat of our communities! Earn Contributor Points inside individual Spaces by contributing high-value posts and comments! 🎖️"
+                }
+              </Typography>
+            </Paper>
+          </Box>
+
+          {/* Leaderboard Tabs */}
+          <Tabs
+            value={leaderboardTab}
+            onChange={handleLeaderboardTabChange}
+            textColor="primary"
+            indicatorColor="primary"
+            sx={{
+              mb: 3,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              width: '100%',
+              maxWidth: '600px',
+              '& .MuiTab-root': {
+                fontWeight: 700,
+                textTransform: 'none',
+                fontSize: { xs: '0.85rem', sm: '1rem' }
+              }
+            }}
+          >
+            <Tab label="Level Masters" />
+            <Tab label="Space Legends" />
+          </Tabs>
+
+          {/* Content Area */}
+          <Box sx={{ width: '100%', maxWidth: '600px', maxHeight: '380px', overflowY: 'auto', pr: 0.5 }}>
+            {leaderboardLoading ? (
+              // Loading Skeleton State
+              <List sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <Paper
+                    key={index}
+                    sx={{
+                      p: 2,
+                      bgcolor: 'background.paper',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                      <Skeleton variant="text" width={25} height={25} />
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <Skeleton variant="text" width="40%" height={24} />
+                    </Box>
+                    <Skeleton variant="rounded" width={50} height={25} />
+                  </Paper>
+                ))}
+              </List>
+            ) : (
+              // Ranked Users List
+              <List sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {(leaderboardTab === 0 ? leaderboardData.levels : leaderboardData.contributors).length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography color="text.secondary">No leaderboard records found yet.</Typography>
+                  </Box>
+                ) : (
+                  (leaderboardTab === 0 ? leaderboardData.levels : leaderboardData.contributors).map((entry, index) => {
+                    // Define rank badge
+                    let rankBadge = `${index + 1}`;
+                    let rankColor = 'text.secondary';
+                    let rankBg = 'rgba(255, 255, 255, 0.05)';
+
+                    if (index === 0) {
+                      rankBadge = '🥇';
+                      rankBg = 'rgba(255, 215, 0, 0.15)';
+                    } else if (index === 1) {
+                      rankBadge = '🥈';
+                      rankBg = 'rgba(192, 192, 192, 0.15)';
+                    } else if (index === 2) {
+                      rankBadge = '🥉';
+                      rankBg = 'rgba(205, 127, 50, 0.15)';
+                    }
+
+                    return (
+                      <Paper
+                        key={entry.id}
+                        sx={{
+                          p: 1.8,
+                          bgcolor: entry.username === user?.username ? 'rgba(76, 175, 80, 0.06)' : 'background.paper',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          border: '1px solid',
+                          borderColor: entry.username === user?.username ? 'success.main' : 'divider',
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                            borderColor: 'primary.main'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          {/* Rank badge */}
+                          <Box sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            fontSize: index < 3 ? '1.2rem' : '0.9rem',
+                            bgcolor: rankBg,
+                            color: rankColor
+                          }}>
+                            {rankBadge}
+                          </Box>
+
+                          {/* Avatar */}
+                          <Avatar
+                            src={entry.avatarUrl || entry.avatar_url}
+                            alt={entry.username}
+                            onClick={() => {
+                              setOpenLeaderboardDrawer(false);
+                              navigate(`/profile/${entry.username}`);
+                            }}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              cursor: 'pointer',
+                              border: '2px solid transparent',
+                              '&:hover': {
+                                borderColor: 'primary.main'
+                              }
+                            }}
+                          >
+                            {entry.username?.charAt(0).toUpperCase()}
+                          </Avatar>
+
+                          {/* Username */}
+                          <Typography
+                            onClick={() => {
+                              setOpenLeaderboardDrawer(false);
+                              navigate(`/profile/${entry.username}`);
+                            }}
+                            sx={{
+                              fontWeight: entry.username === user?.username ? 800 : 600,
+                              color: entry.username === user?.username ? 'success.light' : 'text.primary',
+                              cursor: 'pointer',
+                              '&:hover': {
+                                color: 'primary.main',
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            {entry.username}
+                            {entry.username === user?.username && ' (You)'}
+                          </Typography>
+                        </Box>
+
+                        {/* Level badge / Point score */}
+                        <Box>
+                          {leaderboardTab === 0 ? (
+                            <Typography
+                              sx={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: 'success.light',
+                                bgcolor: 'rgba(76, 175, 80, 0.12)',
+                                px: 1.2,
+                                py: 0.4,
+                                borderRadius: '6px',
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              Lv {entry.level || 1}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              sx={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: 'primary.light',
+                                bgcolor: 'rgba(33, 150, 243, 0.12)',
+                                px: 1.2,
+                                py: 0.4,
+                                borderRadius: '6px',
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              {entry.total_points || 0} pts
+                            </Typography>
+                          )}
+                        </Box>
+                      </Paper>
+                    );
+                  })
+                )}
+              </List>
+            )}
+          </Box>
+        </Box>
+      </Drawer>
+
       {/* Menu */}
       <Tooltip title="Menu" arrow>
         <DragHandleRoundedIcon
@@ -1382,6 +1770,40 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
                 />
                 <ListItemText
                   primary="Create Space"
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: 500,
+                  }}
+                />
+              </Box>
+            </ListItem>
+
+            <ListItem
+              button
+              onClick={() => {
+                handleLeaderboardClick();
+                setShowMobileMenu(false);
+              }}
+              sx={{
+                px: 0,
+                py: 1,
+                borderRadius: .5,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 2 }}>
+                <Medal
+                  size={20}
+                  sx={{
+                    color: 'text.secondary',
+                  }}
+                />
+                <ListItemText
+                  primary="Leaderboard"
                   primaryTypographyProps={{
                     variant: 'body2',
                     fontWeight: 500,

@@ -1144,8 +1144,7 @@ const Space = () => {
               flexDirection: { xs: 'column', sm: 'row' },
               alignItems: { xs: 'flex-start', sm: 'flex-end' },
               gap: { xs: 2, sm: 3 },
-              background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
-              backdropFilter: 'blur(4px)'
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)'
             }}
           >
             {/* Space Avatar */}

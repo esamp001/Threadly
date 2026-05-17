@@ -174,4 +174,54 @@ router.get('/joined-spaces', checkAuth, async (req, res) => {
   }
 });
 
+/**
+ * GET global leaderboard (Levels and Contributor Points)
+ * GET /api/header/leaderboard
+ */
+router.get('/leaderboard', checkAuth, async (req, res) => {
+  let success = true;
+  let error_message = '';
+  let status = 200;
+  let levels = [];
+  let contributors = [];
+
+  try {
+    // 1. Fetch top levels (Global levels leaderboard)
+    levels = await knex('users')
+      .select('id', 'username', 'avatar_url', 'exp_points', 'level')
+      .orderBy('exp_points', 'desc')
+      .limit(10);
+
+    // 2. Fetch top contributors (aggregated space contributor points)
+    const rawContributors = await knex('space_contributor_points')
+      .join('users', 'space_contributor_points.user_id', 'users.id')
+      .select(
+        'users.id',
+        'users.username',
+        'users.avatar_url',
+        knex.raw('SUM(space_contributor_points.points) as total_points')
+      )
+      .groupBy('users.id', 'users.username', 'users.avatar_url')
+      .orderBy('total_points', 'desc')
+      .limit(10);
+
+    // Format sum results as standard JavaScript integers
+    contributors = rawContributors.map(c => ({
+      id: c.id,
+      username: c.username,
+      avatarUrl: c.avatar_url,
+      total_points: parseInt(c.total_points) || 0
+    }));
+
+  } catch (error) {
+    console.error('Error fetching global leaderboard:', error);
+    status = 500;
+    error_message = error.message;
+    success = false;
+  } finally {
+    res.status(status).json({ success, status, error_message, levels, contributors });
+  }
+});
+
 module.exports = router;
+

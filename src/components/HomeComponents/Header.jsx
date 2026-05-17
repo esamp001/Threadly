@@ -1183,13 +1183,13 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
             flexDirection: { xs: 'column', sm: 'row' },
             textAlign: { xs: 'center', sm: 'left' }
           }}>
-            <Box sx={{ position: 'relative' }}>
+            <Box sx={{ position: 'relative', width: { xs: 60, sm: 90 }, height: { xs: 60, sm: 90 }, flexShrink: 0 }}>
               <img
                 src={leaderboardTab === 0 ? LeaderboardOcto : AstroSpace}
                 alt={leaderboardTab === 0 ? "Octo Mascot" : "Astro Mascot"}
                 style={{
-                  width: 90,
-                  height: 90,
+                  width: '100%',
+                  height: '100%',
                   objectFit: 'contain',
                   filter: leaderboardTab === 0
                     ? 'drop-shadow(0px 4px 12px rgba(33, 150, 243, 0.45))'
@@ -1204,7 +1204,7 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               bgcolor: leaderboardTab === 0 ? 'rgba(33, 150, 243, 0.06)' : 'rgba(156, 39, 176, 0.06)',
               border: leaderboardTab === 0 ? '1px solid rgba(33, 150, 243, 0.2)' : '1px solid rgba(156, 39, 176, 0.2)',
               borderRadius: '16px',
-              p: 2,
+              p: { xs: 1, sm: 2 },
               flexGrow: 1,
               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
               display: 'flex',
@@ -1232,13 +1232,13 @@ const Header = ({ openDrawer, setOpenDrawer, onSpaceCreated }) => {
               }
             }}>
               <Typography
-                variant="body2"
                 sx={{
                   fontStyle: 'italic',
                   fontWeight: 600,
                   color: 'text.primary',
                   lineHeight: 1.5,
-                  zIndex: 2
+                  zIndex: 2,
+                  fontSize: { xs: '0.7rem', sm: '0.875rem' }
                 }}
               >
                 {leaderboardTab === 0
